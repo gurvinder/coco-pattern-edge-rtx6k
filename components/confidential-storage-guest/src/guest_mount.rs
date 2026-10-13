@@ -56,6 +56,7 @@ impl MountRoot {
             name,
             before,
             state: State::Empty,
+            readonly: false,
         })
     }
 }
@@ -72,6 +73,7 @@ pub struct GuestMount {
     name: CString,
     before: File,
     state: State,
+    readonly: bool,
 }
 impl GuestMount {
     pub(crate) fn verified_source(&self) -> Result<File> {
@@ -83,7 +85,8 @@ impl GuestMount {
             return Err(Error);
         }
         let info = mount_info(id)?;
-        if info.fs != "ext4" || !info.private || !secure_options(&info.options) {
+        if info.fs != "ext4" || !info.private || !secure_options_mode(&info.options, self.readonly)
+        {
             return Err(Error);
         }
         Ok(file)
@@ -105,6 +108,12 @@ impl GuestMount {
         Ok(a.dev() == b.dev() && a.ino() == b.ino() && mount_id(file)? == mount_id(&self.before)?)
     }
     pub fn mount(&mut self, source: &Path) -> Result<()> {
+        self.mount_mode(source, false)
+    }
+    pub fn mount_readonly(&mut self, source: &Path) -> Result<()> {
+        self.mount_mode(source, true)
+    }
+    fn mount_mode(&mut self, source: &Path, readonly: bool) -> Result<()> {
         if !matches!(self.state, State::Empty) || !self.is_original(&self.current()?)? {
             return Err(Error);
         }
@@ -116,6 +125,7 @@ impl GuestMount {
         }
         let src = CString::new(format!("/proc/self/fd/{}", source.as_raw_fd())).unwrap();
         let target = self.target();
+        self.readonly = readonly;
         self.state = State::Uncertain;
         // SAFETY: live descriptors, valid strings, fixed ext4 type/options.
         let rc = unsafe {
@@ -123,8 +133,15 @@ impl GuestMount {
                 src.as_ptr(),
                 target.as_ptr(),
                 c"ext4".as_ptr(),
-                libc::MS_NODEV | libc::MS_NOSUID | libc::MS_NOEXEC,
-                std::ptr::null(),
+                libc::MS_NODEV
+                    | libc::MS_NOSUID
+                    | libc::MS_NOEXEC
+                    | if readonly { libc::MS_RDONLY } else { 0 },
+                if readonly {
+                    c"noload".as_ptr().cast()
+                } else {
+                    std::ptr::null()
+                },
             )
         };
         let current = self.current()?;
@@ -140,7 +157,7 @@ impl GuestMount {
             || current.metadata().map_err(|_| Error)?.dev() != meta.rdev()
             || info.fs != "ext4"
             || !info.private
-            || !secure_options(&info.options)
+            || !secure_options_mode(&info.options, self.readonly)
         {
             return Err(Error);
         }
@@ -263,17 +280,39 @@ pub(crate) fn mount_info(id: u64) -> Result<MountInfo> {
         id,
     )
 }
-pub(crate) fn secure_options(s: &str) -> bool {
+#[cfg(test)]
+fn secure_options(s: &str) -> bool {
+    secure_options_mode(s, false)
+}
+pub(crate) fn secure_options_mode(s: &str, readonly: bool) -> bool {
     let options: std::collections::BTreeSet<_> = s.split(',').collect();
-    ["rw", "nodev", "nosuid", "noexec"]
-        .iter()
-        .all(|s| options.contains(s))
-        && !options.contains("ro")
+    [
+        if readonly { "ro" } else { "rw" },
+        "nodev",
+        "nosuid",
+        "noexec",
+    ]
+    .iter()
+    .all(|s| options.contains(s))
+        && !options.contains(if readonly { "rw" } else { "ro" })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn readonly_and_writable_mount_profiles_are_distinct() {
+        assert!(secure_options_mode("ro,nodev,nosuid,noexec,relatime", true));
+        assert!(!secure_options_mode("rw,nodev,nosuid,noexec", true));
+        assert!(!secure_options_mode("ro,nodev,nosuid,noexec", false));
+        assert!(!secure_options_mode("ro,rw,nodev,nosuid,noexec", true));
+        for missing in ["nodev", "nosuid", "noexec"] {
+            assert!(!secure_options_mode(
+                &"ro,nodev,nosuid,noexec".replace(missing, ""),
+                true
+            ));
+        }
+    }
     #[test]
     fn mount_info_rejects_ambiguous_and_propagated_mounts() {
         let line = "42 1 254:1 / /private rw,nosuid,nodev,noexec - ext4 /dev/dm-0 rw";

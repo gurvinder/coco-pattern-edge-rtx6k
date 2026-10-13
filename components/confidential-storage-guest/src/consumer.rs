@@ -2,7 +2,7 @@
 //! Agent-internal filesystem consumer. FDs must come from the trusted runtime,
 //! before application startup, never from a host RPC or application PID string.
 use crate::{
-    guest_mount::{directory_at, mount_id, mount_info, secure_options},
+    guest_mount::{directory_at, mount_id, mount_info, secure_options_mode},
     receipt::VerifiedGrant,
 };
 use std::{
@@ -30,6 +30,8 @@ pub(crate) struct Consumer {
     namespace: File,
     root: File,
     state: State,
+    readonly: bool,
+    destination: &'static str,
 }
 impl Consumer {
     pub(crate) fn new(
@@ -54,6 +56,12 @@ impl Consumer {
             namespace,
             root,
             state: State::Prepared,
+            readonly: g.claims().access == "ro",
+            destination: if g.claims().access == "ro" {
+                "models"
+            } else {
+                "data"
+            },
         })
     }
     pub(crate) fn attach(&mut self, source: File) -> Result<()> {
@@ -93,7 +101,7 @@ impl Consumer {
             userns: u64,
         }
         let attr = Attr {
-            set: 2 | 4 | 8,
+            set: 2 | 4 | 8 | if self.readonly { 1 } else { 0 },
             clear: 0,
             propagation: libc::MS_PRIVATE,
             userns: 0,
@@ -134,7 +142,7 @@ impl Consumer {
         {
             return Err(Error);
         }
-        let target = directory_at(&self.root, "data").map_err(|_| Error)?;
+        let target = directory_at(&self.root, self.destination).map_err(|_| Error)?;
         trusted_directory(&target)?;
         let before = identity(&target)?;
         if before.2 != mount_id(&self.root).map_err(|_| Error)? {
@@ -161,13 +169,13 @@ impl Consumer {
         {
             return Err(Error);
         }
-        let visible = directory_at(&self.root, "data").map_err(|_| Error)?;
+        let visible = directory_at(&self.root, self.destination).map_err(|_| Error)?;
         let info = mount_info(mount).map_err(|_| Error)?;
         if mount_id(&visible).map_err(|_| Error)? != mount
             || object(&visible)? != source_identity
             || info.fs != "ext4"
             || !info.private
-            || !secure_options(&info.options)
+            || !secure_options_mode(&info.options, self.readonly)
         {
             return Err(Error);
         }
@@ -198,7 +206,7 @@ impl Consumer {
             _ => return Err(Error),
         };
         self.state = State::NeedsDetach { before, mount };
-        let current = directory_at(&self.root, "data").map_err(|_| Error)?;
+        let current = directory_at(&self.root, self.destination).map_err(|_| Error)?;
         if identity(&current)? == before {
             // A failed move may have left only the original target. Require the
             // recorded mount ID to be absent everywhere in this namespace.
@@ -211,15 +219,16 @@ impl Consumer {
             }
             drop(current);
             let target = CString::new(format!(
-                "/proc/thread-self/fd/{}/data",
-                self.root.as_raw_fd()
+                "/proc/thread-self/fd/{}/{}",
+                self.root.as_raw_fd(),
+                self.destination
             ))
             .unwrap();
             // SAFETY: exact mount ID and retained root; no lazy/force flags.
             if unsafe { libc::umount2(target.as_ptr(), 0) } != 0 {
                 return Err(Error);
             }
-            let current = directory_at(&self.root, "data").map_err(|_| Error)?;
+            let current = directory_at(&self.root, self.destination).map_err(|_| Error)?;
             if identity(&current)? != before || mount_present(mount)? {
                 return Err(Error);
             }
@@ -240,8 +249,10 @@ impl Consumer {
 }
 fn binding(g: &VerifiedGrant, container: &str) -> Result<()> {
     if g.claims().container_name != container
-        || g.claims().access != "rw"
-        || g.claims().destination != "/data"
+        || !matches!(
+            (g.claims().access.as_str(), g.claims().destination.as_str()),
+            ("rw", "/data") | ("ro", "/models")
+        )
     {
         return Err(Error);
     }

@@ -23,6 +23,26 @@ fn metadata() -> Value {
     })
 }
 const UUID: &str = "01234567-89ab-4cde-8123-456789abcdef";
+#[test]
+fn read_only_header_profile_cannot_downgrade_rw_integrity() {
+    let mut ro = metadata();
+    ro["keyslots"]["0"]["key_size"] = json!(64);
+    ro["keyslots"]["0"]["area"]["size"] = json!("258048");
+    ro["segments"]["0"]
+        .as_object_mut()
+        .unwrap()
+        .remove("integrity");
+    let h = header(&serde_json::to_vec(&ro).unwrap());
+    validate_ro_header(&h, UUID).unwrap();
+    assert!(validate_header(&h, UUID).is_err());
+    let rw = header(&serde_json::to_vec(&metadata()).unwrap());
+    assert!(validate_ro_header(&rw, UUID).is_err());
+    for (key, value) in [("key_size", json!(96)), ("key_size", json!(32))] {
+        let mut altered = ro.clone();
+        altered["keyslots"]["0"][key] = value;
+        assert!(validate_ro_header(&header(&serde_json::to_vec(&altered).unwrap()), UUID).is_err());
+    }
+}
 fn header(metadata: &[u8]) -> Vec<u8> {
     let mut bytes = vec![0; HEADER_BYTES];
     for (offset, magic) in [(0, b"LUKS\xba\xbe"), (METADATA_BYTES, b"SKUL\xba\xbe")] {

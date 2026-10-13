@@ -40,9 +40,9 @@ type Result<T> = std::result::Result<T, Error>;
 /// Supplied by a trusted guest device resolver. The major/minor expectation must
 /// come from that resolver, not from a host claim of authorization.
 pub struct BlockDevice {
-    file: File,
-    id: String,
-    bytes: u64,
+    pub(crate) file: File,
+    pub(crate) id: String,
+    pub(crate) bytes: u64,
 }
 impl BlockDevice {
     pub fn from_file(file: File, major: u32, minor: u32) -> Result<Self> {
@@ -268,13 +268,13 @@ impl Opener {
         Ok(())
     }
 }
-fn now() -> Result<u64> {
+pub(crate) fn now() -> Result<u64> {
     Ok(SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|_| Error::Authorization)?
         .as_secs())
 }
-fn read(path: PathBuf) -> Result<String> {
+pub(crate) fn read(path: PathBuf) -> Result<String> {
     let bytes = fs::read(path).map_err(|_| Error::Stack)?;
     if bytes.len() > 4096 {
         return Err(Error::Stack);
@@ -284,7 +284,7 @@ fn read(path: PathBuf) -> Result<String> {
         .trim()
         .to_owned())
 }
-fn lookup(name: &str) -> Result<Option<PathBuf>> {
+pub(crate) fn lookup(name: &str) -> Result<Option<PathBuf>> {
     let mut found = None;
     for entry in fs::read_dir("/sys/class/block").map_err(|_| Error::Stack)? {
         let path = entry.map_err(|_| Error::Stack)?.path();
@@ -302,7 +302,7 @@ fn lookup(name: &str) -> Result<Option<PathBuf>> {
     }
     Ok(found)
 }
-fn slaves(path: &std::path::Path) -> Result<BTreeSet<String>> {
+pub(crate) fn slaves(path: &std::path::Path) -> Result<BTreeSet<String>> {
     fs::read_dir(path.join("slaves"))
         .map_err(|_| Error::Stack)?
         .map(|e| read(e.map_err(|_| Error::Stack)?.path().join("dev")))
@@ -374,7 +374,12 @@ fn crypt_status(text: &str, name: &str, sectors: u64) -> Result<()> {
 
 /// Fixed trusted executables only. Suppress stderr; never return tool output in
 /// public errors. The bounded stdout is used solely by strict stack parsers.
-fn run(tool: &str, args: &[&str], inherited: &[RawFd], key: Option<&[u8; 32]>) -> Result<String> {
+pub(crate) fn run(
+    tool: &str,
+    args: &[&str],
+    inherited: &[RawFd],
+    key: Option<&[u8; 32]>,
+) -> Result<String> {
     run_bounded(tool, args, inherited, key, Duration::from_secs(30))
 }
 fn run_bounded(

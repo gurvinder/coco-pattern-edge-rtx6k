@@ -1,0 +1,8 @@
+   Compiling confidential-storage-guest v0.1.0 (/build/storage-ro)
+    Finished `release` profile [optimized] target(s) in 2.43s
+Built disposable non-TEE kernel lab with Linux 6.1.0-53-amd64
+PASS initialize; log SHA256 74f3bf30a88edc2ff13adfb9741d5e985f00cbeb63b11ec002bbae57e53d0f08
+PASS reopen; log SHA256 f78cbab20290d0ad866b4a25f56d8a0d1a0b65edad686b7b20fdec8195ed881a
+PASS wrong-key; log SHA256 9954b1b3c403c3eecc43010146ab1bb747797d140f57486217c3f3ff52b58c47
+PASS corruption; log SHA256 317366284f826859e7a2a1db618950044886c6041162a8ffb7c35e639065049e
+PASS non-TEE kernel lab; no attestation, Trustee, agent RPC integration or crash recovery tested

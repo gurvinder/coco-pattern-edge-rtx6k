@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+[ "$(id -u)" = 1000 ]
+grep -q '^CapEff:[[:space:]]*0000000000000000$' /proc/self/status
+grep -q '^CapBnd:[[:space:]]*0000000000000000$' /proc/self/status
+grep -q '^NoNewPrivs:[[:space:]]*1$' /proc/self/status
+cd /models
+sha256sum -c /model-checksums
+if touch should-not-write 2>/dev/null; then exit 1; fi
+if cat /test-key >/dev/null 2>&1; then exit 1; fi
+if dd if=/dev/vda of=/dev/null bs=4096 count=1 2>/dev/null; then exit 1; fi
+if ls /run/coco/storage >/dev/null 2>&1; then exit 1; fi
+echo COCO_TEST_PASS:ro-model-hashes-uid1000-no-capabilities

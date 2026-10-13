@@ -47,20 +47,20 @@
     {
       "source": "components/confidential-storage-guest/src/consumer.rs",
       "destination": "src/libs/confidential-storage-guest/src/consumer.rs",
-      "sourceSha256": "23f1bdad652083311cba71fab1ebe980b16ddd76bce43e0690755614cd33cea1",
-      "outputSha256": "23f1bdad652083311cba71fab1ebe980b16ddd76bce43e0690755614cd33cea1"
+      "sourceSha256": "ca487ea8e769548de5f0f34948cec11242435d6390b2f0408aa57bb1e06f9542",
+      "outputSha256": "ca487ea8e769548de5f0f34948cec11242435d6390b2f0408aa57bb1e06f9542"
     },
     {
       "source": "components/confidential-storage-guest/src/guest_mount.rs",
       "destination": "src/libs/confidential-storage-guest/src/guest_mount.rs",
-      "sourceSha256": "2975c03811d9a32f5244860f303548a35a72194beb139dbefdd29fac2e3ee069",
-      "outputSha256": "2975c03811d9a32f5244860f303548a35a72194beb139dbefdd29fac2e3ee069"
+      "sourceSha256": "59ed7896193dd0d2cfc55216b9738435493804759ea7d65031f54f8abd934765",
+      "outputSha256": "59ed7896193dd0d2cfc55216b9738435493804759ea7d65031f54f8abd934765"
     },
     {
       "source": "components/confidential-storage-guest/src/lib.rs",
       "destination": "src/libs/confidential-storage-guest/src/lib.rs",
-      "sourceSha256": "3a54c0c3c3d56036ce5376457f76e689b08c5c711afaab529a1fb47bee5ae56f",
-      "outputSha256": "3a54c0c3c3d56036ce5376457f76e689b08c5c711afaab529a1fb47bee5ae56f"
+      "sourceSha256": "022b9b27d094907331bcf36d0ba7d60b5e1477885ea5a93cfd5d3360d3fb27a5",
+      "outputSha256": "022b9b27d094907331bcf36d0ba7d60b5e1477885ea5a93cfd5d3360d3fb27a5"
     },
     {
       "source": "components/confidential-storage-guest/src/lifecycle/tests.rs",
@@ -77,8 +77,8 @@
     {
       "source": "components/confidential-storage-guest/src/linux_backend.rs",
       "destination": "src/libs/confidential-storage-guest/src/linux_backend.rs",
-      "sourceSha256": "6cac3b3279c946564acdf4cf3028558fd69bd4f39309abaecbabe9449a067143",
-      "outputSha256": "6cac3b3279c946564acdf4cf3028558fd69bd4f39309abaecbabe9449a067143"
+      "sourceSha256": "5e7e39549e8f114d595cd4588dabb224db066177f1eb5ecd5ced8f3ba9f53246",
+      "outputSha256": "5e7e39549e8f114d595cd4588dabb224db066177f1eb5ecd5ced8f3ba9f53246"
     },
     {
       "source": "components/confidential-storage-guest/src/opener/tests.rs",
@@ -89,20 +89,20 @@
     {
       "source": "components/confidential-storage-guest/src/opener.rs",
       "destination": "src/libs/confidential-storage-guest/src/opener.rs",
-      "sourceSha256": "94e449834c4e47ec1f085dbf31fa69b7d0d2cb8d1dd9acebbe76680cabe24d80",
-      "outputSha256": "94e449834c4e47ec1f085dbf31fa69b7d0d2cb8d1dd9acebbe76680cabe24d80"
+      "sourceSha256": "3520ee3a1b0faf169cf0120e67a48c71c85ea619ebcbc230a87c46ada1d2d38e",
+      "outputSha256": "3520ee3a1b0faf169cf0120e67a48c71c85ea619ebcbc230a87c46ada1d2d38e"
     },
     {
       "source": "components/confidential-storage-guest/src/profile/tests.rs",
       "destination": "src/libs/confidential-storage-guest/src/profile/tests.rs",
-      "sourceSha256": "3c2b953c64e1691dbaa53a00eded4aa1e2262bad432dcc08d298fa0c181913bc",
-      "outputSha256": "3c2b953c64e1691dbaa53a00eded4aa1e2262bad432dcc08d298fa0c181913bc"
+      "sourceSha256": "c66328717daa4d121da3562a3e29ca67a6bb42f8aaf47ebbd925d82d08bf89e9",
+      "outputSha256": "c66328717daa4d121da3562a3e29ca67a6bb42f8aaf47ebbd925d82d08bf89e9"
     },
     {
       "source": "components/confidential-storage-guest/src/profile.rs",
       "destination": "src/libs/confidential-storage-guest/src/profile.rs",
-      "sourceSha256": "54154a59349f4d01913b9723032a63e6150321180129e389d72c7f618b731ad3",
-      "outputSha256": "54154a59349f4d01913b9723032a63e6150321180129e389d72c7f618b731ad3"
+      "sourceSha256": "7defa567c7535b922e4dcee92cb94e8851278640a2cca150ab76ca0d555a4d92",
+      "outputSha256": "7defa567c7535b922e4dcee92cb94e8851278640a2cca150ab76ca0d555a4d92"
     },
     {
       "source": "components/confidential-storage-guest/src/receipt.rs",
@@ -113,8 +113,8 @@
     {
       "source": "components/confidential-storage-guest/src/sealed_header.rs",
       "destination": "src/libs/confidential-storage-guest/src/sealed_header.rs",
-      "sourceSha256": "6b2c38ee1e550229b5b6d51f69a23d45aae3434afe4cbf746b3109614afcc5f9",
-      "outputSha256": "6b2c38ee1e550229b5b6d51f69a23d45aae3434afe4cbf746b3109614afcc5f9"
+      "sourceSha256": "ff0b91100732e605a3313f14392d46031c1ec2b50d22a5792d7d1617ad2538bb",
+      "outputSha256": "ff0b91100732e605a3313f14392d46031c1ec2b50d22a5792d7d1617ad2538bb"
     },
     {
       "source": "components/confidential-storage-guest/tests/receipt-fixture.json",
@@ -181,6 +181,42 @@
       "destination": "src/libs/confidential-storage-kata-adapter/src/start_fifo.rs",
       "sourceSha256": "19c568c2f263ffcf0b7dac46bf66df6fc0fe3aa6e1640986f808250e16d98503",
       "outputSha256": "19c568c2f263ffcf0b7dac46bf66df6fc0fe3aa6e1640986f808250e16d98503"
+    },
+    {
+      "source": "components/confidential-storage-guest/profiles/ro-luks2-verity-v1.json",
+      "destination": "src/libs/confidential-storage-guest/profiles/ro-luks2-verity-v1.json",
+      "sourceSha256": "1f46ba950367687ab624d1f18fbd26e5ea7c74977c8a6211db403001e5a7ad69",
+      "outputSha256": "1f46ba950367687ab624d1f18fbd26e5ea7c74977c8a6211db403001e5a7ad69"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/ro_profile.rs",
+      "destination": "src/libs/confidential-storage-guest/src/ro_profile.rs",
+      "sourceSha256": "f260f3b46ae898f6a4af2bd8dd26c7967feef876239c18a1fdfd1d3301af538a",
+      "outputSha256": "f260f3b46ae898f6a4af2bd8dd26c7967feef876239c18a1fdfd1d3301af538a"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/ro_profile/tests.rs",
+      "destination": "src/libs/confidential-storage-guest/src/ro_profile/tests.rs",
+      "sourceSha256": "67be29e9d6fbb6216ef15867f17c95748e3d10e8c5b0a3063e944512f214b1b9",
+      "outputSha256": "67be29e9d6fbb6216ef15867f17c95748e3d10e8c5b0a3063e944512f214b1b9"
+    },
+    {
+      "source": "components/confidential-storage-guest/tests/ro-receipt-fixture.json",
+      "destination": "src/libs/confidential-storage-guest/tests/ro-receipt-fixture.json",
+      "sourceSha256": "201acb1d69363311b1ac959371223421831d861d40b79851b7e3f3e6593e1062",
+      "outputSha256": "201acb1d69363311b1ac959371223421831d861d40b79851b7e3f3e6593e1062"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/ro_opener.rs",
+      "destination": "src/libs/confidential-storage-guest/src/ro_opener.rs",
+      "sourceSha256": "4531f8203e48a262c6dc10618fd039d81fc2d2aa19beda0993092f93360c56f4",
+      "outputSha256": "4531f8203e48a262c6dc10618fd039d81fc2d2aa19beda0993092f93360c56f4"
+    },
+    {
+      "source": "components/confidential-storage-guest/examples/ro_kernel_lab.rs",
+      "destination": "src/libs/confidential-storage-guest/examples/ro_kernel_lab.rs",
+      "sourceSha256": "a136b7747d69a86d02eb8ab2446606fec90d239fc939753d90aebd510c37585a",
+      "outputSha256": "a136b7747d69a86d02eb8ab2446606fec90d239fc939753d90aebd510c37585a"
     }
   ],
   "build": {

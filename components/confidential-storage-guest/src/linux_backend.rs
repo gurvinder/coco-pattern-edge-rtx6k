@@ -7,6 +7,7 @@ use crate::{
     lifecycle::{Backend, BackendError, BackendResult},
     opener::{BlockDevice, Opener, Phase},
     receipt::VerifiedGrant,
+    ro_opener::RoOpener,
 };
 use async_trait::async_trait;
 use std::{
@@ -52,9 +53,56 @@ impl Drop for Secret {
         std::sync::atomic::compiler_fence(std::sync::atomic::Ordering::SeqCst);
     }
 }
+enum Mapping {
+    Rw(Box<Opener>),
+    Ro(Box<RoOpener>),
+}
+impl Mapping {
+    fn prepare(
+        g: VerifiedGrant,
+        manifest: &[u8],
+        device: BlockDevice,
+    ) -> Result<Self, crate::opener::Error> {
+        match g.claims().access.as_str() {
+            "rw" => Opener::prepare(g, manifest, device).map(|o| Self::Rw(Box::new(o))),
+            "ro" => RoOpener::prepare(g, manifest, device).map(|o| Self::Ro(Box::new(o))),
+            _ => Err(crate::opener::Error::Authorization),
+        }
+    }
+    fn credential_uri(&self) -> &str {
+        match self {
+            Self::Rw(o) => o.credential_uri(),
+            Self::Ro(o) => o.credential_uri(),
+        }
+    }
+    fn open(&mut self, key: &[u8; 32]) -> Result<(), crate::opener::Error> {
+        match self {
+            Self::Rw(o) => o.open(key),
+            Self::Ro(o) => o.open(key),
+        }
+    }
+    fn close(&mut self) -> Result<(), crate::opener::Error> {
+        match self {
+            Self::Rw(o) => o.close(),
+            Self::Ro(o) => o.close(),
+        }
+    }
+    fn phase(&self) -> Phase {
+        match self {
+            Self::Rw(o) => o.phase(),
+            Self::Ro(o) => o.phase(),
+        }
+    }
+    fn mapping_path(&self) -> Result<std::path::PathBuf, crate::opener::Error> {
+        match self {
+            Self::Rw(o) => o.mapping_path(),
+            Self::Ro(o) => o.mapping_path(),
+        }
+    }
+}
 struct Record {
     grant: VerifiedGrant,
-    opener: Option<Opener>,
+    opener: Option<Mapping>,
     mount: Option<GuestMount>,
     mount_attempted: bool,
     consumer: Option<Consumer>,
@@ -183,7 +231,7 @@ impl<P: Providers> Backend for LinuxBackend<P> {
             }
             let device = BlockDevice::from_file(resolved.file, resolved.major, resolved.minor)
                 .map_err(|_| BackendError("invalid resolved device"))?;
-            let opener = Opener::prepare(g.clone(), &resolved.manifest, device)
+            let opener = Mapping::prepare(g.clone(), &resolved.manifest, device)
                 .map_err(|_| BackendError("header preparation failed"))?;
             let r = i.records.get_mut(&id).unwrap();
             r.opener = Some(opener); // Retain before key fetch or any kernel effects.
@@ -215,11 +263,13 @@ impl<P: Providers> Backend for LinuxBackend<P> {
                     .reserve(&g.claims().activation_id)
                     .map_err(|_| BackendError("mount target reservation failed"))?,
             );
-            r.mount
-                .as_mut()
-                .unwrap()
-                .mount(&source)
-                .map_err(|_| BackendError("guest mount failed"))
+            let mount = r.mount.as_mut().unwrap();
+            let result = if g.claims().access == "ro" {
+                mount.mount_readonly(&source)
+            } else {
+                mount.mount(&source)
+            };
+            result.map_err(|_| BackendError("guest mount failed"))
         })
         .await
     }

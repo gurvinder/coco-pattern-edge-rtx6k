@@ -1,0 +1,23 @@
+{
+  "status": "library-validation-not-confidential-e2e",
+  "authorityTests": 97,
+  "guestUnitTests": 48,
+  "guestReceiptTests": 2,
+  "realPublishedHeaderTests": 1,
+  "rustfmt": "passed",
+  "clippyWarningsDenied": "passed",
+  "overlaySourceCheck": "passed",
+  "attestation": "synthetic-test-peers",
+  "liveRuntimeChange": false,
+  "roKernelNormal": "passed: real published Qwen disk, UID1000 unprivileged namespace consumer",
+  "roKernelCorruption": "passed: ciphertext corruption rejected with EIO",
+  "kernelExecution": "non-TEE QEMU TCG with snapshot overlays, synthetic receipts/providers",
+  "rwKernelRegression": [
+    "initialize",
+    "reopen",
+    "wrong-key",
+    "corruption"
+  ],
+  "productionUnchanged": true,
+  "publishedDiskSha256": "c350a0f6ea363219ab750a3a3c7d309f7d35fc009b5171d417acde33c69fa8b7"
+}

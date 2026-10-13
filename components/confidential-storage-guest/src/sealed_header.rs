@@ -26,6 +26,34 @@ pub struct PreparedHeader {
     manifest: RwManifest,
     header: File,
 }
+/// Read-only model header, authenticated before parsing and sealed before open.
+pub struct PreparedRoHeader {
+    manifest: crate::ro_profile::RoManifest,
+    header: File,
+}
+impl PreparedRoHeader {
+    pub fn prepare(
+        grant: &VerifiedGrant,
+        manifest: &[u8],
+        source: &File,
+        device_bytes: u64,
+    ) -> Result<Self, Error> {
+        let manifest = crate::ro_profile::RoManifest::verify(grant, manifest, device_bytes)?;
+        let mut bytes = vec![0; HEADER_BYTES];
+        source.read_exact_at(&mut bytes, 0).map_err(|_| Error::Io)?;
+        manifest.validate_header(grant, &bytes)?;
+        Ok(Self {
+            manifest,
+            header: seal(&bytes)?,
+        })
+    }
+    pub fn manifest(&self) -> &crate::ro_profile::RoManifest {
+        &self.manifest
+    }
+    pub fn as_fd(&self) -> BorrowedFd<'_> {
+        self.header.as_fd()
+    }
+}
 impl PreparedHeader {
     /// `source` must be the retained descriptor from the guest's device resolver;
     /// `device_bytes` must be obtained from that same descriptor, not host JSON.

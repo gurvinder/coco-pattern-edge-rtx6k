@@ -555,3 +555,46 @@ Do not remove that hard gate to reuse the prototype raw-device handler.
 
 Do not reinterpret the authority unit tests or the PVC's `Bound` status as evidence
 of confidential storage. No acceptance-matrix encrypted-storage E2E gate has passed.
+
+
+## Published-model approval checkpoint
+
+Added immutable administrator approval for an existing RO model disk, distinct
+from the blank RW volume initialization journal. The publisher descriptor becomes
+an exact manifest bound to the registered policy/profile, credential, OCI digests,
+verity root and file inventory. Rust verifies the signed receipt and manifest,
+strict RO LUKS profile and authenticated sealed header. RW integrity requirements
+remain unchanged. See [the guide](published-model-approval.md).
+
+The actual published Qwen disk passed header validation in the isolated compiler;
+modified header bytes were rejected. Authority/signature fixtures remain synthetic.
+The RO opener and common mount/consumer integration now pass the disposable
+kernel test against the actual Qwen disk: wrong key, all file hashes under UID
+1000 with zero capabilities, RO enforcement, busy teardown, and ciphertext
+corruption returning EIO. These remain synthetic-authorization, non-TEE tests. The node probe installation approval remains pending, and production
+runtime configuration has not been changed.
+
+
+The latest RO implementation is `ro_opener.rs` plus the RO variant of the common
+Linux backend, guest mount and consumer manager. Authority tests: 97; guest unit
+tests: 48 plus 2 receipt tests, with 3 environment-dependent tests ignored by the
+ordinary suite. The actual published-header test was run separately and passed.
+Rustfmt, strict Clippy and Python formatting/lint checks pass. The cumulative
+Kata overlay lock includes the new sources and passes clean-source verification.
+See `tests/confidential-storage/evidence/2026-10-13/model-approval/`.
+
+Immediate remaining work: real private-AA/AS interoperability (node probe approval
+pending), attested profile-bound key and initialization transport, production Kata
+activation/teardown integration, and the two full live examples. Do not treat these
+kernel tests as evidence that a confidential workload has mounted either PVC.
+
+
+The shared-backend RW kernel regression also passed initialization, reopen,
+wrong-key rejection and HMAC corruption detection. Original Qwen disk SHA-256
+remains `c350a0f6ea363219ab750a3a3c7d309f7d35fc009b5171d417acde33c69fa8b7`.
+Final live inventory comparison reports `production_unchanged: true`.
+Compiler scratch: `/build/storage-ro`, `/build/ro-kernel-v3`,
+`/build/rw-ro-regression-v1`. The compiler pod still has the private test key and
+publisher outputs; generated initrds must not be published. Its temporary sleep
+expires around 20:37 UTC on 13 October; preserve required private artifacts
+before deleting it. Do not restart or replace it blindly.

@@ -117,6 +117,12 @@ fn cstring(bytes: &[u8], expected: &[u8]) -> bool {
     bytes.starts_with(expected) && bytes[expected.len()..].iter().all(|b| *b == 0)
 }
 fn validate_header(bytes: &[u8], uuid: &str) -> Result<()> {
+    validate_header_as(bytes, uuid, false)
+}
+pub(crate) fn validate_ro_header(bytes: &[u8], uuid: &str) -> Result<()> {
+    validate_header_as(bytes, uuid, true)
+}
+fn validate_header_as(bytes: &[u8], uuid: &str, readonly: bool) -> Result<()> {
     if bytes.len() != HEADER_BYTES {
         return Err(Error::Header);
     }
@@ -156,7 +162,11 @@ fn validate_header(bytes: &[u8], uuid: &str) -> Result<()> {
     if padded[end..].iter().any(|b| *b != 0) {
         return Err(Error::Header);
     }
-    validate_metadata(&padded[..end])
+    if readonly {
+        validate_metadata_as(&padded[..end], true)
+    } else {
+        validate_metadata(&padded[..end])
+    }
 }
 
 // A fixed slot "0" rejects extra slots AND duplicate JSON names. Generic maps
@@ -227,7 +237,8 @@ struct Segment {
     iv_tweak: String,
     encryption: String,
     sector_size: u64,
-    integrity: Integrity,
+    #[serde(default)]
+    integrity: Option<Integrity>,
     #[serde(default)]
     flags: Vec<String>,
 }
@@ -269,17 +280,29 @@ fn base64_32(s: &str) -> bool {
         .is_ok_and(|v| v.len() == 32 && B64.encode(v) == s)
 }
 fn validate_metadata(bytes: &[u8]) -> Result<()> {
+    validate_metadata_as(bytes, false)
+}
+fn validate_metadata_as(bytes: &[u8], readonly: bool) -> Result<()> {
     let m: Metadata = serde_json::from_slice(bytes).map_err(|_| Error::Header)?;
     let _ = m.tokens;
     let k = m.keyslots.item;
     let s = m.segments.item;
     let d = m.digests.item;
     let c = m.config;
+    match (&s.integrity, readonly) {
+        (None, true) => {}
+        (Some(i), false)
+            if i.kind == "hmac(sha256)"
+                && i.key_size == 32
+                && i.journal_encryption == "none"
+                && i.journal_integrity == "none" => {}
+        _ => return Err(Error::Header),
+    }
     if k.kind != "luks2"
-        || k.key_size != 96
+        || k.key_size != if readonly { 64 } else { 96 }
         || k.area.kind != "raw"
         || k.area.offset != "32768"
-        || k.area.size != "385024"
+        || k.area.size != if readonly { "258048" } else { "385024" }
         || k.area.encryption != "aes-xts-plain64"
         || k.area.key_size != 64
         || k.af.kind != "luks1"
@@ -297,10 +320,6 @@ fn validate_metadata(bytes: &[u8]) -> Result<()> {
         || s.encryption != "aes-xts-plain64"
         || s.sector_size != 4096
         || !s.flags.is_empty()
-        || s.integrity.kind != "hmac(sha256)"
-        || s.integrity.key_size != 32
-        || s.integrity.journal_encryption != "none"
-        || s.integrity.journal_integrity != "none"
         || d.kind != "pbkdf2"
         || d.hash != "sha256"
         || d.keyslots != ["0"]

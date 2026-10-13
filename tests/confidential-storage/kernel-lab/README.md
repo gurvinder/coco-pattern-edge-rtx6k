@@ -192,3 +192,29 @@ This is library-level integration; neither the probe nor the runner's success
 implies installed agent RPC integration or TEE attestation. The test's tmpfs root
 is needed because the kernel's original initramfs root cannot be used as the old
 root for `pivot_root`. It does not relax the adapter's prohibition on `no_pivot_root`.
+
+
+## Read-only published model
+
+`ro.py` runs the real RO opener and Linux lifecycle against the already published
+2 GiB Qwen test disk. Build `cargo build --locked --release --example ro_kernel_lab`
+in `components/confidential-storage-guest`, then on the isolated Linux compiler:
+
+```sh
+python3 tests/confidential-storage/kernel-lab/ro.py \
+  --tools /build/debian/tools --work /build/ro-kernel-new \
+  --opener /build/storage-ro/target/release/examples/ro_kernel_lab \
+  --disk /build/qwen-luks-v2/volume.raw --key /build/qwen-luks-key
+```
+
+Keep the repository layout when staging the harness: `build.py` reads the RW
+profile file relative to its source tree. `--work` must be new. QEMU snapshot
+mode protects the original disk; the corruption test alters only the disposable
+overlay. The key and generated initrd stay private and are never evidence files.
+The fixture pins the exact published model, not an arbitrary caller-chosen disk.
+
+The normal phase verifies every file hash as UID 1000 with zero capabilities,
+read-only application access, private namespace binding, wrong-key cleanup and
+busy teardown ownership. The corruption phase flips ciphertext and requires
+`EIO` from the plaintext mapping. Neither phase uses real attestation or Trustee;
+it is a kernel/library test, not the requested confidential E2E.

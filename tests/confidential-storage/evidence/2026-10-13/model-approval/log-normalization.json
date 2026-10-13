@@ -1,0 +1,41 @@
+{
+  "changes": "CRLF to LF, trailing whitespace and empty EOF lines removed; content otherwise retained",
+  "logs": {
+    "ro-build-tests.log": {
+      "sourceSha256": "3e25d3e687c9c05d667e2e28e8d46c80a4710f6f2bb8d181c5955245ffe80c9b",
+      "committedSha256": "3e25d3e687c9c05d667e2e28e8d46c80a4710f6f2bb8d181c5955245ffe80c9b"
+    },
+    "rw-regression.log": {
+      "sourceSha256": "df7151b90293f3fd84a49d0f623a44e1c3b725497558bb1bb30a624df7414db7",
+      "committedSha256": "df7151b90293f3fd84a49d0f623a44e1c3b725497558bb1bb30a624df7414db7"
+    },
+    "storage-ro-header-test.log": {
+      "sourceSha256": "09ab12f7a12e4de1bd6419bb233218b26cb21b75ff5b818991a474a0d1449560",
+      "committedSha256": "1c766036d769370585daa3e0419f12f0afc1da40318ac2d9eb4df590c524c512"
+    },
+    "authority-tests.log": {
+      "sourceSha256": "ac208768236005903d247b9d988073ecc7698e46984a2d459c646a6193623e18",
+      "committedSha256": "ac208768236005903d247b9d988073ecc7698e46984a2d459c646a6193623e18"
+    },
+    "ro-normal.log": {
+      "sourceSha256": "e8ba35654ffb84e1479a4a1924649a88b0a04b97710da6c9192ce670dd193603",
+      "committedSha256": "5031b7eeeea9b0d836f32bfba1cbdebff22521469e047481b7f84fcd135cdc91"
+    },
+    "storage-ro-clippy.log": {
+      "sourceSha256": "d7d1e5d0ef6324a60aa4c869b37006d10c66fdeacb7d5d9bf18d694352486f00",
+      "committedSha256": "d7d1e5d0ef6324a60aa4c869b37006d10c66fdeacb7d5d9bf18d694352486f00"
+    },
+    "storage-ro-tests.log": {
+      "sourceSha256": "e02d888291d3421f070906a82c168710f9d147b2429ddd1068b4c168804a749a",
+      "committedSha256": "9a3c821e387e22cd00553a8794f0b00611fb9fe3f384bf5bb21d6fc83d8a39c7"
+    },
+    "kernel-markers.log": {
+      "sourceSha256": "29a52088e9b187fb9ad282351dc17f7ec52472eb830b5abbce6cf777cce900a4",
+      "committedSha256": "29a52088e9b187fb9ad282351dc17f7ec52472eb830b5abbce6cf777cce900a4"
+    },
+    "ro-corrupt.log": {
+      "sourceSha256": "329699bf68d126bd95cccbd453c400d17e327c1c8615cc73bec1c3d9b5990fdb",
+      "committedSha256": "47d265fd8e426be84a122af9c36c5a8b76d3f29be7ae3e43d6816a191582c183"
+    }
+  }
+}

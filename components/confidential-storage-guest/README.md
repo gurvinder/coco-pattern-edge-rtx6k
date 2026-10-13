@@ -220,3 +220,5 @@ now reserves ownership before paused namespace creation and serializes verified
 bind attachment, application startup and teardown. It connects to `LinuxBackend`
 but still requires real Kata callbacks and attested providers. The lab runtime is
 synthetic; this is not an installed agent integration.
+
+The RO profile and sealed-header validator now consume the [approved published-model manifest](../../docs/confidential-storage/published-model-approval.md). `RoOpener` and the common Linux backend implement the read-only verity/LUKS stack and `/models` consumer bind. Live attested providers and production runtime integration remain unfinished.

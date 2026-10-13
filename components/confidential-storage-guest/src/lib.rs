@@ -14,5 +14,9 @@ pub mod linux_backend;
 pub mod opener;
 pub mod profile;
 pub mod receipt;
+pub mod ro_profile;
 #[cfg(target_os = "linux")]
 pub mod sealed_header;
+
+#[cfg(target_os = "linux")]
+pub mod ro_opener;

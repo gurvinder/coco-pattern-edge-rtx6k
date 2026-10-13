@@ -85,7 +85,14 @@ class ReceiptIssuer:
             raise Denied("profile mismatch")
         if record["state"] != "Ready" or not record.get("manifest_sha256"):
             raise Denied("only initialized volumes with a pinned manifest may reopen")
-        require_ready_result(record, record["header_sha256"], record["manifest_sha256"])
+        if binding["access"] == "ro":
+            from publication import require_ready
+
+            require_ready(record, record["header_sha256"], record["manifest_sha256"])
+        else:
+            require_ready_result(
+                record, record["header_sha256"], record["manifest_sha256"]
+            )
         now = int(self.clock())
         if not 0 <= now <= (1 << 64) - MAX_LIFETIME - 1:
             raise Denied("invalid authority clock")

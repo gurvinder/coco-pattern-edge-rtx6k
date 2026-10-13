@@ -20,6 +20,7 @@ workload PVC would invalidate the authority's trust boundary.
 | Call | Caller and effect |
 | --- | --- |
 | `register` | Trusted administrator records immutable volume, policy/profile digests and versioned KBS reference; duplicate registration fails |
+| `approve_published_model` | Administrator approves an immutable publisher manifest for RO `/models`; no initialization grant |
 | `approve_initialization` | Administrator authorizes an immutable first-use plan for a new disposable RW volume |
 | `begin(initialize)` | Verified guest obtains ownership and `plan-initialization` after durable `Initializing`; no disk operation yet |
 | `begin_initialization_step` | Records `Started` before a single `execute` decision; retries return `reconcile` or `complete` |
@@ -142,3 +143,5 @@ integration](../../docs/confidential-storage/authority-https.md). Ninety tests p
 including real TLS transport and synthetic AS interoperability. The pinned real
 AS and private ttRPC client build successfully; installed guest diagnostics found
 the public attestation API disabled. Neither storage E2E has passed yet.
+
+The [published-model approval guide](../../docs/confidential-storage/published-model-approval.md) describes the separate immutable RO path and its replay limits.

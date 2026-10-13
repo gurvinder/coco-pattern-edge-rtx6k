@@ -306,6 +306,12 @@ class Authority:
 
         return approve(self, volume_id, plan)
 
+    def approve_published_model(self, volume_id, manifest):
+        """Administrator approval of a verified immutable publisher result."""
+        from publication import approve
+
+        return approve(self, volume_id, manifest)
+
     def begin_initialization_step(self, volume_id, peer, activation_id, step):
         from initialization import begin_step
 

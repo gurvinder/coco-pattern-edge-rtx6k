@@ -2,8 +2,10 @@
 
 This library implements receipt verification and the lifecycle controller intended
 for the privileged **guest system service**. It has no daemon, public RPC, real CDH
-adapter, cryptsetup opener or mount syscall backend. It now includes
-[authenticated RW header preparation](profiles/README.md) using Linux memfd seals. The Kata experiment's
+adapter or complete mount backend. It now includes
+[authenticated RW header preparation](profiles/README.md) using Linux memfd seals
+and a [Linux reopen/close primitive](../../docs/confidential-storage/guest-opener.md)
+that passes those sealed bytes to cryptsetup. The Kata experiment's
 activation gate remains closed. **This is not working encrypted persistent storage.**
 
 The paired [Python authority](../confidential-storage-authority/README.md) now issues
@@ -150,6 +152,12 @@ Kata gate, implement and test it inside the guest CDH/agent service:
 
 First-use initialization still needs its separate durable `Initializing` protocol.
 The current receipt issuer only grants reopening already initialized volumes.
+The standalone `Opener` now handles descriptor-based reopening, effective-stack
+checks and explicit mapping cleanup. It is not yet connected to the lifecycle
+controller, mount namespace handling, device resolver or CDH key provider. Its
+per-handle state is not a substitute for the controller's global activation/device
+reservation and tombstones. Never expose it directly through an application API.
+
 No host CSI code gets a decryption key, and no application storage capabilities
 are added by this library.
 
@@ -187,6 +195,12 @@ PYTHONDONTWRITEBYTECODE=1 python3 \
 
 The tests verify Python-to-Rust signature interoperability, altered fields and
 bytes, wrong keys/sessions/nonces, expiration, duplicate claims, concurrency,
-cancellation, panic and failure cleanup. Backend effects are injected test doubles;
-there are no real disk or TEE operations. Evidence lives under
+cancellation, panic and failure cleanup. The original lifecycle backend effects
+are injected test doubles; those tests have no real disk or TEE operations. Their evidence lives under
 `tests/confidential-storage/evidence/2026-10-13/lifecycle/`.
+
+The separate `kernel_opener_lab` example exercises real block operations with the
+new opener inside the disposable non-TEE guest. It generates synthetic signatures
+in memory and uses the lab's random test key. See the
+[opener guide](../../docs/confidential-storage/guest-opener.md) for reproduction,
+negative cases and remaining production prerequisites.

@@ -15,6 +15,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tools", type=Path, required=True)
     parser.add_argument("--work", type=Path, required=True)
+    parser.add_argument("--opener", type=Path)
     args = parser.parse_args()
     tools = args.tools.resolve(strict=True)
     work = args.work.absolute()
@@ -26,7 +27,8 @@ def main():
             str(tools),
             "--work",
             str(work),
-        ],
+        ]
+        + (["--opener", str(args.opener.resolve(strict=True))] if args.opener else []),
         check=True,
     )
     env = os.environ | {
@@ -76,7 +78,8 @@ def main():
             "-initrd",
             str(work / "initrd.gz"),
             "-append",
-            f"console=ttyS0 reboot=t panic=-1 coco.storage.lab=1 coco.phase={phase}",
+            f"console=ttyS0 reboot=t panic=-1 coco.storage.lab=1 coco.phase={phase}"
+            + (" coco.opener=1" if args.opener and phase == "initialize" else ""),
             "-drive",
             f"id=scratch,file={disk},format=raw,if=none,cache=none",
             "-device",

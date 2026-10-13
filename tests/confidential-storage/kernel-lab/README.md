@@ -88,6 +88,14 @@ a changed keyslot-area byte fails header authentication. The shell lab itself us
 a detached header copy in guest tmpfs; it does **not** integrate that sealed Rust
 descriptor into cryptsetup activation.
 
+The optional `--opener` runner argument now tests the Rust primitive during the
+initialize boot instead. Build `kernel_opener_lab` and pass its release executable;
+see [the opener guide](../../../docs/confidential-storage/guest-opener.md) for the
+exact commands. That path exercises the actual sealed descriptor, wrong-key and
+collision refusal, busy-close state, and removal of both mapper targets. The
+remaining three boots retain the original regression harness. This option is
+separate from journal-controlled execution and cannot be combined with it.
+
 ## Recorded result and limits
 
 On 2026-10-13 all four boots passed with Linux `6.1.0-53-amd64`, cryptsetup `2.6.1`

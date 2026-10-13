@@ -52,7 +52,7 @@ impl PreparedHeader {
         self.header.as_fd()
     }
 }
-fn seal(bytes: &[u8]) -> Result<File, Error> {
+pub(crate) fn seal(bytes: &[u8]) -> Result<File, Error> {
     // SAFETY: NUL-terminated static name, supported flags, no borrowed pointer
     // retained by the syscall. A successful fd is immediately owned by File.
     let fd = unsafe {

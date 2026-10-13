@@ -78,6 +78,9 @@ impl RwManifest {
     pub fn device_bytes(&self) -> u64 {
         self.0.device_bytes
     }
+    pub fn luks_uuid(&self) -> &str {
+        &self.0.luks_uuid
+    }
     /// Authenticate the entire fixed header, including both metadata copies and
     /// keyslot area, BEFORE inspecting any binary fields or JSON. No recovery.
     pub(crate) fn validate_header(&self, grant: &VerifiedGrant, bytes: &[u8]) -> Result<()> {

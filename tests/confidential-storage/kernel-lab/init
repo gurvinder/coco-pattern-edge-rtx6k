@@ -114,6 +114,17 @@ if [ "$phase" = initialize ]; then
     journal_complete filesystem-create "$filesystem_uuid"
     journal_start durability-barrier
 fi
+case " $(cat /proc/cmdline) " in
+    *' coco.opener=1 '*)
+        [ "$phase" = initialize ] && [ "$journal" = false ] || fail invalid-opener-phase
+        cryptsetup close coco-test || fail close-before-rust
+        /usr/sbin/rust-opener-lab || fail rust-opener
+        echo COCO_TEST_PASS:initialize
+        trap - EXIT
+        finish
+        exit 0
+        ;;
+esac
 mount -t ext4 -o nodev,nosuid,noexec /dev/mapper/coco-test /data || fail mount
 if [ "$phase" = initialize ]; then chown 1000:1000 /data; fi
 /usr/bin/setpriv --reuid=1000 --regid=1000 --clear-groups --bounding-set=-all --no-new-privs \

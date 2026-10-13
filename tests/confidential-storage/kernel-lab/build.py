@@ -19,6 +19,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--tools", type=Path, required=True)
     p.add_argument("--work", type=Path, required=True)
+    p.add_argument("--opener", type=Path)
     a = p.parse_args()
     tools = a.tools.resolve(strict=True)
     work = a.work.absolute()
@@ -90,6 +91,8 @@ def main():
         ("usr/bin/setpriv", "/usr/bin/setpriv"),
     ]:
         copy_binary(tools / src, dest)
+    if a.opener:
+        copy_binary(a.opener.resolve(strict=True), "/usr/sbin/rust-opener-lab")
     shutil.copy2(tools / "etc/mke2fs.conf", root / "etc/mke2fs.conf")
     kernels = list((tools / "boot").glob("vmlinuz-*"))
     if len(kernels) != 1:

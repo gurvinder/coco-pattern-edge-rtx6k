@@ -176,6 +176,31 @@ production device resolver, attested transport, sealed-header backend integratio
 partial-write/power-loss recovery and guest service remain unfinished. No storage
 E2E acceptance gate has passed, and the live runtime gate remains closed.
 
+## Descriptor-based opener checkpoint
+
+The [Linux guest opener](guest-opener.md) now connects signed receipts and the
+authenticated sealed header to real cryptsetup activation. It retains a resolved
+block-device descriptor, forwards that descriptor and the sealed header only to
+the trusted child, and supplies the key through an anonymous pipe. Effective
+kernel dependencies, target identities, journaled integrity options and crypto
+status must match before the mapping is exposed to the guest service. There is
+no formatting fallback. Failed or busy cleanup retains NeedsClose; both targets
+must be absent before teardown succeeds.
+
+Thirty-one Rust tests and Clippy pass. The real Linux lab additionally verifies
+wrong-key refusal, sealed-header activation after source keyslot mutation,
+collision ownership, an unprivileged application process, busy-close retention
+and complete cleanup. Four boots pass, including subsequent reopen and ciphertext
+corruption rejection. Evidence is under
+`tests/confidential-storage/evidence/2026-10-13/opener/`.
+
+This is a reopen/close primitive, not the complete lifecycle backend. The lab
+mounts with separate commands and uses synthetic signatures and a random fixture
+key. Device resolution, private mounts/application namespace binding, attested
+authority/CDH delivery, service hardening and crash recovery remain unfinished.
+The compiler was removed after testing and the production inventory is unchanged.
+No live runtime, Trustee policy or encrypted-storage E2E gate was enabled.
+
 ## Next engineering step
 
 Build the guest-managed mount integration in an isolated artifact before installing
@@ -192,7 +217,7 @@ Do not remove that hard gate to reuse the prototype raw-device handler.
    baseline once its exact source is located. Add a guest-agent filesystem mount
    path before container creation;
    remove raw-device exposure to the application. Integrate the tested lifecycle
-   controller with actual mount ownership and teardown. The current controller is
+   controller and tested opener with actual mount ownership and teardown. The current controller is
    exclusive; sharing/refcounts need a separate implementation.
 3. Extend the CDH profile implementation with independently authorized first-use
    initialization, exact authenticated-header handling and enforced journaled
@@ -200,7 +225,8 @@ Do not remove that hard gate to reuse the prototype raw-device handler.
 4. Build a separate AMD64 guest artifact including compatible cryptsetup utilities,
    libraries and dm-integrity support. Pin all inputs and record SBOM/build hashes.
    The isolated AMD64 compiler has now built and tested the patched agent source,
-   but no guest initrd or CDH integration artifact exists. Recreate the disposable
+   but no production guest initrd or CDH integration artifact exists. The disposable
+   non-TEE lab initramfs is not a deployment artifact. Recreate the disposable
    builder for the next build; do not install tools into the inference guest.
 5. Add the attested transport/verifier around the authority core and test receipts
    before enabling key delivery. Keep the authority outside the workload storage

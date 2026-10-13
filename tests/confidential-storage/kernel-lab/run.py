@@ -112,6 +112,8 @@ def main():
             required.append(f"COCO_TEST_PASS:rustjail-encrypted-{mode}")
             if phase == "initialize":
                 required.append("COCO_TEST_PASS:rustjail-callback-lifecycle")
+                required.append("COCO_TEST_PASS:rustjail-process-exit-42-concurrent-waiters-bounded-io")
+                required.append("COCO_TEST_PASS:rustjail-delayed-reaper-retains-ownership-retry")
         if args.runtime_probe and phase == "initialize":
             required.append("COCO_TEST_PASS:pinned-process-cgroup-subtree-quiescence")
         if (

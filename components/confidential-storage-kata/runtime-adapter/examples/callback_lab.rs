@@ -5,7 +5,10 @@ mod start_fifo;
 #[path = "callback_lab/storage.rs"]
 mod storage;
 use confidential_storage_guest::agent_lifecycle::{Identity, Runtime};
-use confidential_storage_kata_adapter::runtime::KataRuntime;
+use confidential_storage_kata_adapter::{
+    process::{ProcessHandle, Reaper, OUTPUT_LIMIT},
+    runtime::KataRuntime,
+};
 use rustjail::{container::LinuxContainer, process::Process, specconv::CreateOpts};
 use slog::{o, Drain, Logger};
 use std::{
@@ -118,15 +121,162 @@ async fn wait_marker(path: &Path) {
     }
     panic!("application did not start: {}", path.display());
 }
-fn reap() {
-    // No production reaper is installed here. This lab subreaper reaps only
-    // after quiescence; it never races the adapter's guarded PID capture.
-    loop {
-        let result = unsafe { libc::waitpid(-1, std::ptr::null_mut(), libc::WNOHANG) };
-        if result <= 0 {
-            break;
-        }
+struct LabReaper {
+    stop: tokio::sync::watch::Sender<bool>,
+    task: tokio::task::JoinHandle<Vec<(i32, i32)>>,
+}
+impl LabReaper {
+    fn start(handle: ProcessHandle, global: bool) -> Self {
+        let (stop, mut stopped) = tokio::sync::watch::channel(false);
+        let task = tokio::spawn(async move {
+            let mut unmatched = Vec::new();
+            loop {
+                {
+                    let reaper = Reaper::lock().await;
+                    if global {
+                        while let Some(event) = reaper.next_exit().unwrap() {
+                            if !handle.observe(&event).await.unwrap() {
+                                unmatched.push((event.pid(), event.code()));
+                            }
+                        }
+                    } else {
+                        reaper.poll_owned(&handle).await.unwrap();
+                    }
+                }
+                if *stopped.borrow() {
+                    return unmatched;
+                }
+                tokio::select! {
+                    _ = tokio::time::sleep(Duration::from_millis(5)) => {},
+                    _ = stopped.changed() => {},
+                }
+            }
+        });
+        Self { stop, task }
     }
+    async fn finish(self) -> Vec<(i32, i32)> {
+        self.stop.send_replace(true);
+        self.task.await.unwrap()
+    }
+}
+fn pipe_targets() -> std::collections::BTreeSet<std::path::PathBuf> {
+    fs::read_dir("/proc/self/fd")
+        .unwrap()
+        .filter_map(|e| fs::read_link(e.ok()?.path()).ok())
+        .filter(|p| p.to_string_lossy().starts_with("pipe:["))
+        .collect()
+}
+async fn process_observations() {
+    let before_pipes = pipe_targets();
+    // More than pipe capacity and output capture limit; a non-draining owner
+    // would block forever. EOF on stdin comes from the owned facade.
+    let script = r#"set -eu
+cat > /result/stdin
+printf 'stderr-marker\n' >&2
+i=0
+while [ "$i" -lt 8192 ]; do printf '0123456789abcdef'; i=$((i+1)); done
+exit 42
+"#;
+    let (runtime, id, root) = setup_with_script("process-exit", Some(script));
+    let handle = runtime.process_handle(&id).await.unwrap();
+    let mut wrong = id.clone();
+    wrong.activation_id.push('x');
+    assert!(runtime.process_handle(&wrong).await.is_err());
+    // Exercise actual unified dispatch: one unrelated child is routed to its
+    // other owner, not confused with the managed init process.
+    let helper = Command::new("/bin/sh")
+        .args(["-c", "exit 17"])
+        .spawn()
+        .unwrap();
+    let helper_pid = helper.id() as i32;
+    let reaper = LabReaper::start(handle.clone(), true);
+    let cancelled = {
+        let h = handle.clone();
+        tokio::spawn(async move { h.wait().await })
+    };
+    cancelled.abort();
+    assert!(cancelled.await.unwrap_err().is_cancelled());
+    let waiter1 = {
+        let h = handle.clone();
+        tokio::spawn(async move { h.wait().await.unwrap() })
+    };
+    let waiter2 = {
+        let h = handle.clone();
+        tokio::spawn(async move { h.wait().await.unwrap() })
+    };
+    let handles = runtime.prepare(&id).await.unwrap();
+    let owned_pipes: Vec<_> = pipe_targets().difference(&before_pipes).cloned().collect();
+    assert!(owned_pipes.len() >= 3);
+    assert!(
+        tokio::time::timeout(Duration::from_millis(20), handle.wait())
+            .await
+            .is_err()
+    );
+    handle.close_stdin().await.unwrap();
+    handle.close_stdin().await.unwrap();
+    runtime.start(&id).await.unwrap();
+    let (a, b) = tokio::time::timeout(Duration::from_secs(15), async {
+        tokio::join!(waiter1, waiter2)
+    })
+    .await
+    .unwrap();
+    assert_eq!((a.unwrap(), b.unwrap()), (42, 42));
+    let (out, err) = tokio::time::timeout(Duration::from_secs(5), handle.output())
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(out.total_bytes, 131072);
+    assert_eq!(out.bytes, b"0123456789abcdef".repeat(OUTPUT_LIMIT / 16));
+    assert!(out.truncated());
+    assert_eq!(err.bytes, b"stderr-marker\n");
+    assert!(!err.truncated());
+    assert_eq!(fs::read(root.join("result/stdin")).unwrap(), b"");
+    assert!(!handle.io_closed().await);
+    // Exit reporting alone does not authorize detach or destruction.
+    assert!(runtime.destroy(&id).await.is_err());
+    runtime.quiesce(&id).await.unwrap();
+    runtime.destroy(&id).await.unwrap();
+    assert!(handle.io_closed().await);
+    let after_pipes = pipe_targets();
+    assert!(owned_pipes.iter().all(|p| !after_pipes.contains(p)));
+    assert_eq!(handle.wait().await.unwrap(), 42);
+    assert_eq!(handle.output().await.unwrap(), (out, err));
+    handle.close_stdin().await.unwrap();
+    let unmatched = reaper.finish().await;
+    assert_eq!(unmatched.len(), 2);
+    assert!(unmatched.contains(&(helper_pid, 17)));
+    // The pinned rustjail bootstrap also leaves its temporary parent to the
+    // subreaper. It is not the managed init; preserve that helper exit route.
+    assert!(unmatched
+        .iter()
+        .any(|(pid, code)| *pid != helper_pid && *code == 0));
+    drop((helper, handles));
+    println!("COCO_TEST_PASS:rustjail-process-exit-42-concurrent-waiters-bounded-io");
+}
+async fn delayed_reaper() {
+    let (runtime, id, root) = setup("delayed-reaper");
+    let observer = runtime.process_handle(&id).await.unwrap();
+    let handles = runtime.prepare(&id).await.unwrap();
+    runtime.start(&id).await.unwrap();
+    wait_marker(&root.join("result/started")).await;
+    runtime.quiesce(&id).await.unwrap();
+    // The kernel confirms death, but the exit status has not been reaped. The
+    // adapter must retain Process/IO and return an error, never invent a status.
+    assert!(runtime.destroy(&id).await.is_err());
+    assert!(!observer.io_closed().await);
+    assert!(Path::new("/run/callback-runtime/delayed-reaper").exists());
+    assert!(
+        tokio::time::timeout(Duration::from_millis(20), observer.wait())
+            .await
+            .is_err()
+    );
+    Reaper::lock().await.poll_owned(&observer).await.unwrap();
+    assert_eq!(observer.wait().await.unwrap(), 137);
+    runtime.destroy(&id).await.unwrap();
+    assert!(observer.io_closed().await);
+    assert!(!Path::new("/run/callback-runtime/delayed-reaper").exists());
+    drop(handles);
+    println!("COCO_TEST_PASS:rustjail-delayed-reaper-retains-ownership-retry");
 }
 async fn callbacks() {
     for scenario in [
@@ -137,6 +287,8 @@ async fn callbacks() {
         "cancel-prepared",
     ] {
         let (runtime, id, root) = setup(scenario);
+        let observer = runtime.process_handle(&id).await.unwrap();
+        let reaper = LabReaper::start(observer.clone(), false);
         assert!(runtime.start(&id).await.is_err());
         assert!(runtime.destroy(&id).await.is_err());
         let handles = runtime.prepare(&id).await.unwrap();
@@ -215,7 +367,6 @@ async fn callbacks() {
         assert!(runtime.start(&id).await.is_err());
         // Namespace handles are deliberately kept through destroy, matching the
         // storage coordinator's requirement to detach after stopping processes.
-        reap();
         runtime.destroy(&id).await.unwrap();
         runtime.destroy(&id).await.unwrap();
         runtime.quiesce(&id).await.unwrap();
@@ -224,6 +375,9 @@ async fn callbacks() {
         if scenario != "normal" && scenario != "blocked-cleanup" {
             assert!(!root.join("result/started").exists());
         }
+        assert_eq!(observer.wait().await.unwrap(), 137);
+        assert!(observer.io_closed().await);
+        assert!(reaper.finish().await.is_empty());
         drop(handles);
         println!("COCO_TEST_PASS:rustjail-{scenario}");
     }
@@ -336,6 +490,8 @@ fn main() {
             if let Some(mode) = storage_mode {
                 storage::test(&mode).await;
             } else {
+                process_observations().await;
+                delayed_reaper().await;
                 callbacks().await;
             }
         });

@@ -23,7 +23,8 @@ runtime handler, modifies the cluster, or grants privileges to the application.
 
 The adapter temporarily removes the already-dead process map during rustjail's
 normal `destroy`, then restores it. This prevents signaling recycled numeric PIDs.
-Process objects remain owned for the future IO/reaper integration. The runtime's
+Process objects remain owned until exit reporting and IO cleanup complete, then
+are removed after successful destruction. The runtime's
 normal lazy rootfs detach occurs only after the coordinator has removed encrypted
 bind/staging mounts and mappings. It is not used to make encrypted-volume cleanup
 succeed.
@@ -129,7 +130,10 @@ initialization; `storage-reopen` runs on the next VM boot. Real Kata application
 write/read encrypted `/data`; busy cleanup and lost-release retries retain
 ownership, while wrong keys and invalid manifests prevent startup. See the
 [combined lab guide](../../../docs/confidential-storage/kata-encrypted-lab.md).
-Agent RPCs, production reaper/IO ownership and attested providers remain absent.
+The [process lifecycle facade](../../../docs/confidential-storage/kata-process-lifecycle.md)
+now supplies real exit dispatch, repeatable waiters and bounded pipe draining in
+the lab. Agent RPCs, production SIGCHLD routing, streaming IO and attested providers
+remain absent.
 
 Before enabling the mount request:
 
@@ -137,8 +141,8 @@ Before enabling the mount request:
    paths, deferring confidential storage until after namespace creation. Keep the
    single-consumer guest rule and remove the ordinary early bind from rustjail's
    input. Port to an approved downstream source/artifact baseline.
-2. Reconcile adapter ownership with Sandbox process lookup, signal reaping, exit
-   reporting and IO cleanup. The object must not simultaneously live in the
+2. Wire the tested process facade into Sandbox lookup and unified signal reaping;
+   implement production streaming IO. The object must not simultaneously live in the
    ordinary container map. Do not call prepare while holding the sandbox lock:
    Kata's SIGCHLD handler takes the reaper lock before that lock.
 3. Test and implement partial-create/destruction recovery beyond the combined

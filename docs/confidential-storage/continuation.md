@@ -319,12 +319,37 @@ This supersedes the separate-runtime/backend limitation above. The providers are
 still synthetic; the test uses a disposable non-TEE VM and has not enabled agent
 RPCs or changed the live runtime. KServe and production configuration are unchanged.
 
+## Process exit and IO ownership checkpoint (13 October)
+
+The concrete adapter now exposes an identity-checked `ProcessHandle` without
+transferring its `LinuxContainer` or `Process` to a second owner. Real waitpid
+results publish retained exit status to concurrent, cancelled and late waiters.
+The shared reaper lock is acquired before runtime state during both preparation
+and exit dispatch. Output drains independently with a 64 KiB cap per stream;
+destruction waits for recorded exit and completed IO, closes pipes and only then
+removes the process after successful runtime cleanup.
+
+The real-container VM tests passed: exit 42 with concurrent waiters and 128 KiB
+stdout, distinct routing of an unrelated child and Kata's temporary bootstrap
+parent, no retained pipe inodes after cleanup, and delayed-reaper refusal/retry
+with actual SIGKILL exit 137. All five existing callback cases and seven encrypted
+storage cases now assert exit 137 and IO cleanup. All four storage boots, six
+adapter unit tests, 45 guest regressions, strict Clippy and formatting passed.
+See [the process guide](kata-process-lifecycle.md) and
+`tests/confidential-storage/evidence/2026-10-13/kata-process/`.
+
+This is still a non-TEE library/lab checkpoint. The actual Sandbox, RPC server and
+production SIGCHLD loop are not patched. Bounded development capture is not
+production streaming IO. No runtime activation or attested provider was enabled.
+
 ## Next engineering step
 
-Integrate Sandbox process ownership, exit reporting and IO cleanup with the
-coordinator, keeping reaper-before-sandbox lock ordering and a single owner of
-runtime state. Route every create/start/exec/remove/teardown path through that
-boundary. Extend partial-create/destruction recovery tests before deployment;
+Integrate the tested process facade and coordinator into actual Sandbox ownership,
+RPC dispatch and the unified SIGCHLD loop, keeping reaper-before-sandbox lock
+ordering and a single owner of runtime state. Route every
+create/start/exec/remove/teardown path through that boundary. Preserve ordinary
+and bootstrap-child exit handling. Add authenticated production streaming IO;
+do not silently replace ReadStream with the bounded development capture. Extend partial-create/destruction recovery tests before deployment;
 keep the activation gate closed pending attested providers and an approved artifact.
 
 Build the guest-managed mount integration in an isolated artifact before installing

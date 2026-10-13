@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Owns one prepared rustjail container for one sandbox lifetime. Not registered
 //! with Kata's RPC server or reaper yet; do not install this development adapter.
-use crate::{process_guard::Guard, start_fifo::StartFifo};
+use crate::{
+    process::{ProcessHandle, Streams},
+    process_guard::Guard,
+    start_fifo::StartFifo,
+};
 use async_trait::async_trait;
 use confidential_storage_guest::{
     agent_lifecycle::{Identity, Runtime},
@@ -18,7 +22,7 @@ use std::{
     path::Path,
     sync::{Arc, Mutex as StdMutex},
 };
-use tokio::sync::Mutex;
+use tokio::sync::{watch, Mutex};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Phase {
@@ -31,8 +35,11 @@ enum Phase {
     Destroying,
     Destroyed,
 }
-struct State {
-    container: LinuxContainer,
+pub(crate) struct State {
+    pub(crate) container: LinuxContainer,
+    pub(crate) exit: watch::Sender<Option<i32>>,
+    pub(crate) streams: Option<Streams>,
+    pub(crate) io_closed: bool,
     process: Option<Process>,
     guard: Option<Arc<StdMutex<Guard>>>,
     phase: Phase,
@@ -40,9 +47,9 @@ struct State {
 }
 pub struct KataRuntime {
     identity: Identity,
-    state: Mutex<State>,
+    state: Arc<Mutex<State>>,
 }
-fn invalid() -> BackendError {
+pub(crate) fn invalid() -> BackendError {
     BackendError("invalid or uncertain Kata runtime state")
 }
 fn validate_spec(spec: &Spec) -> BackendResult {
@@ -105,6 +112,8 @@ impl KataRuntime {
             || container.status() != ContainerState::Created
             || container.init_process_pid != -1
             || !container.processes.is_empty()
+            || process.proc_io.is_some()
+            || !process.extra_files.is_empty()
             || !process.init
             || process.exec_id != container.id
             || spec.process().as_ref() != Some(&process.oci)
@@ -115,15 +124,27 @@ impl KataRuntime {
         {
             return Err(invalid());
         }
+        let (exit, _) = watch::channel(None);
         Ok(Self {
             identity,
-            state: Mutex::new(State {
+            state: Arc::new(Mutex::new(State {
+                exit,
+                streams: None,
+                io_closed: false,
                 container,
                 process: Some(process),
                 guard: None,
                 phase: Phase::Fresh,
                 fifo: None,
-            }),
+            })),
+        })
+    }
+    /// Store this facade alongside the coordinator, not a second LinuxContainer.
+    pub async fn process_handle(&self, id: &Identity) -> Result<ProcessHandle, BackendError> {
+        self.check(id)?;
+        Ok(ProcessHandle {
+            state: self.state.clone(),
+            exit: self.state.lock().await.exit.subscribe(),
         })
     }
     fn check(&self, id: &Identity) -> BackendResult {
@@ -138,6 +159,8 @@ impl Runtime for KataRuntime {
     type Consumer = ConsumerHandles;
     async fn prepare(&self, id: &Identity) -> Result<ConsumerHandles, BackendError> {
         self.check(id)?;
+        // Match the unified reaper lock order, including publication of Process.
+        let _reaper = WAIT_PID_LOCKER.lock().await;
         let mut s = self.state.lock().await;
         if s.phase != Phase::Fresh {
             return Err(invalid());
@@ -145,9 +168,20 @@ impl Runtime for KataRuntime {
         s.phase = Phase::Preparing;
         // The shared reaper cannot recycle this PID between child creation and
         // pidfd/proc handle acquisition. Do not call while holding sandbox.lock.
-        let _reaper = WAIT_PID_LOCKER.lock().await;
         let process = s.process.take().ok_or_else(invalid)?;
         s.container.start(process).await.map_err(|_| invalid())?;
+        let p = s
+            .container
+            .processes
+            .values_mut()
+            .next()
+            .ok_or_else(invalid)?;
+        // Pinned start() moved these child ends into std::process::Stdio, which
+        // has closed them by now. Clear stale numbers; never close them again.
+        p.stdin = None;
+        p.stdout = None;
+        p.stderr = None;
+        s.streams = Some(Streams::start(p)?);
         let path = s
             .container
             .cgroup_manager
@@ -235,7 +269,7 @@ impl Runtime for KataRuntime {
     }
     async fn destroy(&self, id: &Identity) -> BackendResult {
         self.check(id)?;
-        let mut s = self.state.lock().await;
+        let s = self.state.lock().await;
         if s.phase == Phase::Destroyed {
             return Ok(());
         }
@@ -249,6 +283,32 @@ impl Runtime for KataRuntime {
             .map_err(|_| invalid())?
             .quiesce()
             .map_err(|_| invalid())?;
+        // The reaper must publish the true exit before Process removal. Waiting
+        // must release state: the reaper itself needs this lock to publish.
+        let observer = ProcessHandle {
+            state: self.state.clone(),
+            exit: s.exit.subscribe(),
+        };
+        drop(s);
+        tokio::time::timeout(std::time::Duration::from_secs(5), observer.wait())
+            .await
+            .map_err(|_| invalid())??;
+        tokio::time::timeout(std::time::Duration::from_secs(5), observer.output())
+            .await
+            .map_err(|_| invalid())??;
+        let mut s = self.state.lock().await;
+        if s.phase == Phase::Destroyed {
+            return Ok(());
+        }
+        if !matches!(s.phase, Phase::Quiesced | Phase::Destroying) {
+            return Err(invalid());
+        }
+        // EOF is drained before dropping the sole process IO owners. Observers
+        // retain immutable bounded output and exit status across removal.
+        for p in s.container.processes.values_mut() {
+            p.cleanup_process_stream();
+        }
+        s.io_closed = true;
         s.phase = Phase::Destroying;
         // cgroup.kill + populated=0 already stopped all tasks. rustjail's normal
         // destroy signals cached numeric PIDs; suppress that stale-PID path while
@@ -266,6 +326,7 @@ impl Runtime for KataRuntime {
             .map_err(|_| invalid())?
             .removed()
             .map_err(|_| invalid())?;
+        s.container.processes.clear();
         s.guard = None;
         s.phase = Phase::Destroyed;
         Ok(())

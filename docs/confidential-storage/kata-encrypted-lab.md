@@ -39,8 +39,9 @@ gate remains closed.
 The test's `ObservedRuntime` delegates every runtime effect to `KataRuntime` and
 records ordering assertions. Its provider quiescence check requires both the
 successful runtime callback and `cgroup.events` population zero; it never returns
-unconditional success. The lab subreaper reaps after quiescence. These observation
-hooks are not production authorization or reaper/IO integration.
+unconditional success. The lab now runs a concurrent, lock-ordered process reaper.
+Its [process facade](kata-process-lifecycle.md) checks real exit codes, repeated
+waiters and IO cleanup. These hooks do not enable production RPCs or authorization.
 
 ## Cases and acceptance checks
 
@@ -112,8 +113,8 @@ compare the production inventory against its baseline afterward.
 
 The next implementation boundary is ownership of real Kata Sandbox/process state:
 route create/start/exec/remove and sandbox teardown through the coordinator;
-integrate exit reporting and IO cleanup without racing PID capture or duplicating
-container ownership. Add partial-create/destruction recovery tests. Keep the
+connect the tested process facade to the production SIGCHLD loop and streaming IO
+without racing PID capture or duplicating container ownership. Add partial-create/destruction recovery tests. Keep the
 single-consumer guest restriction and prohibit ordinary entry points from bypassing
 it or inheriting private staging mounts.
 

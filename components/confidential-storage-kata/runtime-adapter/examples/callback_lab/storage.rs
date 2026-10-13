@@ -173,7 +173,6 @@ impl Runtime for ObservedRuntime {
         assert!(self.trace.lock().unwrap().released);
         assert!(!mapped());
         assert_eq!(fs::read_dir("/run/coco/storage").unwrap().count(), 0);
-        reap();
         self.inner.destroy(id).await?;
         self.trace.lock().unwrap().events.push("destroyed");
         Ok(())
@@ -296,6 +295,8 @@ exec sleep 600
 "#
         );
         let (inner, id, root) = setup_with_script(name, Some(&script));
+        let observer = inner.process_handle(&id).await.unwrap();
+        let reaper = LabReaper::start(observer.clone(), false);
         let (g, mut manifest) = grant(&header, name);
         assert_eq!(id.activation_id, g.claims().activation_id);
         assert_eq!(id.container_name, g.claims().container_name);
@@ -392,25 +393,30 @@ exec sleep 600
         assert!(agent.prepare(name.into(), g, device.clone()).await.is_err());
         assert!(!mapped());
         assert!(!Path::new(&format!("/sys/fs/cgroup/callback-{name}")).exists());
-        let t = trace.lock().unwrap();
-        assert!(t.released);
-        let expected_starts =
-            usize::from(name != "encrypted-wrong-key" && name != "encrypted-bad-manifest");
-        assert_eq!(
-            t.events.iter().filter(|e| **e == "started").count(),
-            expected_starts
-        );
-        assert_eq!(t.events.iter().filter(|e| **e == "prepared").count(), 1);
-        assert_eq!(
-            t.releases,
-            if name == "encrypted-release-retry" {
-                2
-            } else {
-                1
-            }
-        );
-        assert_eq!(t.events.last(), Some(&"destroyed"));
-        println!("ORDER:{name}:{}", t.events.join(" -> "));
+        {
+            let t = trace.lock().unwrap();
+            assert!(t.released);
+            let expected_starts =
+                usize::from(name != "encrypted-wrong-key" && name != "encrypted-bad-manifest");
+            assert_eq!(
+                t.events.iter().filter(|e| **e == "started").count(),
+                expected_starts
+            );
+            assert_eq!(t.events.iter().filter(|e| **e == "prepared").count(), 1);
+            assert_eq!(
+                t.releases,
+                if name == "encrypted-release-retry" {
+                    2
+                } else {
+                    1
+                }
+            );
+            assert_eq!(t.events.last(), Some(&"destroyed"));
+            println!("ORDER:{name}:{}", t.events.join(" -> "));
+        }
+        assert_eq!(observer.wait().await.unwrap(), 137);
+        assert!(observer.io_closed().await);
+        assert!(reaper.finish().await.is_empty());
         println!("COCO_TEST_PASS:{name}");
     }
     println!("COCO_TEST_PASS:rustjail-encrypted-{mode}");

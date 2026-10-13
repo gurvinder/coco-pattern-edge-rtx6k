@@ -1,0 +1,984 @@
+Probing EDD (edd=off to disable)... ok
+[    0.000000] Linux version 6.1.0-53-amd64 (debian-kernel@lists.debian.org) (gcc-12 (Debian 12.2.0-14+deb12u1) 12.2.0, GNU ld (GNU Binutils for Debian) 2.40) #1 SMP PREEMPT_DYNAMIC Debian 6.1.187-1 (2026-09-07)
+[    0.000000] Command line: console=ttyS0 reboot=t panic=-1 coco.storage.lab=1 coco.phase=initialize coco.opener=1
+[    0.000000] BIOS-provided physical RAM map:
+[    0.000000] BIOS-e820: [mem 0x0000000000000000-0x000000000009fbff] usable
+[    0.000000] BIOS-e820: [mem 0x000000000009fc00-0x000000000009ffff] reserved
+[    0.000000] BIOS-e820: [mem 0x00000000000d0000-0x00000000000effff] ACPI NVS
+[    0.000000] BIOS-e820: [mem 0x00000000000f0000-0x00000000000fffff] reserved
+[    0.000000] BIOS-e820: [mem 0x0000000000100000-0x000000007fffffff] usable
+[    0.000000] NX (Execute Disable) protection: active
+[    0.000000] DMI not present or invalid.
+[    0.000000] tsc: Fast TSC calibration using PIT
+[    0.000000] tsc: Detected 3195.623 MHz processor
+[    0.002310] AGP: No AGP bridge found
+[    0.002459] last_pfn = 0x80000 max_arch_pfn = 0x10000000000
+[    0.002824] Disabled
+[    0.002844] x86/PAT: MTRRs disabled, skipping PAT initialization too.
+[    0.002972] CPU MTRRs all blank - virtualized system.
+[    0.003072] x86/PAT: Configuration [0-7]: WB  WT  UC- UC  WB  WT  UC- UC
+[    0.003630] found SMP MP-table at [mem 0x0009fc00-0x0009fc0f]
+[    0.004579] Using GB pages for direct mapping
+[    0.006742] RAMDISK: [mem 0x784aa000-0x7fffffff]
+[    0.007107] ACPI: Early table checksum verification disabled
+[    0.007345] ACPI: RSDP 0x00000000000F34D0 000024 (v02 BOCHS )
+[    0.007609] ACPI: XSDT 0x00000000000EFFBA 000034 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.007938] ACPI: FACP 0x00000000000EFE54 00010C (v05 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.008242] ACPI: DSDT 0x00000000000EFCC0 000194 (v02 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.008306] ACPI: APIC 0x00000000000EFF60 00005A (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[    0.008355] ACPI: Reserving FACP table memory at [mem 0xefe54-0xeff5f]
+[    0.008371] ACPI: Reserving DSDT table memory at [mem 0xefcc0-0xefe53]
+[    0.008376] ACPI: Reserving APIC table memory at [mem 0xeff60-0xeffb9]
+[    0.009769] No NUMA configuration found
+[    0.009785] Faking a node at [mem 0x0000000000000000-0x000000007fffffff]
+[    0.010217] NODE_DATA(0) allocated [mem 0x7847f000-0x784a9fff]
+[    0.014879] Zone ranges:
+[    0.014900]   DMA      [mem 0x0000000000001000-0x0000000000ffffff]
+[    0.014950]   DMA32    [mem 0x0000000001000000-0x000000007fffffff]
+[    0.014958]   Normal   empty
+[    0.014968]   Device   empty
+[    0.014975] Movable zone start for each node
+[    0.014996] Early memory node ranges
+[    0.015013]   node   0: [mem 0x0000000000001000-0x000000000009efff]
+[    0.015103]   node   0: [mem 0x0000000000100000-0x000000007fffffff]
+[    0.015257] Initmem setup node 0 [mem 0x0000000000001000-0x000000007fffffff]
+[    0.015912] On node 0, zone DMA: 1 pages in unavailable ranges
+[    0.016102] On node 0, zone DMA: 97 pages in unavailable ranges
+[    0.018576] ACPI: LAPIC_NMI (acpi_id[0xff] dfl dfl lint[0x1])
+[    0.018829] IOAPIC[0]: apic_id 0, version 32, address 0xfec00000, GSI 0-23
+[    0.018937] IOAPIC[1]: apic_id 1, version 32, address 0xfec10000, GSI 24-47
+[    0.019035] ACPI: Using ACPI (MADT) for SMP configuration information
+[    0.019242] smpboot: Allowing 2 CPUs, 0 hotplug CPUs
+[    0.019962] PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
+[    0.019987] PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x000fffff]
+[    0.020068] [mem 0x80000000-0xffffffff] available for PCI devices
+[    0.020091] Booting paravirtualized kernel on bare hardware
+[    0.020297] clocksource: refined-jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645519600211568 ns
+[    0.027170] setup_percpu: NR_CPUS:8192 nr_cpumask_bits:2 nr_cpu_ids:2 nr_node_ids:1
+[    0.030512] percpu: Embedded 62 pages/cpu s217088 r8192 d28672 u1048576
+[    0.031719] Fallback order for Node 0: 0
+[    0.031892] Built 1 zonelists, mobility grouping on.  Total pages: 515840
+[    0.031904] Policy zone: DMA32
+[    0.032014] Kernel command line: console=ttyS0 reboot=t panic=-1 coco.storage.lab=1 coco.phase=initialize coco.opener=1
+[    0.034233] random: crng init done
+[    0.036517] Dentry cache hash table entries: 262144 (order: 9, 2097152 bytes, linear)
+[    0.037684] Inode-cache hash table entries: 131072 (order: 8, 1048576 bytes, linear)
+[    0.038826] mem auto-init: stack:all(zero), heap alloc:on, heap free:off
+[    0.038923] AGP: Checking aperture...
+[    0.039575] AGP: No AGP bridge found
+[    0.061013] Memory: 260916K/2096760K available (14343K kernel code, 2338K rwdata, 9124K rodata, 2816K init, 17356K bss, 218836K reserved, 0K cma-reserved)
+[    0.064581] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=2, Nodes=1
+[    0.066180] ftrace: allocating 40468 entries in 159 pages
+[    0.092293] ftrace: allocated 159 pages with 6 groups
+[    0.098238] Dynamic Preempt: voluntary
+[    0.100064] rcu: Preemptible hierarchical RCU implementation.
+[    0.100083] rcu: 	RCU restricting CPUs from NR_CPUS=8192 to nr_cpu_ids=2.
+[    0.100150] 	Trampoline variant of Tasks RCU enabled.
+[    0.100156] 	Rude variant of Tasks RCU enabled.
+[    0.100161] 	Tracing variant of Tasks RCU enabled.
+[    0.100220] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
+[    0.100238] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=2
+[    0.120115] NR_IRQS: 524544, nr_irqs: 512, preallocated irqs: 0
+[    0.123065] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[    0.126206] Console: colour *CGA 80x25
+[    0.131968] printk: console [ttyS0] enabled
+[    0.132684] ACPI: Core revision 20220331
+[    0.135195] APIC: Switch to symmetric I/O mode setup
+[    0.136166] tsc: Marking TSC unstable due to TSCs unsynchronized
+[    0.136450] Calibrating delay loop (skipped), value calculated using timer frequency.. 6391.24 BogoMIPS (lpj=12782492)
+[    0.137518] x86/cpu: User Mode Instruction Prevention (UMIP) activated
+[    0.140328] process: using AMD E400 aware idle routine
+[    0.140328] Last level iTLB entries: 4KB 512, 2MB 255, 4MB 127
+[    0.140328] Last level dTLB entries: 4KB 512, 2MB 255, 4MB 127, 1GB 0
+[    0.140328] Spectre V1 : Mitigation: usercopy/swapgs barriers and __user pointer sanitization
+[    0.140328] Spectre V2 : Mitigation: Retpolines
+[    0.140328] Spectre V2 : Spectre v2 / SpectreRSB: Filling RSB on context switch and VMEXIT
+[    0.140328] x86/fpu: Supporting XSAVE feature 0x001: 'x87 floating point registers'
+[    0.140328] x86/fpu: Supporting XSAVE feature 0x002: 'SSE registers'
+[    0.140328] x86/fpu: Supporting XSAVE feature 0x004: 'AVX registers'
+[    0.140328] x86/fpu: Supporting XSAVE feature 0x008: 'MPX bounds registers'
+[    0.140328] x86/fpu: Supporting XSAVE feature 0x010: 'MPX CSR'
+[    0.140328] x86/fpu: Supporting XSAVE feature 0x200: 'Protection Keys User registers'
+[    0.140328] x86/fpu: xstate_offset[2]:  576, xstate_sizes[2]:  256
+[    0.140328] x86/fpu: xstate_offset[3]:  960, xstate_sizes[3]:   64
+[    0.140328] x86/fpu: xstate_offset[4]: 1024, xstate_sizes[4]:   64
+[    0.140328] x86/fpu: xstate_offset[9]: 2688, xstate_sizes[9]:    8
+[    0.140328] x86/fpu: Enabled xstate features 0x21f, context size is 2696 bytes, using 'standard' format.
+[    0.140328] Freeing SMP alternatives memory: 36K
+[    0.140328] pid_max: default: 32768 minimum: 301
+[    0.140328] LSM: Security Framework initializing
+[    0.140328] landlock: Up and running.
+[    0.140328] Yama: disabled by default; enable with sysctl kernel.yama.*
+[    0.140328] AppArmor: AppArmor initialized
+[    0.140328] TOMOYO Linux initialized
+[    0.140328] LSM support for eBPF active
+[    0.140328] Mount-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.140328] Mountpoint-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.140328] smpboot: CPU0: AMD QEMU TCG CPU version 2.5+ (family: 0xf, model: 0x6b, stepping: 0x1)
+[    0.141898] cblist_init_generic: Setting adjustable number of callback queues.
+[    0.142008] cblist_init_generic: Setting shift to 1 and lim to 1.
+[    0.142266] cblist_init_generic: Setting adjustable number of callback queues.
+[    0.142337] cblist_init_generic: Setting shift to 1 and lim to 1.
+[    0.142657] cblist_init_generic: Setting adjustable number of callback queues.
+[    0.142729] cblist_init_generic: Setting shift to 1 and lim to 1.
+[    0.143030] Performance Events: PMU not available due to virtualization, using software events only.
+[    0.144495] signal: max sigframe size: 3632
+[    0.145074] rcu: Hierarchical SRCU implementation.
+[    0.145140] rcu: 	Max phase no-delay instances is 1000.
+[    0.148579] NMI watchdog: Perf NMI watchdog permanently disabled
+[    0.150600] smp: Bringing up secondary CPUs ...
+[    0.153744] x86: Booting SMP configuration:
+[    0.153824] .... node  #0, CPUs:      #1
+[    0.240508] smp: Brought up 1 node, 2 CPUs
+[    0.240655] smpboot: Max logical packages: 1
+[    0.240739] smpboot: Total of 2 processors activated (13963.91 BogoMIPS)
+[    0.254717] node 0 deferred pages initialised in 8ms
+[    0.261538] devtmpfs: initialized
+[    0.264785] x86/mm: Memory block size: 128MB
+[    0.268727] ACPI: PM: Registering ACPI NVS region [mem 0x000d0000-0x000effff] (131072 bytes)
+[    0.269609] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+[    0.269988] futex hash table entries: 512 (order: 3, 32768 bytes, linear)
+[    0.271730] pinctrl core: initialized pinctrl subsystem
+[    0.285604] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.287770] DMA: preallocated 256 KiB GFP_KERNEL pool for atomic allocations
+[    0.288631] DMA: preallocated 256 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[    0.289053] DMA: preallocated 256 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+[    0.289248] audit: initializing netlink subsys (disabled)
+[    0.289583] audit: type=2000 audit(1791903696.152:1): state=initialized audit_enabled=0 res=1
+[    0.292958] thermal_sys: Registered thermal governor 'fair_share'
+[    0.292982] thermal_sys: Registered thermal governor 'bang_bang'
+[    0.293060] thermal_sys: Registered thermal governor 'step_wise'
+[    0.293115] thermal_sys: Registered thermal governor 'user_space'
+[    0.293168] thermal_sys: Registered thermal governor 'power_allocator'
+[    0.293467] cpuidle: using governor ladder
+[    0.293631] cpuidle: using governor menu
+[    0.294499] acpiphp: ACPI Hot Plug PCI Controller Driver version: 0.5
+[    0.295671] PCI: Fatal: No config space access function found
+[    0.303146] kprobes: kprobe jump-optimization is enabled. All kprobes are optimized if possible.
+[    0.305270] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
+[    0.305364] HugeTLB: 16380 KiB vmemmap can be freed for a 1.00 GiB page
+[    0.305432] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.305491] HugeTLB: 28 KiB vmemmap can be freed for a 2.00 MiB page
+[    0.326429] ACPI: Added _OSI(Module Device)
+[    0.326505] ACPI: Added _OSI(Processor Device)
+[    0.326549] ACPI: Added _OSI(Processor Aggregator Device)
+[    0.330920] ACPI: 1 ACPI AML tables successfully acquired and loaded
+[    0.334244] ACPI: Interpreter enabled
+[    0.334781] ACPI: PM: (supports S0 S5)
+[    0.334843] ACPI: Using IOAPIC for interrupt routing
+[    0.335119] PCI: Using host bridge windows from ACPI; if necessary, use "pci=nocrs" and report a bug
+[    0.335213] PCI: Using E820 reservations for host bridge windows
+[    0.344106] iommu: Default domain type: Translated
+[    0.344106] iommu: DMA domain TLB invalidation policy: lazy mode
+[    0.345055] pps_core: LinuxPPS API ver. 1 registered
+[    0.345121] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.345230] PTP clock support registered
+[    0.345446] EDAC MC: Ver: 3.0.0
+[    0.350223] NetLabel: Initializing
+[    0.350286] NetLabel:  domain hash size = 128
+[    0.350341] NetLabel:  protocols = UNLABELED CIPSOv4 CALIPSO
+[    0.350829] NetLabel:  unlabeled traffic allowed by default
+[    0.350899] PCI: Using ACPI for IRQ routing
+[    0.350976] PCI: System does not support PCI
+[    0.352930] vgaarb: loaded
+[    0.353602] clocksource: Switched to clocksource refined-jiffies
+[    0.355261] VFS: Disk quotas dquot_6.6.0
+[    0.356410] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.363900] AppArmor: AppArmor Filesystem Enabled
+[    0.364184] pnp: PnP ACPI init
+[    0.365584] pnp: PnP ACPI: found 2 devices
+[    0.373555] NET: Registered PF_INET protocol family
+[    0.374476] IP idents hash table entries: 32768 (order: 6, 262144 bytes, linear)
+[    0.381947] tcp_listen_portaddr_hash hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[    0.382339] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    0.382566] TCP established hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[    0.383406] TCP bind hash table entries: 16384 (order: 7, 524288 bytes, linear)
+[    0.383644] TCP: Hash tables configured (established 16384 bind 16384)
+[    0.384954] MPTCP token hash table entries: 2048 (order: 4, 49152 bytes, linear)
+[    0.385213] UDP hash table entries: 1024 (order: 3, 32768 bytes, linear)
+[    0.385430] UDP-Lite hash table entries: 1024 (order: 3, 32768 bytes, linear)
+[    0.386242] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[    0.386502] NET: Registered PF_XDP protocol family
+[    0.386682] PCI: CLS 0 bytes, default 64
+[    0.389334] Trying to unpack rootfs image as initramfs...
+[    0.408167] Initialise system trusted keyrings
+[    0.413398] Key type blacklist registered
+[    0.414437] workingset: timestamp_bits=36 max_order=19 bucket_order=0
+[    0.421834] zbud: loaded
+[    0.425569] integrity: Platform Keyring initialized
+[    0.425810] integrity: Machine keyring initialized
+[    0.425870] Key type asymmetric registered
+[    0.425958] Asymmetric key parser 'x509' registered
+[    5.446334] Freeing initrd memory: 126296K
+[    5.616717] alg: self-tests for CTR-KDF (hmac(sha256)) passed
+[    5.617310] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 248)
+[    5.617472] io scheduler mq-deadline registered
+[    5.624964] shpchp: Standard Hot Plug PCI Controller Driver version: 0.4
+[    5.629445] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[    5.630121] 00:00: ttyS0 at I/O 0x3f8 (irq = 50, base_baud = 115200) is a 16550A
+[    5.633301] Linux agpgart interface v0.103
+[    5.633353] AMD-Vi: AMD IOMMUv2 functionality not available on this system - This is not a bug.
+[    5.637811] i8042: PNP: No PS/2 controller found.
+[    5.638128] mousedev: PS/2 mouse device common for all mice
+[    5.641238] rtc_cmos 00:01: registered as rtc0
+[    5.641648] rtc_cmos 00:01: setting system clock to 2026-10-13T15:01:41 UTC (1791903701)
+[    5.642619] rtc_cmos 00:01: alarms up to one day, 242 bytes nvram
+[    5.642997] ledtrig-cpu: registered to indicate activity on CPUs
+[    5.704379] NET: Registered PF_INET6 protocol family
+[    5.870637] Segment Routing with IPv6
+[    5.871079] In-situ OAM (IOAM) with IPv6
+[    5.871468] mip6: Mobile IPv6
+[    5.871703] NET: Registered PF_PACKET protocol family
+[    5.872798] mpls_gso: MPLS GSO support
+[    5.873439] IPI shorthand broadcast: enabled
+[    5.874544] registered taskstats version 1
+[    5.876867] Loading compiled-in X.509 certificates
+[    5.921073] Loaded X.509 cert 'Build time autogenerated kernel key: 2fbfcbfe2768783bf6eb8eeae73eb082d614ed36'
+[    5.925128] zswap: loaded using pool lzo/zbud
+[    5.925831] Key type .fscrypt registered
+[    5.925831] Key type fscrypt-provisioning registered
+[    6.055485] Key type encrypted registered
+[    6.055734] AppArmor: AppArmor sha1 policy hashing enabled
+[    6.056249] ima: No TPM chip found, activating TPM-bypass!
+[    6.056338] ima: Allocated hash algorithm: sha256
+[    6.057512] ima: No architecture policies found
+[    6.057877] evm: Initialising EVM extended attributes:
+[    6.057953] evm: security.selinux
+[    6.057999] evm: security.SMACK64 (disabled)
+[    6.058038] evm: security.SMACK64EXEC (disabled)
+[    6.058080] evm: security.SMACK64TRANSMUTE (disabled)
+[    6.058124] evm: security.SMACK64MMAP (disabled)
+[    6.058165] evm: security.apparmor
+[    6.058196] evm: security.ima
+[    6.058224] evm: security.capability
+[    6.058263] evm: HMAC attrs: 0x1
+[    6.223654] Unstable clock detected, switching default tracing clock to "global"
+[    6.223654] If you want to keep using the local clock, then add:
+[    6.223654]   "trace_clock=local"
+[    6.223654] on the kernel command line
+[    6.223654] clk: Disabling unused clocks
+[    6.246707] Freeing unused decrypted memory: 2036K
+[    6.303522] Freeing unused kernel image (initmem) memory: 2816K
+[    6.303806] Write protecting the kernel read-only data: 26624k
+[    6.305736] Freeing unused kernel image (text/rodata gap) memory: 2040K
+[    6.306376] Freeing unused kernel image (rodata/data gap) memory: 1116K
+[    6.388570] x86/mm: Checked W+X mappings: passed, no W+X pages found.
+[    6.388928] Run /init as init process
+[    6.489950] virtio_blk virtio0: 1/0/0 default/read/poll queues
+[    6.496186] virtio_blk virtio0: [vda] 262144 512-byte logical blocks (134 MB/128 MiB)
+[    6.539499] device-mapper: core: CONFIG_IMA_DISABLE_HTABLE is disabled. Duplicate IMA measurements will not be recorded in the IMA log.
+[    6.540008] device-mapper: uevent: version 1.0.3
+[    6.540875] device-mapper: ioctl: 4.47.0-ioctl (2022-07-28) initialised: dm-devel@redhat.com
+[    6.572477] xor: automatically using best checksumming function   avx
+[    6.584590] async_tx: api initialized (async)
+cryptsetup 2.6.1 flags: UDEV BLKID KEYRING KERNEL_CAPI
+6.1.0-53-amd64
+COCO_TEST_PASS:pinned-process-cgroup-subtree-quiescence
+COCO_TEST_PASS:rustjail-fifo-no-child-nonblocking
+rustjail: new cgroup_manager cgroupfs
+rustjail: before create console socket!
+rustjail: created console socket!
+rustjail: enter container.start!
+rustjail: exec fifo opened!
+rustjail: Continuing execution in temporary process, new child has pid: Pid(144)
+rustjail: child process start run
+rustjail: temporary parent process exit successfully
+rustjail: child pid: 144
+rustjail: try to send spec from parent to child
+rustjail: wait child received oci spec
+rustjail: notify parent to send oci process
+rustjail: send oci process from parent to child
+rustjail: wait child received oci process
+rustjail: notify parent to send oci state
+rustjail: try to send state from parent to child
+rustjail: wait child received oci state
+rustjail: notify parent to send cgroup manager
+rustjail: wait child setup user namespace
+rustjail: notify parent unshare user ns completed
+rustjail: wait parent to setup user id mapping
+rustjail: apply processes to cgroups!
+rustjail: set properties to cgroups!
+rustjail: notify child to continue
+rustjail: notify child parent ready to run prestart hook!
+rustjail: setup rootfs /run/callback-lab/process-exit/rootfs
+rustjail: get ready to run prestart hook!
+rustjail: notify child run prestart hook completed!
+rustjail: wait for child process ready to run exec
+rustjail: old cwd: /
+rustjail: Creating CWD /
+rustjail: process command: ["/bin/sh", "-c", "set -eu\ncat > /result/stdin\nprintf 'stderr-marker\\n' >&2\ni=0\nwhile [ \"$i\" -lt 8192 ]; do printf '0123456789abcdef'; i=$((i+1)); done\nexit 42\n"]
+rustjail: ready to run exec
+rustjail: read child process log end
+rustjail: entered namespaces!
+rustjail: updating namespaces
+rustjail: wait on child log handler
+rustjail: create process completed
+rustjail: container started
+rustjail: destroy: container process-exit cgroup has 0 processes: []
+rustjail: destroy: destroying cgroup for container process-exit
+rustjail: rootfs not mounted
+COCO_TEST_PASS:rustjail-process-exit-42-concurrent-waiters-bounded-io
+rustjail: new cgroup_manager cgroupfs
+rustjail: before create console socket!
+rustjail: created console socket!
+rustjail: enter container.start!
+rustjail: exec fifo opened!
+rustjail: Continuing execution in temporary process, new child has pid: Pid(148)
+rustjail: child process start run
+rustjail: temporary parent process exit successfully
+rustjail: child pid: 148
+rustjail: try to send spec from parent to child
+rustjail: wait child received oci spec
+rustjail: notify parent to send oci process
+rustjail: send oci process from parent to child
+rustjail: wait child received oci process
+rustjail: notify parent to send oci state
+rustjail: try to send state from parent to child
+rustjail: wait child received oci state
+rustjail: notify parent to send cgroup manager
+rustjail: wait child setup user namespace
+rustjail: notify parent unshare user ns completed
+rustjail: wait parent to setup user id mapping
+rustjail: apply processes to cgroups!
+rustjail: set properties to cgroups!
+rustjail: notify child to continue
+rustjail: notify child parent ready to run prestart hook!
+rustjail: setup rootfs /run/callback-lab/delayed-reaper/rootfs
+rustjail: get ready to run prestart hook!
+rustjail: notify child run prestart hook completed!
+rustjail: wait for child process ready to run exec
+rustjail: old cwd: /
+rustjail: Creating CWD /
+rustjail: process command: ["/bin/sh", "-c", "\nset -eu\n[ \"$(id -u)\" = 1000 ]\n[ ! -e /dev/vda ] && [ ! -e /test-key ]\ngrep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status\nfor cap in CapInh CapPrm CapEff CapBnd CapAmb; do grep -Eq \"^$cap:[[:space:]]+0000000000000000$\" /proc/self/status; done\ncat /proc/self/status > /result/status\nprintf 'unprivileged-rustjail-app\\n' > /result/started\nexec sleep 600\n"]
+rustjail: ready to run exec
+rustjail: read child process log end
+rustjail: entered namespaces!
+rustjail: updating namespaces
+rustjail: wait on child log handler
+rustjail: create process completed
+rustjail: container started
+rustjail: destroy: container delayed-reaper cgroup has 0 processes: []
+rustjail: destroy: destroying cgroup for container delayed-reaper
+rustjail: rootfs not mounted
+COCO_TEST_PASS:rustjail-delayed-reaper-retains-ownership-retry
+rustjail: new cgroup_manager cgroupfs
+rustjail: before create console socket!
+rustjail: created console socket!
+rustjail: enter container.start!
+rustjail: exec fifo opened!
+rustjail: Continuing execution in temporary process, new child has pid: Pid(158)
+rustjail: child process start run
+rustjail: child pid: 158
+rustjail: try to send spec from parent to child
+rustjail: temporary parent process exit successfully
+rustjail: wait child received oci spec
+rustjail: notify parent to send oci process
+rustjail: send oci process from parent to child
+rustjail: wait child received oci process
+rustjail: notify parent to send oci state
+rustjail: try to send state from parent to child
+rustjail: wait child received oci state
+rustjail: notify parent to send cgroup manager
+rustjail: wait child setup user namespace
+rustjail: notify parent unshare user ns completed
+rustjail: wait parent to setup user id mapping
+rustjail: apply processes to cgroups!
+rustjail: set properties to cgroups!
+rustjail: notify child to continue
+rustjail: notify child parent ready to run prestart hook!
+rustjail: setup rootfs /run/callback-lab/normal/rootfs
+rustjail: get ready to run prestart hook!
+rustjail: notify child run prestart hook completed!
+rustjail: wait for child process ready to run exec
+rustjail: old cwd: /
+rustjail: Creating CWD /
+rustjail: process command: ["/bin/sh", "-c", "\nset -eu\n[ \"$(id -u)\" = 1000 ]\n[ ! -e /dev/vda ] && [ ! -e /test-key ]\ngrep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status\nfor cap in CapInh CapPrm CapEff CapBnd CapAmb; do grep -Eq \"^$cap:[[:space:]]+0000000000000000$\" /proc/self/status; done\ncat /proc/self/status > /result/status\nprintf 'unprivileged-rustjail-app\\n' > /result/started\nexec sleep 600\n"]
+rustjail: entered namespaces!
+rustjail: updating namespaces
+rustjail: wait on child log handler
+rustjail: ready to run exec
+rustjail: read child process log end
+rustjail: create process completed
+rustjail: container started
+APP:Uid:	1000	1000	1000	1000
+APP:CapInh:	0000000000000000
+APP:CapPrm:	0000000000000000
+APP:CapEff:	0000000000000000
+APP:CapBnd:	0000000000000000
+APP:CapAmb:	0000000000000000
+APP:NoNewPrivs:	1
+rustjail: destroy: container normal cgroup has 0 processes: []
+rustjail: destroy: destroying cgroup for container normal
+rustjail: rootfs not mounted
+COCO_TEST_PASS:rustjail-normal
+rustjail: new cgroup_manager cgroupfs
+rustjail: before create console socket!
+rustjail: created console socket!
+rustjail: enter container.start!
+rustjail: exec fifo opened!
+rustjail: Continuing execution in temporary process, new child has pid: Pid(168)
+rustjail: child process start run
+rustjail: temporary parent process exit successfully
+rustjail: child pid: 168
+rustjail: try to send spec from parent to child
+rustjail: wait child received oci spec
+rustjail: notify parent to send oci process
+rustjail: send oci process from parent to child
+rustjail: wait child received oci process
+rustjail: notify parent to send oci state
+rustjail: try to send state from parent to child
+rustjail: wait child received oci state
+rustjail: notify parent to send cgroup manager
+rustjail: wait child setup user namespace
+rustjail: notify parent unshare user ns completed
+rustjail: wait parent to setup user id mapping
+rustjail: apply processes to cgroups!
+rustjail: set properties to cgroups!
+rustjail: notify child to continue
+rustjail: notify child parent ready to run prestart hook!
+rustjail: setup rootfs /run/callback-lab/blocked-cleanup/rootfs
+rustjail: get ready to run prestart hook!
+rustjail: notify child run prestart hook completed!
+rustjail: wait for child process ready to run exec
+rustjail: old cwd: /
+rustjail: Creating CWD /
+rustjail: process command: ["/bin/sh", "-c", "\nset -eu\n[ \"$(id -u)\" = 1000 ]\n[ ! -e /dev/vda ] && [ ! -e /test-key ]\ngrep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status\nfor cap in CapInh CapPrm CapEff CapBnd CapAmb; do grep -Eq \"^$cap:[[:space:]]+0000000000000000$\" /proc/self/status; done\ncat /proc/self/status > /result/status\nprintf 'unprivileged-rustjail-app\\n' > /result/started\nexec sleep 600\n"]
+rustjail: entered namespaces!
+rustjail: updating namespaces
+rustjail: wait on child log handler
+rustjail: ready to run exec
+rustjail: read child process log end
+rustjail: create process completed
+rustjail: container started
+APP:Uid:	1000	1000	1000	1000
+APP:CapInh:	0000000000000000
+APP:CapPrm:	0000000000000000
+APP:CapEff:	0000000000000000
+APP:CapBnd:	0000000000000000
+APP:CapAmb:	0000000000000000
+APP:NoNewPrivs:	1
+rustjail: destroy: container blocked-cleanup cgroup has 0 processes: []
+rustjail: destroy: destroying cgroup for container blocked-cleanup
+rustjail: rootfs not mounted
+COCO_TEST_PASS:rustjail-blocked-cleanup
+rustjail: new cgroup_manager cgroupfs
+rustjail: before create console socket!
+rustjail: created console socket!
+rustjail: enter container.start!
+rustjail: exec fifo opened!
+rustjail: Continuing execution in temporary process, new child has pid: Pid(180)
+rustjail: child process start run
+rustjail: child pid: 180
+rustjail: temporary parent process exit successfully
+rustjail: try to send spec from parent to child
+rustjail: wait child received oci spec
+rustjail: notify parent to send oci process
+rustjail: send oci process from parent to child
+rustjail: wait child received oci process
+rustjail: notify parent to send oci state
+rustjail: try to send state from parent to child
+rustjail: wait child received oci state
+rustjail: notify parent to send cgroup manager
+rustjail: wait child setup user namespace
+rustjail: notify parent unshare user ns completed
+rustjail: wait parent to setup user id mapping
+rustjail: apply processes to cgroups!
+rustjail: set properties to cgroups!
+rustjail: notify child to continue
+rustjail: notify child parent ready to run prestart hook!
+rustjail: setup rootfs /run/callback-lab/dead-prepared/rootfs
+rustjail: get ready to run prestart hook!
+rustjail: notify child run prestart hook completed!
+rustjail: wait for child process ready to run exec
+rustjail: old cwd: /
+rustjail: Creating CWD /
+rustjail: process command: ["/bin/sh", "-c", "\nset -eu\n[ \"$(id -u)\" = 1000 ]\n[ ! -e /dev/vda ] && [ ! -e /test-key ]\ngrep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status\nfor cap in CapInh CapPrm CapEff CapBnd CapAmb; do grep -Eq \"^$cap:[[:space:]]+0000000000000000$\" /proc/self/status; done\ncat /proc/self/status > /result/status\nprintf 'unprivileged-rustjail-app\\n' > /result/started\nexec sleep 600\n"]
+rustjail: ready to run exec
+rustjail: read child process log end
+rustjail: entered namespaces!
+rustjail: updating namespaces
+rustjail: wait on child log handler
+rustjail: create process completed
+rustjail: destroy: container dead-prepared cgroup has 0 processes: []
+rustjail: destroy: destroying cgroup for container dead-prepared
+rustjail: rootfs not mounted
+COCO_TEST_PASS:rustjail-dead-prepared
+rustjail: new cgroup_manager cgroupfs
+rustjail: before create console socket!
+rustjail: created console socket!
+rustjail: enter container.start!
+rustjail: exec fifo opened!
+rustjail: Continuing execution in temporary process, new child has pid: Pid(182)
+rustjail: child process start run
+rustjail: child pid: 182
+rustjail: temporary parent process exit successfully
+rustjail: try to send spec from parent to child
+rustjail: wait child received oci spec
+rustjail: notify parent to send oci process
+rustjail: send oci process from parent to child
+rustjail: wait child received oci process
+rustjail: try to send state from parent to child
+rustjail: notify parent to send oci state
+rustjail: wait child received oci state
+rustjail: notify parent to send cgroup manager
+rustjail: wait child setup user namespace
+rustjail: notify parent unshare user ns completed
+rustjail: wait parent to setup user id mapping
+rustjail: apply processes to cgroups!
+rustjail: set properties to cgroups!
+rustjail: notify child to continue
+rustjail: notify child parent ready to run prestart hook!
+rustjail: setup rootfs /run/callback-lab/replaced-fifo/rootfs
+rustjail: get ready to run prestart hook!
+rustjail: notify child run prestart hook completed!
+rustjail: wait for child process ready to run exec
+rustjail: old cwd: /
+rustjail: Creating CWD /
+rustjail: process command: ["/bin/sh", "-c", "\nset -eu\n[ \"$(id -u)\" = 1000 ]\n[ ! -e /dev/vda ] && [ ! -e /test-key ]\ngrep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status\nfor cap in CapInh CapPrm CapEff CapBnd CapAmb; do grep -Eq \"^$cap:[[:space:]]+0000000000000000$\" /proc/self/status; done\ncat /proc/self/status > /result/status\nprintf 'unprivileged-rustjail-app\\n' > /result/started\nexec sleep 600\n"]
+rustjail: ready to run exec
+rustjail: read child process log end
+rustjail: entered namespaces!
+rustjail: updating namespaces
+rustjail: wait on child log handler
+rustjail: create process completed
+rustjail: destroy: container replaced-fifo cgroup has 0 processes: []
+rustjail: destroy: destroying cgroup for container replaced-fifo
+rustjail: rootfs not mounted
+COCO_TEST_PASS:rustjail-replaced-fifo
+rustjail: new cgroup_manager cgroupfs
+rustjail: before create console socket!
+rustjail: created console socket!
+rustjail: enter container.start!
+rustjail: exec fifo opened!
+rustjail: Continuing execution in temporary process, new child has pid: Pid(185)
+rustjail: child process start run
+rustjail: child pid: 185
+rustjail: try to send spec from parent to child
+rustjail: wait child received oci spec
+rustjail: temporary parent process exit successfully
+rustjail: notify parent to send oci process
+rustjail: send oci process from parent to child
+rustjail: wait child received oci process
+rustjail: notify parent to send oci state
+rustjail: try to send state from parent to child
+rustjail: wait child received oci state
+rustjail: notify parent to send cgroup manager
+rustjail: wait child setup user namespace
+rustjail: notify parent unshare user ns completed
+rustjail: wait parent to setup user id mapping
+rustjail: apply processes to cgroups!
+rustjail: set properties to cgroups!
+rustjail: notify child to continue
+rustjail: notify child parent ready to run prestart hook!
+rustjail: setup rootfs /run/callback-lab/cancel-prepared/rootfs
+rustjail: get ready to run prestart hook!
+rustjail: notify child run prestart hook completed!
+rustjail: wait for child process ready to run exec
+rustjail: old cwd: /
+rustjail: Creating CWD /
+rustjail: process command: ["/bin/sh", "-c", "\nset -eu\n[ \"$(id -u)\" = 1000 ]\n[ ! -e /dev/vda ] && [ ! -e /test-key ]\ngrep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status\nfor cap in CapInh CapPrm CapEff CapBnd CapAmb; do grep -Eq \"^$cap:[[:space:]]+0000000000000000$\" /proc/self/status; done\ncat /proc/self/status > /result/status\nprintf 'unprivileged-rustjail-app\\n' > /result/started\nexec sleep 600\n"]
+rustjail: ready to run exec
+rustjail: read child process log end
+rustjail: entered namespaces!
+rustjail: updating namespaces
+rustjail: wait on child log handler
+rustjail: create process completed
+rustjail: destroy: container cancel-prepared cgroup has 0 processes: []
+rustjail: destroy: destroying cgroup for container cancel-prepared
+rustjail: rootfs not mounted
+COCO_TEST_PASS:rustjail-cancel-prepared
+COCO_TEST_PASS:rustjail-callback-lifecycle
+[   15.982684] cryptd: max_cpu_qlen set to 1000
+[   16.005668] AVX2 version of gcm_enc/dec engaged.
+[   16.006706] AES CTR mode by8 optimization enabled
+[   17.133462] alg: No test for authenc(hmac(sha256),xts(aes)) (authenc(hmac(sha256-generic),xts-aes-aesni))
+COCO_TEST_PASS:format
+821f995ef4ff8405487849dfe56c96de668c463035afffb8bb0afb4c7afd03b9  /run/header
+{
+  "keyslots":{
+    "0":{
+      "type":"luks2",
+      "key_size":96,
+      "af":{
+        "type":"luks1",
+        "stripes":4000,
+        "hash":"sha256"
+      },
+      "area":{
+        "type":"raw",
+        "offset":"32768",
+        "size":"385024",
+        "encryption":"aes-xts-plain64",
+        "key_size":64
+      },
+      "kdf":{
+        "type":"argon2id",
+        "time":4,
+        "memory":65536,
+        "cpus":1,
+        "salt":"nIb9xnu4eZ6Msm8TepJO3aeeP+2ss5f/aEx1b+FvgTk="
+      }
+    }
+  },
+  "tokens":{
+  },
+  "segments":{
+    "0":{
+      "type":"crypt",
+      "offset":"16777216",
+      "size":"dynamic",
+      "iv_tweak":"0",
+      "encryption":"aes-xts-plain64",
+      "sector_size":4096,
+      "integrity":{
+        "type":"hmac(sha256)",
+        "journal_encryption":"none",
+        "journal_integrity":"none"
+      }
+    }
+  },
+  "digests":{
+    "0":{
+      "type":"pbkdf2",
+      "keyslots":[
+        "0"
+      ],
+      "segments":[
+        "0"
+      ],
+      "hash":"sha256",
+      "iterations":1000,
+      "salt":"Yt4owA4G2ktvLXYhcYjaKOr47yFBuyLFUSxIhwH3VBY=",
+      "digest":"jknf8lbu9rrBiDqAG7XCFQD83Bmyp/aEJFBRqmrPh9A="
+    }
+  },
+  "config":{
+    "json_size":"12288",
+    "keyslots_size":"16744448"
+  }
+}
+/dev/mapper/coco-test is active.
+  type:    LUKS2
+  cipher:  aes-xts-plain64
+  keysize: 768 bits
+  key location: dm-crypt
+  integrity: hmac(sha256)
+  integrity keysize: 256 bits
+  device:  /dev/vda
+  sector size:  4096
+  offset:  0 sectors
+  size:    225728 sectors
+  mode:    read/write
+0 225728 integrity 254:0 32768 32 J 7 block_size:4096 journal_sectors:1848 interleave_sectors:32768 buffer_sectors:128 journal_watermark:50 commit_time:10000 fix_padding
+COCO_TEST_PASS:journaled-hmac-stack
+COCO_TEST_PASS:rust-wrong-key-no-retry
+COCO_TEST_PASS:rust-sealed-header-survives-source-change
+COCO_TEST_PASS:rust-collision-retains-existing-mapping
+[   29.351329] EXT4-fs (dm-1): mounted filesystem with ordered data mode. Quota mode: none.
+600e75d4d85613ca991023cb570566436355737b2a67b2e0544f057d909153db  /data/probe
+COCO_TEST_PASS:unprivileged-application
+COCO_TEST_PASS:rust-busy-close-retains-state
+[   29.547222] EXT4-fs (dm-1): unmounting filesystem.
+COCO_TEST_PASS:rust-close-removes-both-mappings
+COCO_TEST_PASS:private-root-permissions-collision-propagation
+COCO_TEST_PASS:backend-authenticates-before-key
+COCO_TEST_PASS:backend-failed-open-cleanup-tombstone
+[   35.462831] EXT4-fs (dm-1): mounted filesystem with ordered data mode. Quota mode: none.
+[   35.582770] EXT4-fs (dm-1): unmounting filesystem.
+COCO_TEST_PASS:consumer-rejects-inherited-staging-retains-release
+[   38.531015] EXT4-fs (dm-1): mounted filesystem with ordered data mode. Quota mode: none.
+COCO_TEST_PASS:consumer-identity-namespace-replay-guards
+600e75d4d85613ca991023cb570566436355737b2a67b2e0544f057d909153db  /data/probe
+COCO_TEST_PASS:unprivileged-application
+COCO_TEST_PASS:backend-unprivileged-namespace-consumer
+COCO_TEST_PASS:backend-detach-failure-retains-staging
+COCO_TEST_PASS:consumer-refuses-replaced-mount
+COCO_TEST_PASS:backend-busy-unmount-retains-ownership
+[   38.679145] EXT4-fs (dm-1): unmounting filesystem.
+COCO_TEST_PASS:backend-release-after-teardown-retry-tombstone
+COCO_TEST_PASS:consumer-detached-before-staging-release
+[   41.679330] EXT4-fs (dm-1): mounted filesystem with ordered data mode. Quota mode: none.
+600e75d4d85613ca991023cb570566436355737b2a67b2e0544f057d909153db  /data/probe
+COCO_TEST_PASS:unprivileged-application
+[   41.811106] EXT4-fs (dm-1): unmounting filesystem.
+COCO_TEST_PASS:agent-start-barrier-real-storage-cleanup
+rustjail: new cgroup_manager cgroupfs
+rustjail: before create console socket!
+rustjail: created console socket!
+rustjail: enter container.start!
+rustjail: exec fifo opened!
+rustjail: Continuing execution in temporary process, new child has pid: Pid(505)
+rustjail: child process start run
+rustjail: child pid: 505
+rustjail: try to send spec from parent to child
+rustjail: wait child received oci spec
+rustjail: temporary parent process exit successfully
+rustjail: notify parent to send oci process
+rustjail: send oci process from parent to child
+rustjail: wait child received oci process
+rustjail: notify parent to send oci state
+rustjail: try to send state from parent to child
+rustjail: wait child received oci state
+rustjail: notify parent to send cgroup manager
+rustjail: wait child setup user namespace
+rustjail: notify parent unshare user ns completed
+rustjail: apply processes to cgroups!
+rustjail: set properties to cgroups!
+rustjail: notify child to continue
+rustjail: notify child parent ready to run prestart hook!
+rustjail: wait parent to setup user id mapping
+rustjail: setup rootfs /run/callback-lab/encrypted-write/rootfs
+rustjail: get ready to run prestart hook!
+rustjail: notify child run prestart hook completed!
+rustjail: wait for child process ready to run exec
+rustjail: old cwd: /
+rustjail: Creating CWD /
+rustjail: process command: ["/bin/sh", "-c", "set -eu\n[ \"$(id -u)\" = 1000 ] && [ \"$(id -g)\" = 1000 ]\nfor cap in CapInh CapPrm CapEff CapBnd CapAmb; do grep -Eq \"^$cap:[[:space:]]+0000000000000000$\" /proc/self/status; done\ngrep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status\n[ ! -e /dev/vda ] && [ ! -e /dev/mapper ] && [ ! -e /test-key ] && [ ! -e /run/coco/storage ]\ncp /bin/busybox /data/noexec-test; chmod 755 /data/noexec-test\nif /data/noexec-test true 2>/dev/null; then exit 1; fi\nrm /data/noexec-test\nprintf 'kata-encrypted-persistent-v1\\n' > /data/kata-probe; sync -f /data/kata-probe\n[ \"$(cat /data/kata-probe)\" = kata-encrypted-persistent-v1 ]\nsha256sum /data/kata-probe > /result/hash\ncat /proc/self/mountinfo > /result/mountinfo\ncat /proc/self/status > /result/status\nprintf 'encrypted-app-ok\\n' > /result/started\nexec sleep 600\n"]
+rustjail: ready to run exec
+rustjail: entered namespaces!
+rustjail: updating namespaces
+rustjail: wait on child log handler
+rustjail: read child process log end
+rustjail: create process completed
+[   45.287459] EXT4-fs (dm-1): mounted filesystem with ordered data mode. Quota mode: none.
+rustjail: container started
+APP:encrypted-write:uid=1000 gid=1000 caps=0 nnp=1 one-private-ext4=/data hash=13fb25ecbd02c7a0607db0919e6cf7892db0c35fa47fd4327683efa9447bf75c
+[   45.459847] EXT4-fs (dm-1): unmounting filesystem.
+rustjail: destroy: container encrypted-write cgroup has 0 processes: []
+rustjail: destroy: destroying cgroup for container encrypted-write
+rustjail: rootfs not mounted
+ORDER:encrypted-write:prepared -> resolve -> key -> started -> quiesced -> detach-authorized -> release-attempt -> released -> destroyed
+COCO_TEST_PASS:encrypted-write
+rustjail: new cgroup_manager cgroupfs
+rustjail: before create console socket!
+rustjail: created console socket!
+rustjail: enter container.start!
+rustjail: exec fifo opened!
+rustjail: Continuing execution in temporary process, new child has pid: Pid(557)
+rustjail: child process start run
+rustjail: child pid: 557
+rustjail: try to send spec from parent to child
+rustjail: wait child received oci spec
+rustjail: temporary parent process exit successfully
+rustjail: notify parent to send oci process
+rustjail: send oci process from parent to child
+rustjail: wait child received oci process
+rustjail: notify parent to send oci state
+rustjail: try to send state from parent to child
+rustjail: wait child received oci state
+rustjail: notify parent to send cgroup manager
+rustjail: wait child setup user namespace
+rustjail: notify parent unshare user ns completed
+rustjail: apply processes to cgroups!
+rustjail: set properties to cgroups!
+rustjail: notify child to continue
+rustjail: notify child parent ready to run prestart hook!
+rustjail: wait parent to setup user id mapping
+rustjail: setup rootfs /run/callback-lab/encrypted-read/rootfs
+rustjail: get ready to run prestart hook!
+rustjail: notify child run prestart hook completed!
+rustjail: wait for child process ready to run exec
+rustjail: old cwd: /
+rustjail: Creating CWD /
+rustjail: process command: ["/bin/sh", "-c", "set -eu\n[ \"$(id -u)\" = 1000 ] && [ \"$(id -g)\" = 1000 ]\nfor cap in CapInh CapPrm CapEff CapBnd CapAmb; do grep -Eq \"^$cap:[[:space:]]+0000000000000000$\" /proc/self/status; done\ngrep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status\n[ ! -e /dev/vda ] && [ ! -e /dev/mapper ] && [ ! -e /test-key ] && [ ! -e /run/coco/storage ]\ncp /bin/busybox /data/noexec-test; chmod 755 /data/noexec-test\nif /data/noexec-test true 2>/dev/null; then exit 1; fi\nrm /data/noexec-test\n:\n[ \"$(cat /data/kata-probe)\" = kata-encrypted-persistent-v1 ]\nsha256sum /data/kata-probe > /result/hash\ncat /proc/self/mountinfo > /result/mountinfo\ncat /proc/self/status > /result/status\nprintf 'encrypted-app-ok\\n' > /result/started\nexec sleep 600\n"]
+rustjail: entered namespaces!
+rustjail: updating namespaces
+rustjail: wait on child log handler
+rustjail: ready to run exec
+rustjail: read child process log end
+rustjail: create process completed
+[   48.655674] EXT4-fs (dm-1): mounted filesystem with ordered data mode. Quota mode: none.
+rustjail: container started
+APP:encrypted-read:uid=1000 gid=1000 caps=0 nnp=1 one-private-ext4=/data hash=13fb25ecbd02c7a0607db0919e6cf7892db0c35fa47fd4327683efa9447bf75c
+[   48.807965] EXT4-fs (dm-1): unmounting filesystem.
+rustjail: destroy: container encrypted-read cgroup has 0 processes: []
+rustjail: destroy: destroying cgroup for container encrypted-read
+rustjail: rootfs not mounted
+ORDER:encrypted-read:prepared -> resolve -> key -> started -> quiesced -> detach-authorized -> release-attempt -> released -> destroyed
+COCO_TEST_PASS:encrypted-read
+rustjail: new cgroup_manager cgroupfs
+rustjail: before create console socket!
+rustjail: created console socket!
+rustjail: enter container.start!
+rustjail: exec fifo opened!
+rustjail: Continuing execution in temporary process, new child has pid: Pid(607)
+rustjail: child process start run
+rustjail: child pid: 607
+rustjail: try to send spec from parent to child
+rustjail: wait child received oci spec
+rustjail: temporary parent process exit successfully
+rustjail: send oci process from parent to child
+rustjail: notify parent to send oci process
+rustjail: wait child received oci process
+rustjail: notify parent to send oci state
+rustjail: try to send state from parent to child
+rustjail: wait child received oci state
+rustjail: notify parent to send cgroup manager
+rustjail: wait child setup user namespace
+rustjail: notify parent unshare user ns completed
+rustjail: wait parent to setup user id mapping
+rustjail: apply processes to cgroups!
+rustjail: set properties to cgroups!
+rustjail: notify child to continue
+rustjail: notify child parent ready to run prestart hook!
+rustjail: setup rootfs /run/callback-lab/encrypted-busy/rootfs
+rustjail: get ready to run prestart hook!
+rustjail: notify child run prestart hook completed!
+rustjail: wait for child process ready to run exec
+rustjail: old cwd: /
+rustjail: Creating CWD /
+rustjail: process command: ["/bin/sh", "-c", "set -eu\n[ \"$(id -u)\" = 1000 ] && [ \"$(id -g)\" = 1000 ]\nfor cap in CapInh CapPrm CapEff CapBnd CapAmb; do grep -Eq \"^$cap:[[:space:]]+0000000000000000$\" /proc/self/status; done\ngrep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status\n[ ! -e /dev/vda ] && [ ! -e /dev/mapper ] && [ ! -e /test-key ] && [ ! -e /run/coco/storage ]\ncp /bin/busybox /data/noexec-test; chmod 755 /data/noexec-test\nif /data/noexec-test true 2>/dev/null; then exit 1; fi\nrm /data/noexec-test\n:\n[ \"$(cat /data/kata-probe)\" = kata-encrypted-persistent-v1 ]\nsha256sum /data/kata-probe > /result/hash\ncat /proc/self/mountinfo > /result/mountinfo\ncat /proc/self/status > /result/status\nprintf 'encrypted-app-ok\\n' > /result/started\nexec sleep 600\n"]
+rustjail: ready to run exec
+rustjail: read child process log end
+rustjail: entered namespaces!
+rustjail: updating namespaces
+rustjail: wait on child log handler
+rustjail: create process completed
+[   51.988209] EXT4-fs (dm-1): mounted filesystem with ordered data mode. Quota mode: none.
+rustjail: container started
+APP:encrypted-busy:uid=1000 gid=1000 caps=0 nnp=1 one-private-ext4=/data hash=13fb25ecbd02c7a0607db0919e6cf7892db0c35fa47fd4327683efa9447bf75c
+[   52.176106] EXT4-fs (dm-1): unmounting filesystem.
+rustjail: destroy: container encrypted-busy cgroup has 0 processes: []
+rustjail: destroy: destroying cgroup for container encrypted-busy
+rustjail: rootfs not mounted
+ORDER:encrypted-busy:prepared -> resolve -> key -> started -> quiesced -> detach-authorized -> detach-authorized -> release-attempt -> released -> destroyed
+COCO_TEST_PASS:encrypted-busy
+rustjail: new cgroup_manager cgroupfs
+rustjail: before create console socket!
+rustjail: created console socket!
+rustjail: enter container.start!
+rustjail: exec fifo opened!
+rustjail: Continuing execution in temporary process, new child has pid: Pid(659)
+rustjail: child process start run
+rustjail: child pid: 659
+rustjail: try to send spec from parent to child
+rustjail: wait child received oci spec
+rustjail: temporary parent process exit successfully
+rustjail: notify parent to send oci process
+rustjail: send oci process from parent to child
+rustjail: wait child received oci process
+rustjail: notify parent to send oci state
+rustjail: try to send state from parent to child
+rustjail: wait child received oci state
+rustjail: notify parent to send cgroup manager
+rustjail: wait child setup user namespace
+rustjail: notify parent unshare user ns completed
+rustjail: wait parent to setup user id mapping
+rustjail: apply processes to cgroups!
+rustjail: set properties to cgroups!
+rustjail: notify child to continue
+rustjail: notify child parent ready to run prestart hook!
+rustjail: setup rootfs /run/callback-lab/encrypted-release-retry/rootfs
+rustjail: get ready to run prestart hook!
+rustjail: notify child run prestart hook completed!
+rustjail: wait for child process ready to run exec
+rustjail: old cwd: /
+rustjail: Creating CWD /
+rustjail: process command: ["/bin/sh", "-c", "set -eu\n[ \"$(id -u)\" = 1000 ] && [ \"$(id -g)\" = 1000 ]\nfor cap in CapInh CapPrm CapEff CapBnd CapAmb; do grep -Eq \"^$cap:[[:space:]]+0000000000000000$\" /proc/self/status; done\ngrep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status\n[ ! -e /dev/vda ] && [ ! -e /dev/mapper ] && [ ! -e /test-key ] && [ ! -e /run/coco/storage ]\ncp /bin/busybox /data/noexec-test; chmod 755 /data/noexec-test\nif /data/noexec-test true 2>/dev/null; then exit 1; fi\nrm /data/noexec-test\n:\n[ \"$(cat /data/kata-probe)\" = kata-encrypted-persistent-v1 ]\nsha256sum /data/kata-probe > /result/hash\ncat /proc/self/mountinfo > /result/mountinfo\ncat /proc/self/status > /result/status\nprintf 'encrypted-app-ok\\n' > /result/started\nexec sleep 600\n"]
+rustjail: ready to run exec
+rustjail: read child process log end
+rustjail: entered namespaces!
+rustjail: updating namespaces
+rustjail: wait on child log handler
+rustjail: create process completed
+[   55.376110] EXT4-fs (dm-1): mounted filesystem with ordered data mode. Quota mode: none.
+rustjail: container started
+APP:encrypted-release-retry:uid=1000 gid=1000 caps=0 nnp=1 one-private-ext4=/data hash=13fb25ecbd02c7a0607db0919e6cf7892db0c35fa47fd4327683efa9447bf75c
+[   55.528404] EXT4-fs (dm-1): unmounting filesystem.
+rustjail: destroy: container encrypted-release-retry cgroup has 0 processes: []
+rustjail: destroy: destroying cgroup for container encrypted-release-retry
+rustjail: rootfs not mounted
+ORDER:encrypted-release-retry:prepared -> resolve -> key -> started -> quiesced -> detach-authorized -> release-attempt -> release-attempt -> released -> destroyed
+COCO_TEST_PASS:encrypted-release-retry
+rustjail: new cgroup_manager cgroupfs
+rustjail: before create console socket!
+rustjail: created console socket!
+rustjail: enter container.start!
+rustjail: exec fifo opened!
+rustjail: Continuing execution in temporary process, new child has pid: Pid(711)
+rustjail: child process start run
+rustjail: child pid: 711
+rustjail: try to send spec from parent to child
+rustjail: wait child received oci spec
+rustjail: temporary parent process exit successfully
+rustjail: send oci process from parent to child
+rustjail: notify parent to send oci process
+rustjail: wait child received oci process
+rustjail: notify parent to send oci state
+rustjail: try to send state from parent to child
+rustjail: wait child received oci state
+rustjail: notify parent to send cgroup manager
+rustjail: wait child setup user namespace
+rustjail: notify parent unshare user ns completed
+rustjail: wait parent to setup user id mapping
+rustjail: apply processes to cgroups!
+rustjail: set properties to cgroups!
+rustjail: notify child to continue
+rustjail: notify child parent ready to run prestart hook!
+rustjail: setup rootfs /run/callback-lab/encrypted-wrong-key/rootfs
+rustjail: get ready to run prestart hook!
+rustjail: notify child run prestart hook completed!
+rustjail: wait for child process ready to run exec
+rustjail: old cwd: /
+rustjail: Creating CWD /
+rustjail: process command: ["/bin/sh", "-c", "set -eu\n[ \"$(id -u)\" = 1000 ] && [ \"$(id -g)\" = 1000 ]\nfor cap in CapInh CapPrm CapEff CapBnd CapAmb; do grep -Eq \"^$cap:[[:space:]]+0000000000000000$\" /proc/self/status; done\ngrep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status\n[ ! -e /dev/vda ] && [ ! -e /dev/mapper ] && [ ! -e /test-key ] && [ ! -e /run/coco/storage ]\ncp /bin/busybox /data/noexec-test; chmod 755 /data/noexec-test\nif /data/noexec-test true 2>/dev/null; then exit 1; fi\nrm /data/noexec-test\n:\n[ \"$(cat /data/kata-probe)\" = kata-encrypted-persistent-v1 ]\nsha256sum /data/kata-probe > /result/hash\ncat /proc/self/mountinfo > /result/mountinfo\ncat /proc/self/status > /result/status\nprintf 'encrypted-app-ok\\n' > /result/started\nexec sleep 600\n"]
+rustjail: ready to run exec
+rustjail: read child process log end
+rustjail: entered namespaces!
+rustjail: updating namespaces
+rustjail: wait on child log handler
+rustjail: create process completed
+rustjail: destroy: container encrypted-wrong-key cgroup has 0 processes: []
+rustjail: destroy: destroying cgroup for container encrypted-wrong-key
+rustjail: rootfs not mounted
+ORDER:encrypted-wrong-key:prepared -> resolve -> key -> quiesced -> release-attempt -> released -> destroyed
+COCO_TEST_PASS:encrypted-wrong-key
+rustjail: new cgroup_manager cgroupfs
+rustjail: before create console socket!
+rustjail: created console socket!
+rustjail: enter container.start!
+rustjail: exec fifo opened!
+rustjail: Continuing execution in temporary process, new child has pid: Pid(719)
+rustjail: child pid: 719
+rustjail: try to send spec from parent to child
+rustjail: wait child received oci spec
+rustjail: child process start run
+rustjail: temporary parent process exit successfully
+rustjail: send oci process from parent to child
+rustjail: notify parent to send oci process
+rustjail: wait child received oci process
+rustjail: notify parent to send oci state
+rustjail: try to send state from parent to child
+rustjail: wait child received oci state
+rustjail: notify parent to send cgroup manager
+rustjail: wait child setup user namespace
+rustjail: notify parent unshare user ns completed
+rustjail: apply processes to cgroups!
+rustjail: set properties to cgroups!
+rustjail: notify child to continue
+rustjail: notify child parent ready to run prestart hook!
+rustjail: wait parent to setup user id mapping
+rustjail: setup rootfs /run/callback-lab/encrypted-bad-manifest/rootfs
+rustjail: get ready to run prestart hook!
+rustjail: notify child run prestart hook completed!
+rustjail: wait for child process ready to run exec
+rustjail: old cwd: /
+rustjail: Creating CWD /
+rustjail: process command: ["/bin/sh", "-c", "set -eu\n[ \"$(id -u)\" = 1000 ] && [ \"$(id -g)\" = 1000 ]\nfor cap in CapInh CapPrm CapEff CapBnd CapAmb; do grep -Eq \"^$cap:[[:space:]]+0000000000000000$\" /proc/self/status; done\ngrep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status\n[ ! -e /dev/vda ] && [ ! -e /dev/mapper ] && [ ! -e /test-key ] && [ ! -e /run/coco/storage ]\ncp /bin/busybox /data/noexec-test; chmod 755 /data/noexec-test\nif /data/noexec-test true 2>/dev/null; then exit 1; fi\nrm /data/noexec-test\n:\n[ \"$(cat /data/kata-probe)\" = kata-encrypted-persistent-v1 ]\nsha256sum /data/kata-probe > /result/hash\ncat /proc/self/mountinfo > /result/mountinfo\ncat /proc/self/status > /result/status\nprintf 'encrypted-app-ok\\n' > /result/started\nexec sleep 600\n"]
+rustjail: entered namespaces!
+rustjail: updating namespaces
+rustjail: wait on child log handler
+rustjail: ready to run exec
+rustjail: read child process log end
+rustjail: create process completed
+rustjail: destroy: container encrypted-bad-manifest cgroup has 0 processes: []
+rustjail: destroy: destroying cgroup for container encrypted-bad-manifest
+rustjail: rootfs not mounted
+ORDER:encrypted-bad-manifest:prepared -> resolve -> quiesced -> release-attempt -> released -> destroyed
+COCO_TEST_PASS:encrypted-bad-manifest
+COCO_TEST_PASS:rustjail-encrypted-storage
+COCO_TEST_PASS:rustjail-callback-lifecycle
+COCO_TEST_PASS:initialize
+[   59.346460] ACPI: PM: Preparing to enter system sleep state S5
+[   59.346978] reboot: Restarting system
+[   59.347040] reboot: machine restart

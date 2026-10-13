@@ -146,3 +146,15 @@ retention, lost-release acknowledgement retry, wrong-key/invalid-manifest startu
 denial, duplicate-operation handling and cleanup before runtime destruction.
 Synthetic providers are still used. Sandbox/reaper/IO/RPC integration, partial
 creation/destruction recovery and attested provider gates remain open.
+
+## Process observation checkpoint
+
+The concrete adapter now provides an identity-checked `ProcessHandle` alongside
+its sole runtime owner. Real waitpid events publish retained exit status; multiple
+and cancelled waiters cannot remove the process. Bounded output pumps prevent pipe
+backpressure. Final destruction requires a recorded exit and completed drain,
+then closes streams and removes the process. Preparation and reaping both follow
+reaper-before-runtime lock ordering. See the
+[process lifecycle guide](kata-process-lifecycle.md) for the API contract,
+disposable-VM checks and limits. Actual Sandbox/RPC/SIGCHLD registration and
+production streaming IO remain required; the activation gate is unchanged.

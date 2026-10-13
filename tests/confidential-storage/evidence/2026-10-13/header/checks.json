@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-13",
+  "evidence": "userspace-header-validation-and-linux-memfd-tests",
+  "regular_rust_tests_passed": 24,
+  "explicit_cryptsetup_test_passed": 1,
+  "cargo_fmt": "passed",
+  "cargo_clippy": "passed --locked --all-targets -- -D warnings",
+  "rust_version": "1.94.1",
+  "cryptsetup_version": "2.6.1 (Debian 2:2.6.1-4~deb12u2)",
+  "reference_source": {
+    "url": "https://gitlab.com/cryptsetup/cryptsetup.git",
+    "tag": "v2.8.1",
+    "commit": "9cfdd6ba068b375a2b6cda429b3f92388448dd67"
+  },
+  "compiler_image": "docker.io/library/rust@sha256:4ec71e955e6c08aeb238885083222ddff79d82eb87654a96c76e38e94da1a53b",
+  "profile_sha256": "d8d4bd81023565806a8996efb6702b2eb785b792929cf8b8a2733286eb2e10cb",
+  "production_unchanged": {
+    "production_pods": true,
+    "production_resources": true,
+    "runtimes": true,
+    "gitops_sources": true
+  },
+  "test_pods_remaining": 0,
+  "encrypted_storage_e2e": false,
+  "device_mapper_targets_created": false,
+  "attested_vm_test": false,
+  "production_keys_accessed": false,
+  "kata_activation_gate": "closed",
+  "limitations": [
+    "The positive LUKS2 header is synthetic and has no usable encrypted keyslot/data.",
+    "The negative image is real ordinary LUKS2 without dm-integrity; its disposable random key is not retained.",
+    "Memfd seals run on the compiler pod Linux kernel, not a confidential guest kernel.",
+    "No real CDH/authority channel, key retrieval, opener, mount, initialization or runtime installation was added.",
+    "Journal enforcement, effective kernel stack checks and corruption/recovery remain required."
+  ]
+}

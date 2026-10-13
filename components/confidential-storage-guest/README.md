@@ -2,7 +2,8 @@
 
 This library implements receipt verification and the lifecycle controller intended
 for the privileged **guest system service**. It has no daemon, public RPC, real CDH
-adapter, cryptsetup implementation or mount syscall backend. The Kata experiment's
+adapter, cryptsetup opener or mount syscall backend. It now includes
+[authenticated RW header preparation](profiles/README.md) using Linux memfd seals. The Kata experiment's
 activation gate remains closed. **This is not working encrypted persistent storage.**
 
 The paired [Python authority](../confidential-storage-authority/README.md) now issues
@@ -125,9 +126,9 @@ Kata gate, implement and test it inside the guest CDH/agent service:
    The authority needs independently managed durable storage and administrative
    authentication. It must not accept client JSON as `AttestedPeer`.
 2. Resolve and retain the guest block device safely. Fetch the exact manifest via
-   CDH, authenticate its bytes and verify its key reference and profile. Copy the
-   complete header into guest-private tmpfs, authenticate that exact copy, validate
-   the LUKS/integrity parameters, and use the same copy for cryptsetup. No unverified
+   CDH and use `PreparedHeader::prepare` to bind its key reference/profile, authenticate
+   the complete header, validate the narrow RW metadata profile and seal the copy.
+   Pass that same sealed descriptor to cryptsetup. No unverified
    disk-header parsing, fallback cipher or format-on-open-failure is permitted.
 3. Use activation-specific mapping names and enforce the journaled integrity profile
    in both metadata and the effective kernel stack. Include compatible cryptsetup

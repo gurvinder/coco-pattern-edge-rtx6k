@@ -41,6 +41,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "base64",
+ "libc",
  "ring",
  "serde",
  "serde_json",

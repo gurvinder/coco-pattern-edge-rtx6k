@@ -92,6 +92,29 @@ Storage effects in tests are injected backends; test peers are synthetic.
 No real key was issued, no encrypted disk was mounted, and no new runtime was
 installed. The compiler was isolated from GPUs/PVCs and removed after validation.
 
+## Authenticated header preparation checkpoint
+
+The guest core now implements the candidate `rw-luks2-v1` profile and a strict
+signed-manifest binding. It authenticates the entire 16 MiB LUKS2 header before
+parsing, validates both metadata copies and the supported crypto/KDF/layout, and
+stores the accepted bytes in a Linux memfd sealed against writes and resizing.
+See the [profile contract](../../components/confidential-storage-guest/profiles/README.md).
+The original source can change after preparation without altering the sealed copy.
+
+Twenty-four regular Rust tests and one explicitly enabled cryptsetup tool test
+pass. The latter uses real cryptsetup 2.6.1 to parse a sealed synthetic header and
+create/unlock an ordinary LUKS2 regular-file image that the RW profile then rejects
+because it does not meet the authenticated-storage requirements. The synthetic
+positive header is not a usable encrypted disk. No device-mapper target was opened.
+Evidence is under `tests/confidential-storage/evidence/2026-10-13/header/`.
+
+This adds header preparation, **not an opener or a mounted filesystem**. The fixed
+profile remains a candidate until the effective kernel stack, journal behavior and
+corruption/recovery tests pass. Device resolution, real attested authority/CDH
+transport, key retrieval, cryptsetup activation, first-use initialization and the
+private guest-service endpoint remain unfinished. The Kata activation gate is
+unchanged. No production key or runtime was modified.
+
 ## Next engineering step
 
 Build the guest-managed mount integration in an isolated artifact before installing

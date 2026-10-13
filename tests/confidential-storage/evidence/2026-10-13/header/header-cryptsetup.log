@@ -1,0 +1,8 @@
+cryptsetup 2.6.1 flags: UDEV BLKID KEYRING KERNEL_CAPI
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (target/debug/deps/confidential_storage_guest-9750860b544fbda1)
+
+running 1 test
+test profile::tests::cryptsetup_parses_sealed_synthetic_header_and_real_plain_luks_is_rejected ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 22 filtered out; finished in 0.07s

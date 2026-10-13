@@ -4,6 +4,18 @@ Checkpoint: 13 October 2026, branch `dev/confidential-storage-integration`, base
 on proposal/handoff commit `e4a3616`. Read the [report](compatibility-report.md)
 before making changes. The original six-phase handoff still defines completion.
 
+## Latest checkpoint: private KBS key provider
+
+The client now issues opaque, expiring key permits for RO model reopen and owned
+RW initialization. A guest-only provider reuses pinned CoCo RCAR/JWE code behind
+those checks; 13 interoperability/negative tests pass with synthetic attestation,
+plus the client's 3 unit and 16 TLS regression tests. See
+[private key delivery](private-key-delivery.md) for evidence and scope.
+No real model/PVC key, confidential guest deployment or production policy changed.
+The remaining work is measured configuration and API isolation, actual guest
+execution/lifecycle wiring, real attestation/key release and both workload E2Es.
+The runtime installation/reload approval is still pending.
+
 ## Latest checkpoint: signed guest initialization API
 
 The Rust guest client and Python TLS gateway now implement the administrator-approved

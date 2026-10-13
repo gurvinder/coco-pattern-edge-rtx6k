@@ -17,6 +17,7 @@ use std::{
 };
 
 pub mod initialization;
+pub mod keys;
 #[cfg(target_os = "linux")]
 pub mod private_aa;
 const PROTOCOL: &str = "confidential-storage-request/v1";
@@ -149,6 +150,12 @@ impl<E: Evidence> AuthorityClient<E> {
             session,
             evidence,
         })
+    }
+    pub fn policy_sha256(&self) -> &str {
+        &self.config.policy_sha256
+    }
+    pub fn init_data_digest(&self) -> &str {
+        &self.config.init_data
     }
     pub fn session_sha256(&self) -> &str {
         &self.session

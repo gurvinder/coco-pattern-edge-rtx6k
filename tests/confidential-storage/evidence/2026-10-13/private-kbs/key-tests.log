@@ -1,0 +1,80 @@
+warning: use of deprecated associated function `p256::elliptic_curve::generic_array::GenericArray::<T, N>::from_slice`: please upgrade to generic-array 1.x
+  --> /build/storage-kbs-build/upstream/attestation-agent/deps/crypto/src/rust/ec.rs:98:45
+   |
+98 | ...                   P256FieldBytes::from_slice(&epk_x),
+   |                                       ^^^^^^^^^^
+   |
+   = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated associated function `p256::elliptic_curve::generic_array::GenericArray::<T, N>::from_slice`: please upgrade to generic-array 1.x
+  --> /build/storage-kbs-build/upstream/attestation-agent/deps/crypto/src/rust/ec.rs:99:45
+   |
+99 | ...                   P256FieldBytes::from_slice(&epk_y),
+   |                                       ^^^^^^^^^^
+
+warning: use of deprecated associated function `p256::elliptic_curve::generic_array::GenericArray::<T, N>::from_slice`: please upgrade to generic-array 1.x
+   --> /build/storage-kbs-build/upstream/attestation-agent/deps/crypto/src/rust/ec.rs:123:45
+    |
+123 | ...                   P521FieldBytes::from_slice(&epk_x),
+    |                                       ^^^^^^^^^^
+
+warning: use of deprecated associated function `p256::elliptic_curve::generic_array::GenericArray::<T, N>::from_slice`: please upgrade to generic-array 1.x
+   --> /build/storage-kbs-build/upstream/attestation-agent/deps/crypto/src/rust/ec.rs:124:45
+    |
+124 | ...                   P521FieldBytes::from_slice(&epk_y),
+    |                                       ^^^^^^^^^^
+
+warning: `crypto` (lib) generated 4 warnings
+   Compiling kbs_protocol v0.1.0 (/build/storage-kbs-build/upstream/attestation-agent/kbs_protocol)
+    Checking confidential-storage-client v0.1.0 (/build/storage-kbs-build/components/confidential-storage-client)
+    Checking confidential-storage-kbs v0.1.0 (/build/storage-kbs-build/components/confidential-storage-kbs)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.70s
+warning: use of deprecated associated function `p256::elliptic_curve::generic_array::GenericArray::<T, N>::from_slice`: please upgrade to generic-array 1.x
+  --> /build/storage-kbs-build/upstream/attestation-agent/deps/crypto/src/rust/ec.rs:98:45
+   |
+98 | ...                   P256FieldBytes::from_slice(&epk_x),
+   |                                       ^^^^^^^^^^
+   |
+   = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated associated function `p256::elliptic_curve::generic_array::GenericArray::<T, N>::from_slice`: please upgrade to generic-array 1.x
+  --> /build/storage-kbs-build/upstream/attestation-agent/deps/crypto/src/rust/ec.rs:99:45
+   |
+99 | ...                   P256FieldBytes::from_slice(&epk_y),
+   |                                       ^^^^^^^^^^
+
+warning: use of deprecated associated function `p256::elliptic_curve::generic_array::GenericArray::<T, N>::from_slice`: please upgrade to generic-array 1.x
+   --> /build/storage-kbs-build/upstream/attestation-agent/deps/crypto/src/rust/ec.rs:123:45
+    |
+123 | ...                   P521FieldBytes::from_slice(&epk_x),
+    |                                       ^^^^^^^^^^
+
+warning: use of deprecated associated function `p256::elliptic_curve::generic_array::GenericArray::<T, N>::from_slice`: please upgrade to generic-array 1.x
+   --> /build/storage-kbs-build/upstream/attestation-agent/deps/crypto/src/rust/ec.rs:124:45
+    |
+124 | ...                   P521FieldBytes::from_slice(&epk_y),
+    |                                       ^^^^^^^^^^
+
+warning: `crypto` (lib) generated 4 warnings
+   Compiling kbs_protocol v0.1.0 (/build/storage-kbs-build/upstream/attestation-agent/kbs_protocol)
+   Compiling confidential-storage-client v0.1.0 (/build/storage-kbs-build/components/confidential-storage-client)
+   Compiling confidential-storage-kbs v0.1.0 (/build/storage-kbs-build/components/confidential-storage-kbs)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.53s
+test_attestation_denied (test_keys.KeyTests.test_attestation_denied) ... ok
+test_changed_initdata_rejected_before_kbs_access (test_keys.KeyTests.test_changed_initdata_rejected_before_kbs_access) ... ok
+test_gpu_required_cannot_fall_back_to_cpu (test_keys.KeyTests.test_gpu_required_cannot_fall_back_to_cpu) ... ok
+test_readonly_published_model_key_permit (test_keys.KeyTests.test_readonly_published_model_key_permit) ... ok
+test_real_rcar_and_encrypted_key_response_twice (test_keys.KeyTests.test_real_rcar_and_encrypted_key_response_twice) ... ok
+test_redirect_not_followed (test_keys.KeyTests.test_redirect_not_followed) ... ok
+test_resource_not_allowlisted_makes_no_kbs_request (test_keys.KeyTests.test_resource_not_allowlisted_makes_no_kbs_request) ... ok
+test_response_size_bounded (test_keys.KeyTests.test_response_size_bounded) ... ok
+test_short_curve_coordinate_rejected_without_panic (test_keys.KeyTests.test_short_curve_coordinate_rejected_without_panic) ... ok
+test_short_wrapped_key_rejected_without_panic (test_keys.KeyTests.test_short_wrapped_key_rejected_without_panic) ... ok
+test_tampered_encrypted_key_denied (test_keys.KeyTests.test_tampered_encrypted_key_denied) ... ok
+test_wrong_kbs_hostname (test_keys.KeyTests.test_wrong_kbs_hostname) ... ok
+test_wrong_key_length_denied (test_keys.KeyTests.test_wrong_key_length_denied) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 12.637s
+
+OK

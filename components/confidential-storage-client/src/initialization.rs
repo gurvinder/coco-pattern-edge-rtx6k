@@ -171,7 +171,7 @@ struct RecordData {
 }
 /// Metadata accepted only after signature and exact request-binding validation.
 /// It cannot be constructed or deserialized by a caller.
-pub struct Record(RecordData);
+pub struct Record(RecordData, u64);
 impl Record {
     pub fn state(&self) -> &State {
         &self.0.state
@@ -446,7 +446,7 @@ impl<E: Evidence> AuthorityClient<E> {
             Operation::Plan => {
                 let r = parse(claims.result.get())?.record;
                 r.check(request, &self.session, &identity)?;
-                Ok(Decision::Plan(Record(r)))
+                Ok(Decision::Plan(Record(r, claims.exp)))
             }
             Operation::Begin => {
                 let r: BeginResult =
@@ -466,7 +466,7 @@ impl<E: Evidence> AuthorityClient<E> {
                 }
                 Ok(Decision::Begin {
                     fresh,
-                    record: Record(r.record),
+                    record: Record(r.record, claims.exp),
                 })
             }
             Operation::Step {
@@ -545,9 +545,28 @@ impl<E: Evidence> AuthorityClient<E> {
                 {
                     return Err(Error::Binding);
                 }
-                Ok(Decision::Ready(Record(r)))
+                Ok(Decision::Ready(Record(r, claims.exp)))
             }
         }
+    }
+    /// Fetch fresh approved metadata for an already owned initialization. This
+    /// permits key retrieval, never formatting; disk effects need a Step permit.
+    pub fn authorize_initialization_key(
+        &self,
+        request: &Request,
+    ) -> Result<crate::keys::KeyPermit> {
+        let Decision::Plan(record) = self.initialization(request, Operation::Plan)? else {
+            return Err(Error::Binding);
+        };
+        if record.0.state != State::Initializing || record.0.owner.is_none() {
+            return Err(Error::Binding);
+        }
+        crate::keys::KeyPermit::new(
+            self.session.clone(),
+            self.config.policy_sha256.clone(),
+            record.0.credential_uri,
+            record.1,
+        )
     }
     /// Only after initialization's mappings are proven closed. Ready metadata is
     /// not a reopen grant and cannot be fed to the filesystem opener.

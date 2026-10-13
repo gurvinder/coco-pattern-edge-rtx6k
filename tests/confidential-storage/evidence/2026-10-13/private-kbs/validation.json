@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-13",
+  "upstream_commit": "0ab1fb1be6e46293f29600085f929ae035ca3739",
+  "rust": "1.94.1",
+  "attestation": "synthetic only",
+  "key_material": "disposable fixture keys only",
+  "key_interoperability_tests": 13,
+  "client_unit_tests": 3,
+  "client_tls_tests": 16,
+  "hardware_e2e_complete": false,
+  "production_unchanged": true,
+  "sha256": {
+    "components/confidential-storage-kbs/Cargo.toml": "f4002c286a4ccb49c3798f32acb6db509ec3904ea7a6e6383ad77ecdb963bed2",
+    "components/confidential-storage-kbs/Cargo.lock": "ef37483fdeb07e3bd4ea651b664b60f0c4de5285f1942aae5c33acddd86d9e9e",
+    "components/confidential-storage-kbs/prepare.py": "94c10551db2b860bd963ba5d74196f1ade3303fda3b668c5f3da362c07b9f821",
+    "components/confidential-storage-kbs/src/lib.rs": "9d8c282515d1de79f2084133305c6cc940bfb84e77f452e0fd4fd6e5fefcbe3d",
+    "components/confidential-storage-kbs/examples/key_fixture.rs": "61fa73dd40a20df4fc567b52fea63a5ce00da2934be4abd2e1ef8e9a3f4fed04",
+    "components/confidential-storage-kbs/test_keys.py": "2ac1fa09d9201e324a80553e695b4b5c05f635137ddef45183c2943e95230e45",
+    "components/confidential-storage-client/src/lib.rs": "0ae3d22e6b10cbfe1f913050b1ce833ce3a8779c9a8a2dedc53c71f4380b00b4",
+    "components/confidential-storage-client/src/keys.rs": "812635929efa01946693461441d17a954a39bbe14b12f426ad3f153269c7164d",
+    "components/confidential-storage-client/src/initialization.rs": "87b277e86e56fe5b13eba15e7d14e4d5822143789ff8ceb22430104c84a44845",
+    "components/confidential-storage-client/src/private_aa.rs": "5a8748ade163a2c7cd8d9ba75ae56e4ab77a13aa3ef91d25edca564f9e56ef11"
+  }
+}

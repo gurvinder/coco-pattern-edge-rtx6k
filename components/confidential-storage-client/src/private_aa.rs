@@ -25,6 +25,15 @@ const LIMIT: usize = 144 * 1024;
 pub struct PrivateAa;
 impl Evidence for PrivateAa {
     fn collect(&self, runtime_sha256: [u8; 32]) -> Result<Vec<u8>> {
+        self.collect_digest(&runtime_sha256)
+    }
+}
+impl PrivateAa {
+    /// KBS negotiates SHA-256/384/512; pass the digest directly to private AA.
+    pub fn collect_digest(&self, runtime_digest: &[u8]) -> Result<Vec<u8>> {
+        if ![32, 48, 64].contains(&runtime_digest.len()) {
+            return Err(Error::Attestation);
+        }
         let directory = fs::symlink_metadata(DIRECTORY).map_err(|_| Error::Attestation)?;
         let socket = fs::symlink_metadata(SOCKET).map_err(|_| Error::Attestation)?;
         let client = fs::symlink_metadata(CLIENT).map_err(|_| Error::Attestation)?;
@@ -53,7 +62,7 @@ impl Evidence for PrivateAa {
                 ),
                 "get-evidence",
                 "--runtime-data",
-                &STANDARD.encode(runtime_sha256),
+                &STANDARD.encode(runtime_digest),
             ])
             .env_clear()
             .env("PATH", "/usr/bin:/bin")

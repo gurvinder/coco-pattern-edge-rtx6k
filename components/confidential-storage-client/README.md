@@ -1,8 +1,8 @@
 # Trusted guest authority client
 
 Development library for the privileged **guest system service**, not the
-application container. No listener, public RPC, disk operation or volume-key
-delivery API is provided. It is not wired into the Kata activation gate yet.
+application container. No listener, public RPC, disk operation or key-byte delivery API is provided.
+Opaque key permits can now be consumed by the separate private KBS provider. It is not wired into the Kata activation gate yet.
 That gate remains closed.
 
 The client now implements the real authority TLS protocol:
@@ -74,8 +74,8 @@ The `transport_fixture` example is a test-only binary and must never be installe
 in a measured production guest. A missing fixture binary skips Python tests;
 that is not a passing interoperability run.
 
-Remaining integration: trusted disk execution of initialization decisions, profile-bound
-private CDH key retrieval, real device resolution and production agent lifecycle
+Remaining integration: trusted disk execution of initialization decisions,
+production wiring of the private KBS provider, real device resolution and agent lifecycle
 callbacks. Neither requested confidential-storage E2E is complete yet.
 
 ## Initialization journal
@@ -86,3 +86,13 @@ one-shot execute permits expire and cannot be cloned/deserialized. A Started
 retry requires reconciliation and Ready never grants another format decision.
 See [the full timeline and manifest recovery contract](../../docs/confidential-storage/guest-initialization-protocol.md).
 The fixture tests these messages with synthetic completion data, not real disks.
+
+## Private key authorization
+
+`keys` creates non-cloneable, expiring permits only from fresh authority responses.
+`authorize_reopen_key` returns the verified grant and its permit for a supported
+RO/RW profile. `authorize_initialization_key` requires an already owned Initializing
+record; it cannot grant formatting. The consumer checks the retained session,
+policy and exact credential allowlist before and after retrieval. See the
+[private KBS provider](../confidential-storage-kbs/README.md) for the real encrypted
+response integration, CPU-only test scope and remaining deployment gates.

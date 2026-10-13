@@ -167,7 +167,15 @@ fn initialize(client: &AuthorityClient<FixtureEvidence>, expected: Expected, v: 
     client.close_initialization(&ready).unwrap();
     let mut reopen = request.expected.clone();
     reopen.operation_id = "rust-after-init".into();
-    let grant = client.reopen(&reopen).unwrap();
+    assert!(client.authorize_initialization_key(&request).is_err());
+    let (grant, permit) = client.authorize_reopen_key(&reopen).unwrap();
+    assert!(permit
+        .check(
+            client.session_sha256(),
+            client.policy_sha256(),
+            &["kbs:///storage-test/keys/scratch-v1".into()]
+        )
+        .is_ok());
     client.close(&grant).unwrap();
     println!("PASS signed initialization, one-shot steps, Ready, close and reopen");
 }

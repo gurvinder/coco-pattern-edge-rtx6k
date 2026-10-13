@@ -598,3 +598,41 @@ Compiler scratch: `/build/storage-ro`, `/build/ro-kernel-v3`,
 publisher outputs; generated initrds must not be published. Its temporary sleep
 expires around 20:37 UTC on 13 October; preserve required private artifacts
 before deleting it. Do not restart or replace it blindly.
+
+
+## Guest authority client checkpoint
+
+The new `components/confidential-storage-client` library implements the guest
+side of the real TLS challenge/attest/prove/receipt protocol. It generates a
+private P-256 session key, canonically binds the request to report_data, verifies
+Ed25519 receipts, and retains the same operation/session for retries. It pins
+TLS trust roots and hostname, refuses redirects/proxies, and bounds replies.
+The fixed private-AA CLI collector is compiled but not hardware-tested.
+See its README for reproduction and the remaining integration boundaries.
+
+**Compiler replacement:** the original `storage-compiler` was authoritatively
+Evicted at 19:01 UTC on 13 October because its `/build` EmptyDir exceeded 16 GiB.
+It was not restarted. Its temporary AS process and scratch outputs are gone;
+rebuild those from pinned source as needed. The model key is retained in the
+local ignored private directory, the encrypted model artifact is in the internal
+registry/PVC, the private AA binary and probe initrd are retained locally, and
+all prior test evidence is committed. Do not rely on old `/build` paths.
+
+The replacement `storage-client-compiler` is Running with 32 GiB build scratch,
+no host access, no token, no PVC and no GPU. It uses the same pinned Rust image.
+Current build is `/build/components/confidential-storage-client`, Rust 1.94.1,
+with `/build/rustup` and `/build/cargo`. Python test dependencies are isolated
+under `/build/storage-python-packages`; no system packages were installed.
+The replacement expires roughly four hours after 19:03 UTC. No node handler or
+shared CRI-O configuration was changed; that explicit approval remains pending.
+
+
+Final client validation: 11 Rust-to-Python TLS/signature/state cases and one
+Rust canonicalization test passed; strict Clippy, rustfmt and Python lint passed.
+Evidence is in `tests/confidential-storage/evidence/2026-10-13/guest-client/`.
+The source and dependency lock match the compiler hashes. No storage decryption
+key was retrieved by this client, and no private-AA hardware quote was collected.
+Next: expose the approved initialization journal through authenticated requests,
+verify bound decisions in the guest, then connect private CDH retrieval and actual
+agent activation. The key and initialization APIs are still absent from the
+current HTTPS gateway. Preserve that distinction when reporting completion.

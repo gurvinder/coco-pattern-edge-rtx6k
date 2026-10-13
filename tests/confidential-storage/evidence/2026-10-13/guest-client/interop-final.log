@@ -1,0 +1,16 @@
+test_changed_challenge_does_not_collect_or_execute (test_transport.RustClientTests.test_changed_challenge_does_not_collect_or_execute) ... ok
+test_changed_initdata_session_binding_rejects_receipt (test_transport.RustClientTests.test_changed_initdata_session_binding_rejects_receipt) ... ok
+test_new_guest_key_cannot_take_over_after_rejected_response (test_transport.RustClientTests.test_new_guest_key_cannot_take_over_after_rejected_response) ... ok
+test_oversized_response_is_rejected_before_body_read (test_transport.RustClientTests.test_oversized_response_is_rejected_before_body_read) ... ok
+test_real_tls_ecdsa_proof_receipt_retry_close (test_transport.RustClientTests.test_real_tls_ecdsa_proof_receipt_retry_close) ... ok
+test_response_redirect_is_not_followed (test_transport.RustClientTests.test_response_redirect_is_not_followed) ... ok
+test_unapproved_hardware_claim_is_rejected (test_transport.RustClientTests.test_unapproved_hardware_claim_is_rejected) ... ok
+test_unknown_ca_is_rejected (test_transport.RustClientTests.test_unknown_ca_is_rejected) ... ok
+test_unknown_challenge_fields_are_rejected (test_transport.RustClientTests.test_unknown_challenge_fields_are_rejected) ... ok
+test_wrong_hostname_is_rejected (test_transport.RustClientTests.test_wrong_hostname_is_rejected) ... ok
+test_wrong_receipt_signer_is_rejected_after_durable_acquisition (test_transport.RustClientTests.test_wrong_receipt_signer_is_rejected_after_durable_acquisition) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 5.857s
+
+OK

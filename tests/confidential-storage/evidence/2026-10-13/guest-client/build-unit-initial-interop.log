@@ -1,0 +1,31 @@
+    Checking confidential-storage-client v0.1.0 (/build/components/confidential-storage-client)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.26s
+   Compiling confidential-storage-client v0.1.0 (/build/components/confidential-storage-client)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.73s
+
+running 1 test
+     Running unittests src/lib.rs (target/debug/deps/confidential_storage_client-c59d443dd64aa3e5)
+test tests::runtime_canonicalization_is_recursive_and_whitespace_free ... ok
+   Doc-tests confidential_storage_client
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.04s
+test_changed_challenge_does_not_collect_or_execute (test_transport.RustClientTests.test_changed_challenge_does_not_collect_or_execute) ... ok
+test_changed_initdata_session_binding_rejects_receipt (test_transport.RustClientTests.test_changed_initdata_session_binding_rejects_receipt) ... ok
+test_real_tls_ecdsa_proof_receipt_retry_close (test_transport.RustClientTests.test_real_tls_ecdsa_proof_receipt_retry_close) ... ok
+test_response_redirect_is_not_followed (test_transport.RustClientTests.test_response_redirect_is_not_followed) ... ok
+test_unapproved_hardware_claim_is_rejected (test_transport.RustClientTests.test_unapproved_hardware_claim_is_rejected) ... ok
+test_unknown_ca_is_rejected (test_transport.RustClientTests.test_unknown_ca_is_rejected) ... ok
+test_wrong_hostname_is_rejected (test_transport.RustClientTests.test_wrong_hostname_is_rejected) ... ok
+test_wrong_receipt_signer_is_rejected_after_durable_acquisition (test_transport.RustClientTests.test_wrong_receipt_signer_is_rejected_after_durable_acquisition) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 4.257s
+
+OK

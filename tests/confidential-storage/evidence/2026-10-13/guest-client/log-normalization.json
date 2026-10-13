@@ -1,0 +1,17 @@
+{
+  "changes": "line endings and trailing whitespace only",
+  "logs": {
+    "build-unit-initial-interop.log": {
+      "originalSha256": "28dbeb53471ef62aa589eff8b3ea609a256fc3e8050aca18bdadb4d8339ec372",
+      "committedSha256": "28dbeb53471ef62aa589eff8b3ea609a256fc3e8050aca18bdadb4d8339ec372"
+    },
+    "interop-final.log": {
+      "originalSha256": "60a1218d0975d58e9d6c2dc576422a539e17b10c52a108798118d14560eaa54a",
+      "committedSha256": "60a1218d0975d58e9d6c2dc576422a539e17b10c52a108798118d14560eaa54a"
+    },
+    "source-artifact-hashes.log": {
+      "originalSha256": "0e11aac34541527f874959704573503c75240b9a7e16587204bddd6bbc642274",
+      "committedSha256": "0e11aac34541527f874959704573503c75240b9a7e16587204bddd6bbc642274"
+    }
+  }
+}

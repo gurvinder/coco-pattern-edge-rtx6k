@@ -1,0 +1,20 @@
+{
+  "status": "guest-client-transport-validation-not-confidential-e2e",
+  "rustUnitTests": 1,
+  "crossLanguageTlsTests": 11,
+  "rustfmt": "passed",
+  "clippyWarningsDenied": "passed",
+  "pythonFormattingLint": "passed",
+  "hardwareEvidence": "synthetic",
+  "privateAaCollector": "compiled, not hardware validated",
+  "modelOrVolumeKeyReleased": false,
+  "runtimeHandlerInstalled": false,
+  "oldCompiler": {
+    "name": "storage-compiler",
+    "state": "Evicted",
+    "reason": "EmptyDir build exceeded 16Gi",
+    "finishedAt": "2026-10-13T19:01:06Z"
+  },
+  "replacementCompiler": "storage-client-compiler",
+  "productionUnchanged": true
+}

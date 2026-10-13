@@ -2,6 +2,7 @@
 //! Guest-service primitives, including Linux reopen/close and staging mounts. No
 //! host-facing RPC, attestation verifier or production namespace adapter is supplied.
 //! Applications must never receive access to this service.
+pub mod agent_lifecycle;
 #[cfg(target_os = "linux")]
 mod consumer;
 #[cfg(target_os = "linux")]

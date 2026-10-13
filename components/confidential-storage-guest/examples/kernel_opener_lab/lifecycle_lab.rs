@@ -402,6 +402,146 @@ pub fn run(header: &[u8]) {
         holder.wait().unwrap();
         println!("COCO_TEST_PASS:backend-release-after-teardown-retry-tombstone");
         println!("COCO_TEST_PASS:consumer-detached-before-staging-release");
+        agent_lab(header, &device).await;
     });
     assert_eq!(fs::read_dir("/run/coco/storage").unwrap().count(), 0);
+}
+
+/// Lab runtime owns the namespace holder and runs a synchronous unprivileged
+/// application. This tests the real storage adapter, not Kata's FIFO/cgroup code.
+struct LabRuntime {
+    holder: std::sync::Mutex<Option<std::process::Child>>,
+    releases: Arc<AtomicUsize>,
+    starts: Arc<AtomicUsize>,
+}
+#[async_trait::async_trait]
+impl confidential_storage_guest::agent_lifecycle::Runtime for LabRuntime {
+    type Consumer = confidential_storage_guest::linux_backend::ConsumerHandles;
+    async fn prepare(
+        &self,
+        id: &confidential_storage_guest::agent_lifecycle::Identity,
+    ) -> Result<Self::Consumer, BackendError> {
+        assert_eq!(fs::read_dir("/run/coco/storage").unwrap().count(), 0);
+        let child = namespace_holder("/run/agent-holder-ready");
+        let pid = child.id();
+        *self.holder.lock().unwrap() = Some(child);
+        Ok(Self::Consumer {
+            namespace: File::open(format!("/proc/{pid}/ns/mnt")).unwrap(),
+            root: File::open(format!("/proc/{pid}/root")).unwrap(),
+            container_name: id.container_name.clone(),
+        })
+    }
+    async fn start(
+        &self,
+        id: &confidential_storage_guest::agent_lifecycle::Identity,
+    ) -> BackendResult {
+        let pid = self.holder.lock().unwrap().as_ref().unwrap().id();
+        let names = Command::new("/usr/sbin/dmsetup")
+            .args(["info", "-c", "--noheadings", "-o", "name"])
+            .output()
+            .unwrap();
+        let names = String::from_utf8(names.stdout).unwrap();
+        let name = names
+            .lines()
+            .map(str::trim)
+            .find(|s| s.starts_with("coco-") && !s.ends_with("_dif"))
+            .unwrap();
+        assert!(Command::new("/bin/nsenter")
+            .arg(format!("--mount=/proc/{pid}/ns/mnt"))
+            .args([
+                "/usr/bin/setpriv",
+                "--reuid=1000",
+                "--regid=1000",
+                "--clear-groups",
+                "--bounding-set=-all",
+                "--inh-caps=-all",
+                "--ambient-caps=-all",
+                "--no-new-privs",
+                "/app-test",
+                "initialize"
+            ])
+            .env("COCO_TEST_MAPPER", format!("/dev/mapper/{name}"))
+            .env(
+                "COCO_TEST_PRIVATE_ROOT",
+                format!("/run/coco/storage/{}", id.activation_id)
+            )
+            .status()
+            .unwrap()
+            .success());
+        self.starts.fetch_add(1, Ordering::SeqCst);
+        Ok(())
+    }
+    async fn quiesce(
+        &self,
+        _: &confidential_storage_guest::agent_lifecycle::Identity,
+    ) -> BackendResult {
+        // start waits for the sole lab application; only the inert sleep holder
+        // remains. Keep it alive until the backend has detached its bind.
+        assert!(self
+            .holder
+            .lock()
+            .unwrap()
+            .as_mut()
+            .unwrap()
+            .try_wait()
+            .unwrap()
+            .is_none());
+        Ok(())
+    }
+    async fn destroy(
+        &self,
+        _: &confidential_storage_guest::agent_lifecycle::Identity,
+    ) -> BackendResult {
+        assert_eq!(self.releases.load(Ordering::SeqCst), 1);
+        assert_eq!(fs::read_dir("/run/coco/storage").unwrap().count(), 0);
+        if let Some(mut child) = self.holder.lock().unwrap().take() {
+            assert!(
+                !std::path::Path::new(&format!("/proc/{}/root/data/probe", child.id())).exists()
+            );
+            child.kill().unwrap();
+            child.wait().unwrap();
+        }
+        Ok(())
+    }
+}
+async fn agent_lab(header: &[u8], device: &str) {
+    use confidential_storage_guest::agent_lifecycle::{Agent, Phase};
+    let (g, manifest) = grant_named(header, "agent-lab");
+    let providers = LabProviders::new(manifest);
+    let starts = Arc::new(AtomicUsize::new(0));
+    let runtime = LabRuntime {
+        holder: std::sync::Mutex::new(None),
+        releases: providers.releases.clone(),
+        starts: starts.clone(),
+    };
+    let agent = Agent::new(
+        LinuxBackend::new(providers.clone()).unwrap(),
+        runtime,
+        g.claims().session_sha256.clone(),
+        8,
+    );
+    assert!(agent.start("app-runtime-id").await.is_err());
+    agent
+        .prepare("app-runtime-id".into(), g.clone(), device.into())
+        .await
+        .unwrap();
+    assert_eq!(starts.load(Ordering::SeqCst), 0);
+    assert_eq!(agent.phase("app-runtime-id").await.unwrap(), Phase::Ready);
+    agent
+        .prepare("app-runtime-id".into(), g.clone(), device.into())
+        .await
+        .unwrap();
+    agent.start("app-runtime-id").await.unwrap();
+    agent.start("app-runtime-id").await.unwrap();
+    assert_eq!(starts.load(Ordering::SeqCst), 1);
+    agent.close("app-runtime-id").await.unwrap();
+    agent.close("app-runtime-id").await.unwrap();
+    assert_eq!(agent.phase("app-runtime-id").await.unwrap(), Phase::Closed);
+    assert!(agent.start("app-runtime-id").await.is_err());
+    assert!(agent
+        .prepare("app-runtime-id".into(), g, device.into())
+        .await
+        .is_err());
+    assert_eq!(providers.releases.load(Ordering::SeqCst), 1);
+    println!("COCO_TEST_PASS:agent-start-barrier-real-storage-cleanup");
 }

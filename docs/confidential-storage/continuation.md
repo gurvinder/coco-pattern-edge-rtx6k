@@ -240,6 +240,24 @@ operation binding. Production paused-container descriptor acquisition, quiescenc
 attested device/key/authority providers and crash recovery remain unfinished.
 The builder was removed and production state is unchanged; activation stays gated.
 
+## Agent start/teardown checkpoint
+
+The [trusted-agent coordinator](agent-lifecycle.md) now reserves ownership without
+disk effects, prepares the runtime namespace before activation, attaches the
+verified filesystem and gates application startup. It serializes startup/removal,
+survives cancelled waiters and retains failed cleanup phases. Runtime destruction
+follows successful storage teardown and authority release. Only one non-closed
+confidential consumer per guest is admitted in this MVP.
+
+The library connects to `LinuxBackend` and is exercised with a lab runtime in the
+real Linux test. Production Kata RPC wiring is still absent. Source inspection
+identified storage-before-create and root-destruction-before-storage-cleanup as
+ordering changes required in the adapter. Descriptor acquisition, cgroup quiescence,
+all-entry-point enforcement and attested providers still need implementation.
+Forty-five Rust tests, strict Clippy, formatting and the four real Linux regression
+boots passed. The builder was removed and production state is unchanged. See
+`tests/confidential-storage/evidence/2026-10-13/agent-lifecycle/` for checks.
+
 ## Next engineering step
 
 Build the guest-managed mount integration in an isolated artifact before installing

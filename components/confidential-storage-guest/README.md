@@ -214,3 +214,9 @@ negative cases and remaining production prerequisites.
 The example also tests the Linux lifecycle backend with synthetic providers,
 including authentication before key retrieval, busy unmount, release ordering
 and acknowledgement retry. See the [mount backend guide](../../docs/confidential-storage/guest-mount-backend.md).
+
+The [trusted-agent coordinator](../../docs/confidential-storage/agent-lifecycle.md)
+now reserves ownership before paused namespace creation and serializes verified
+bind attachment, application startup and teardown. It connects to `LinuxBackend`
+but still requires real Kata callbacks and attested providers. The lab runtime is
+synthetic; this is not an installed agent integration.

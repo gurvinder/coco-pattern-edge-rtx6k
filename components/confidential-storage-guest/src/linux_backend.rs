@@ -311,3 +311,22 @@ impl<P: Providers> Backend for LinuxBackend<P> {
         .await
     }
 }
+
+/// Passed only by a trusted runtime while the container is held before startup.
+pub struct ConsumerHandles {
+    pub namespace: File,
+    pub root: File,
+    pub container_name: String,
+}
+#[async_trait]
+impl<P: Providers> crate::agent_lifecycle::ConsumerBackend<ConsumerHandles> for LinuxBackend<P> {
+    async fn attach(&self, grant: &VerifiedGrant, consumer: ConsumerHandles) -> BackendResult {
+        self.attach_consumer(
+            grant,
+            consumer.namespace,
+            consumer.root,
+            &consumer.container_name,
+        )
+        .await
+    }
+}

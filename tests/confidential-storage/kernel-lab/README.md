@@ -157,3 +157,9 @@ See [the executor guide](../../../docs/confidential-storage/initialization-execu
 for the exact boundaries, invocation and production limitations. `coco.journal=1`
 is exclusively a test-guest switch, never an attestation or production authorization
 mechanism. Both runners require new scratch files and never reuse user volumes.
+
+The example also drives the [trusted-agent coordinator](../../../docs/confidential-storage/agent-lifecycle.md)
+with the actual Linux backend. A lab runtime creates its namespace before storage,
+starts a synchronous unprivileged application only after attachment, and destroys
+the holder only after storage cleanup/release. It does not exercise Kata's FIFO or
+cgroup implementation, and no production runtime is installed.

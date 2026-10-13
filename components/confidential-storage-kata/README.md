@@ -172,3 +172,10 @@ header and integrity parameters; retain failed cleanup state; and release owners
 only after successful unmount and mapping close. Initialization requires the
 separate durable `Initializing` protocol. Build and verify a distinct guest artifact
 with cryptsetup and dm-integrity before proposing any node installation.
+
+The [agent lifecycle guide](../../docs/confidential-storage/agent-lifecycle.md)
+now identifies the concrete create/FIFO/destroy integration points in the pinned
+Kata source. A tested coordinator exists in the guest library, including the Linux
+backend adapter. No RPC is connected to it yet. The ordinary storage-before-create
+and destroy-before-storage-cleanup ordering must be changed for this path; the
+activation gate remains unchanged until those callbacks and attested providers exist.

@@ -109,18 +109,27 @@ impl<B: Backend> Controller<B> {
             .as_secs();
         self.activate_at(grant, device_id, now).await
     }
-    async fn activate_at(
-        self: &Arc<Self>,
-        grant: VerifiedGrant,
-        device_id: String,
+    /// Reserve ownership without opening/mounting anything. The trusted runtime
+    /// can create a paused namespace after admission and before plaintext exists.
+    /// After success the caller must eventually activate or close this record.
+    pub async fn reserve(self: &Arc<Self>, grant: VerifiedGrant, device_id: String) -> Result<()> {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|_| Error::Binding)?
+            .as_secs();
+        self.reserve_at(&grant, &device_id, now).await.map(|_| ())
+    }
+    async fn reserve_at(
+        &self,
+        grant: &VerifiedGrant,
+        device_id: &str,
         now: u64,
-    ) -> Result<Mounted> {
+    ) -> Result<Arc<Mutex<Record>>> {
         grant.check_time(now).map_err(|_| Error::Binding)?;
         let c = grant.claims();
-        if c.session_sha256 != self.session_sha256 || !device_id_valid(&device_id) {
+        if c.session_sha256 != self.session_sha256 || !device_id_valid(device_id) {
             return Err(Error::Binding);
         }
-        let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(c.exp - now);
         let id = c.activation_id.clone();
         let record = {
             let mut registry = self.registry.lock().await;
@@ -128,7 +137,7 @@ impl<B: Backend> Controller<B> {
                 record.clone()
             } else {
                 if registry.volumes.contains_key(&c.volume_id)
-                    || registry.devices.contains_key(&device_id)
+                    || registry.devices.contains_key(device_id)
                 {
                     return Err(Error::Conflict);
                 }
@@ -137,16 +146,41 @@ impl<B: Backend> Controller<B> {
                 }
                 let record = Arc::new(Mutex::new(Record {
                     grant: grant.clone(),
-                    device_id: device_id.clone(),
+                    device_id: device_id.to_owned(),
                     mount_path: format!("/run/coco/storage/{id}"),
                     phase: Phase::Reserved,
                 }));
                 registry.volumes.insert(c.volume_id.clone(), id.clone());
-                registry.devices.insert(device_id.clone(), id.clone());
+                registry.devices.insert(device_id.to_owned(), id.clone());
                 registry.records.insert(id.clone(), record.clone());
                 record
             }
         };
+
+        {
+            let r = record.lock().await;
+            if !r.grant.same_activation(grant) || r.device_id != device_id {
+                return Err(Error::Conflict);
+            }
+            match r.phase {
+                Phase::Reserved | Phase::Mounted => (),
+                Phase::Closed => return Err(Error::Closed),
+                _ => return Err(Error::NeedsCleanup),
+            }
+        }
+        Ok(record)
+    }
+    async fn activate_at(
+        self: &Arc<Self>,
+        grant: VerifiedGrant,
+        device_id: String,
+        now: u64,
+    ) -> Result<Mounted> {
+        grant.check_time(now).map_err(|_| Error::Binding)?;
+        let deadline =
+            tokio::time::Instant::now() + std::time::Duration::from_secs(grant.claims().exp - now);
+        let id = grant.claims().activation_id.clone();
+        let record = self.reserve_at(&grant, &device_id, now).await?;
         let this = self.clone();
         // A lost RPC waiter must not drop a future halfway through disk effects.
         // The service-owned task finishes; retry/close finds the retained record.

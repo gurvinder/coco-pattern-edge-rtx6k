@@ -388,3 +388,21 @@ async fn queued_worker_rechecks_deadline_before_disk_effects() {
     assert_eq!(c.phase("activation-1").await.unwrap(), Phase::Closed);
     assert_eq!(b.calls().await, vec!["release"]);
 }
+
+#[tokio::test]
+async fn reservation_has_no_disk_effects_and_closes_without_open() {
+    let (b, c, g) = setup();
+    c.reserve_at(&g, "8:1", NOW).await.unwrap();
+    assert_eq!(c.phase("activation-1").await.unwrap(), Phase::Reserved);
+    assert!(b.calls().await.is_empty());
+    assert!(matches!(
+        c.reserve_at(&g, "8:2", NOW).await,
+        Err(Error::Conflict)
+    ));
+    c.close("activation-1").await.unwrap();
+    assert_eq!(b.calls().await, ["release"]);
+    assert!(matches!(
+        c.reserve_at(&g, "8:1", NOW).await,
+        Err(Error::Closed)
+    ));
+}

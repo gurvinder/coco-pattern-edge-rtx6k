@@ -10,6 +10,13 @@ if dd if=/dev/vda of=/dev/null bs=1 count=1 2>/dev/null; then exit 1; fi
 mapper=${COCO_TEST_MAPPER:-/dev/mapper/coco-test}
 [ -b "$mapper" ]
 if dd if="$mapper" of=/dev/null bs=1 count=1 2>/dev/null; then exit 1; fi
+if [ -n "${COCO_TEST_PRIVATE_ROOT:-}" ]; then
+    if cat "$COCO_TEST_PRIVATE_ROOT/probe" >/dev/null 2>&1; then exit 1; fi
+    cp /bin/busybox /data/noexec-test
+    chmod 755 /data/noexec-test
+    if /data/noexec-test true 2>/dev/null; then exit 1; fi
+    rm /data/noexec-test
+fi
 if [ "$1" = initialize ]; then
     echo confidential-storage-synthetic-payload-v1 > /data/probe
     sync -f /data/probe

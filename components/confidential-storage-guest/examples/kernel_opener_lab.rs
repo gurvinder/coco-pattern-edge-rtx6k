@@ -27,6 +27,9 @@ fn sha(bytes: &[u8]) -> String {
         .collect()
 }
 fn grant(header: &[u8]) -> (VerifiedGrant, Vec<u8>) {
+    grant_named(header, "opener-lab")
+}
+fn grant_named(header: &[u8], activation: &str) -> (VerifiedGrant, Vec<u8>) {
     let fixture: Value =
         serde_json::from_str(include_str!("../tests/receipt-fixture.json")).unwrap();
     let mut claims: Claims = serde_json::from_slice(
@@ -50,6 +53,7 @@ fn grant(header: &[u8]) -> (VerifiedGrant, Vec<u8>) {
         .unwrap()
         .as_secs();
     claims.exp = claims.iat + 60;
+    claims.activation_id = activation.to_owned();
     let mut expected: Expected = serde_json::from_value(fixture["expected"].clone()).unwrap();
     expected.profile_sha256 = profile_sha256();
     let key = Ed25519KeyPair::from_pkcs8(
@@ -187,6 +191,10 @@ fn main() {
     assert_eq!(opener.phase(), Phase::Closed);
     assert!(opener.open(&key).is_err());
     println!("COCO_TEST_PASS:rust-close-removes-both-mappings");
+    lifecycle_lab::run(&header);
     key.fill(0);
     bad.fill(0);
 }
+
+#[path = "kernel_opener_lab/lifecycle_lab.rs"]
+mod lifecycle_lab;

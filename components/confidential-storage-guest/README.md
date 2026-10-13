@@ -2,10 +2,12 @@
 
 This library implements receipt verification and the lifecycle controller intended
 for the privileged **guest system service**. It has no daemon, public RPC, real CDH
-adapter or complete mount backend. It now includes
+adapter or production Kata namespace integration. It now includes
 [authenticated RW header preparation](profiles/README.md) using Linux memfd seals
 and a [Linux reopen/close primitive](../../docs/confidential-storage/guest-opener.md)
-that passes those sealed bytes to cryptsetup. The Kata experiment's
+that passes those sealed bytes to cryptsetup, plus a
+[Linux lifecycle backend](../../docs/confidential-storage/guest-mount-backend.md)
+for private guest staging mounts with injected trusted providers. The Kata experiment's
 activation gate remains closed. **This is not working encrypted persistent storage.**
 
 The paired [Python authority](../confidential-storage-authority/README.md) now issues
@@ -153,8 +155,10 @@ Kata gate, implement and test it inside the guest CDH/agent service:
 First-use initialization still needs its separate durable `Initializing` protocol.
 The current receipt issuer only grants reopening already initialized volumes.
 The standalone `Opener` now handles descriptor-based reopening, effective-stack
-checks and explicit mapping cleanup. It is not yet connected to the lifecycle
-controller, mount namespace handling, device resolver or CDH key provider. Its
+checks and explicit mapping cleanup. `LinuxBackend` now connects it to the
+lifecycle controller and private ext4 staging mounts. Production application
+namespace handling, the device resolver and attested CDH key provider remain
+unfinished. Its
 per-handle state is not a substitute for the controller's global activation/device
 reservation and tombstones. Never expose it directly through an application API.
 
@@ -204,3 +208,6 @@ new opener inside the disposable non-TEE guest. It generates synthetic signature
 in memory and uses the lab's random test key. See the
 [opener guide](../../docs/confidential-storage/guest-opener.md) for reproduction,
 negative cases and remaining production prerequisites.
+The example also tests the Linux lifecycle backend with synthetic providers,
+including authentication before key retrieval, busy unmount, release ordering
+and acknowledgement retry. See the [mount backend guide](../../docs/confidential-storage/guest-mount-backend.md).

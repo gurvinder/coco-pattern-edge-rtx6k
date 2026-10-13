@@ -3,8 +3,10 @@
 [`opener.rs`](../../components/confidential-storage-guest/src/opener.rs) adds a real
 Linux reopen/close primitive for the privileged **guest system service**. The
 application should receive only a filesystem bind mount. There is no formatting
-method, public socket, Trustee client or authority-release method. This is not yet
-the complete `lifecycle::Backend`; the Kata activation gate remains closed.
+method, public socket, Trustee client or authority-release method. The separate
+[Linux lifecycle backend](guest-mount-backend.md) now connects it to private guest
+mounts and injected providers; production integration and the Kata activation
+gate remain unfinished/closed.
 
 ## Authorization and descriptors
 
@@ -136,8 +138,8 @@ random key. Never ship this example in a production guest. Evidence lives under
 
 ## Next integration work
 
-Connect the primitive to the lifecycle backend with retained device/mapping/mount
-ownership, private guest mounts and application namespace binds. Add the real
+The Linux lifecycle backend now retains device/mapping/mount ownership and manages
+private guest staging mounts. Add production application namespace binds, the real
 device resolver, attested authority/CDH transport and key provider. Test partial
 opens/cleanup, service crashes and recovery against the approved guest kernel.
 The production initialization backend also remains separate from the Python

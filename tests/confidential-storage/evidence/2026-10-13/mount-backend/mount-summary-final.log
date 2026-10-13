@@ -1,0 +1,6 @@
+Built disposable non-TEE kernel lab with Linux 6.1.0-53-amd64
+PASS initialize; log SHA256 788ddae8a4a1eb906b27c69dc8ae8565d1ffa9358eaf0cf77205d22855e1a43a
+PASS reopen; log SHA256 48c62c2f7471e3dc4ec0b25f41a23b550e8278373172d8b12ea57b361956bf6d
+PASS wrong-key; log SHA256 ccb669d5874896372e35f16d74b6af1f88413713cf8ba6cda5731a4853700b29
+PASS corruption; log SHA256 57616cf4a87d1d154e3caa402df221d50a605faa58bf8f6219150e7dfd733038
+PASS non-TEE kernel lab; no attestation, Trustee, Kata integration or crash recovery tested

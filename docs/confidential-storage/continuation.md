@@ -201,6 +201,23 @@ authority/CDH delivery, service hardening and crash recovery remain unfinished.
 The compiler was removed after testing and the production inventory is unchanged.
 No live runtime, Trustee policy or encrypted-storage E2E gate was enabled.
 
+## Linux staging backend checkpoint
+
+The latest [Linux backend checkpoint](guest-mount-backend.md) connects the lifecycle
+controller and opener to actual private ext4 staging mounts. Trusted provider
+interfaces cover device/manifest resolution, key delivery, application detach and
+authority release. Only synthetic lab providers exist. The production namespace
+adapter and attested authority/CDH implementations remain required.
+
+Thirty-three Rust tests and Clippy pass. Real Linux tests cover private-root
+permissions/propagation/target collision, authentication before key fetch,
+wrong-key cleanup and tombstones, an unprivileged namespace consumer, detach
+failure, busy unmount, release-after-teardown and lost acknowledgement retry.
+The existing four-boot persistence/wrong-key/corruption regression also passes.
+Evidence is under `tests/confidential-storage/evidence/2026-10-13/mount-backend/`.
+The compiler was removed and production state is unchanged. These remain non-TEE
+tests and do not enable any storage E2E gate.
+
 ## Next engineering step
 
 Build the guest-managed mount integration in an isolated artifact before installing
@@ -217,7 +234,8 @@ Do not remove that hard gate to reuse the prototype raw-device handler.
    baseline once its exact source is located. Add a guest-agent filesystem mount
    path before container creation;
    remove raw-device exposure to the application. Integrate the tested lifecycle
-   controller and tested opener with actual mount ownership and teardown. The current controller is
+   controller and Linux staging backend with application bind ownership and teardown.
+   The current controller is
    exclusive; sharing/refcounts need a separate implementation.
 3. Extend the CDH profile implementation with independently authorized first-use
    initialization, exact authenticated-header handling and enforced journaled

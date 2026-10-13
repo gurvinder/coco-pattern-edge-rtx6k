@@ -1,0 +1,34 @@
+{
+  "corruption.log": {
+    "original_sha256": "57616cf4a87d1d154e3caa402df221d50a605faa58bf8f6219150e7dfd733038",
+    "stored_sha256": "28c2458c3b46f3db33dba983d1e275c7cf865326dad3833561d8e2fa935e3b40"
+  },
+  "initialize.log": {
+    "original_sha256": "788ddae8a4a1eb906b27c69dc8ae8565d1ffa9358eaf0cf77205d22855e1a43a",
+    "stored_sha256": "1e445c740bf2d5c4f5b181e7493963fa171d0cb6810adcee259799347d49fe1f"
+  },
+  "mount-build-final.log": {
+    "original_sha256": "aaa05bb96a06ce11594e1a51935b67166616622e2452dd7027ba16ac8da2bbbb",
+    "stored_sha256": "aaa05bb96a06ce11594e1a51935b67166616622e2452dd7027ba16ac8da2bbbb"
+  },
+  "mount-clippy-final.log": {
+    "original_sha256": "3c9df773b91fae13fa8cfdcb1fe3463616bfad4d08d337437587c34a20bea43c",
+    "stored_sha256": "3c9df773b91fae13fa8cfdcb1fe3463616bfad4d08d337437587c34a20bea43c"
+  },
+  "mount-summary-final.log": {
+    "original_sha256": "d0a3282ed40b188173f03fc35cf455bf0a442730d2735c19084d4fb961ed772f",
+    "stored_sha256": "d0a3282ed40b188173f03fc35cf455bf0a442730d2735c19084d4fb961ed772f"
+  },
+  "mount-tests-final.log": {
+    "original_sha256": "dadf712e2baf430c9019a375df27f174cd4ff4bae963b9b53ab5bebfce329661",
+    "stored_sha256": "42e33b03f24346a9cde2ca06fd0fac713e8681a434b5d9c7777907840d1ca1d3"
+  },
+  "reopen.log": {
+    "original_sha256": "48c62c2f7471e3dc4ec0b25f41a23b550e8278373172d8b12ea57b361956bf6d",
+    "stored_sha256": "79d08c6366211000d4cc985f007d1a1ffea39b8a85a196329ff3e01ccd78815a"
+  },
+  "wrong-key.log": {
+    "original_sha256": "ccb669d5874896372e35f16d74b6af1f88413713cf8ba6cda5731a4853700b29",
+    "stored_sha256": "c851d668fb5a85c47de9814eb49aea2caa5a98bb271f297d1032bdf5c7a886f4"
+  }
+}

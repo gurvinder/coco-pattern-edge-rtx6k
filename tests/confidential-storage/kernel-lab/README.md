@@ -95,6 +95,9 @@ exact commands. That path exercises the actual sealed descriptor, wrong-key and
 collision refusal, busy-close state, and removal of both mapper targets. The
 remaining three boots retain the original regression harness. This option is
 separate from journal-controlled execution and cannot be combined with it.
+The same example now also exercises the
+[guest mount lifecycle backend](../../../docs/confidential-storage/guest-mount-backend.md)
+with synthetic providers, a namespace consumer, busy unmount and release retry.
 
 ## Recorded result and limits
 

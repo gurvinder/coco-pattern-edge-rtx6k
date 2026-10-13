@@ -1,0 +1,12 @@
+test=raw-block-delivery-only
+encrypted_storage_proven=false
+6.12.0-211.16.1.el10_2.x86_64
+uid=1001100000(1001100000) gid=0(root) groups=0(root),1001100000
+CapEff:	0000000000000000
+NoNewPrivs:	1
+Seccomp:	0
+module_dm_crypt=visible
+module_dm_integrity=not-visible
+module_dm_verity=visible
+device_type=block special file mode=0 uid=0 gid=6
+dd: failed to open '/dev/storage-probe': Permission denied

@@ -1,0 +1,6 @@
+# Explicitly selected for this lab; not included by any live Argo application.
+runtimeClassName: kata-cc
+storageClassName: lvms-vg1
+initdataConfigMap: storage-audit-no-secrets
+probe:
+  enabled: true

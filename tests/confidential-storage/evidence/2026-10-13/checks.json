@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-13",
+  "authority_unit_tests": {
+    "passed": 16,
+    "evidence_level": "local-unit"
+  },
+  "chart_generator_tests": {
+    "passed": 5,
+    "evidence_level": "local-unit"
+  },
+  "helm_lint": "pass",
+  "server_admission": "pass",
+  "hardware_encrypted_storage_e2e": "not-implemented",
+  "live_raw_device_read": "failed-permission-denied",
+  "preview-all": "failed-no-make-target",
+  "validate-schema": "failed-existing-baremetal-values-missing-global.hardware.profile",
+  "production_comparison": {
+    "production_pods": true,
+    "production_resources": true,
+    "runtimes": true,
+    "gitops_sources": true
+  },
+  "python_black": "pass",
+  "python_flake8": "pass",
+  "markdownlint": "pass"
+}

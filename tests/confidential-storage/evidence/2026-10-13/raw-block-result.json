@@ -1,0 +1,31 @@
+{
+  "collected_at": "2026-10-13T08:28:35.912752+00:00",
+  "level": "live-hardware-attachment-diagnostic",
+  "encrypted_storage_e2e": false,
+  "pod_uid": "0cef8068-821a-4bbf-b519-326a6e6de273",
+  "pod_phase": "Failed",
+  "container_state": {
+    "terminated": {
+      "containerID": "cri-o://dd2da5b11e3f1a6c4d7f60bf9f97374eab416b0d97cbc1073d896552edd16099",
+      "exitCode": 1,
+      "finishedAt": "2026-10-13T08:21:49Z",
+      "reason": "Error",
+      "startedAt": "2026-10-13T08:21:49Z"
+    }
+  },
+  "pvc_uid": "fb6965a0-31f6-4bb3-b330-b91505044220",
+  "pvc_phase": "Bound",
+  "volume_mode": "Block",
+  "access_modes": [
+    "ReadWriteOncePod"
+  ],
+  "findings": {
+    "block_node_delivered": true,
+    "unprivileged_read": "denied",
+    "CAP_SYS_ADMIN": false,
+    "seccomp_requested": "RuntimeDefault",
+    "seccomp_observed": 0
+  },
+  "key_release_tested": false,
+  "formatting_performed": false
+}

@@ -1,0 +1,85 @@
+{{- if not (hasPrefix "confidential-storage-test" .Release.Namespace) }}
+{{- fail "Install this diagnostic only in a dedicated confidential-storage-test namespace" }}
+{{- end }}
+{{- if not (regexMatch "^[^[:space:]]+@sha256:[a-f0-9]{64}$" .Values.image) }}
+{{- fail "The diagnostic image must be pinned by sha256 digest" }}
+{{- end }}
+{{- if ne .Values.accessMode "ReadWriteOncePod" }}
+{{- fail "This private-volume experiment requires ReadWriteOncePod; do not silently fall back to RWO" }}
+{{- end }}
+{{- $prefix := .Release.Name }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $prefix }}-data
+  labels:
+    app.kubernetes.io/part-of: confidential-storage-test
+    app.kubernetes.io/instance: {{ $prefix }}
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  storageClassName: {{ required "Set storageClassName to an audited block CSI class" .Values.storageClassName | quote }}
+  volumeMode: Block
+  accessModes:
+    - {{ .Values.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.size | quote }}
+{{- if .Values.probe.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $prefix }}-probe
+  labels:
+    app.kubernetes.io/part-of: confidential-storage-test
+    app.kubernetes.io/instance: {{ $prefix }}
+data:
+  probe.sh: |
+{{ .Files.Get "files/probe.sh" | indent 4 }}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ $prefix }}-{{ .Values.probe.name }}
+  annotations:
+    coco.io/initdata-configmap: {{ required "Set initdataConfigMap to reviewed test InitData" .Values.initdataConfigMap | quote }}
+  labels:
+    app.kubernetes.io/part-of: confidential-storage-test
+    app.kubernetes.io/instance: {{ $prefix }}
+spec:
+  runtimeClassName: {{ required "Set an audited CPU-only confidential runtime" .Values.runtimeClassName | quote }}
+  automountServiceAccountToken: false
+  restartPolicy: Never
+  activeDeadlineSeconds: 180
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: probe
+      image: {{ .Values.image | quote }}
+      command: [/bin/sh, /probe/probe.sh]
+      securityContext:
+        privileged: false
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      resources:
+{{ toYaml .Values.resources | indent 8 }}
+      volumeDevices:
+        - name: data
+          devicePath: /dev/storage-probe
+      volumeMounts:
+        - name: probe
+          mountPath: /probe
+          readOnly: true
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: {{ $prefix }}-data
+    - name: probe
+      configMap:
+        name: {{ $prefix }}-probe
+{{- end }}

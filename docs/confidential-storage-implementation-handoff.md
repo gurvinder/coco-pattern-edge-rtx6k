@@ -4,6 +4,8 @@ Prepared: 13 October 2026. Design baseline: proposal commit `a0ffe04` on `codex/
 
 ## Objective and scope
 
+Implementation checkpoint (13 October): see the [live compatibility report](confidential-storage/compatibility-report.md), [diagnostic runbook](confidential-storage/installation.md), and [transactional authority core](../components/confidential-storage-authority/README.md). Guest-managed encrypted mounts and the later model pipeline remain unimplemented; this checkpoint must not be described as completed storage deployment.
+
 Implement and validate two storage profiles for confidential workloads on the edge-rtx6k OpenShift lab. Keep application containers unprivileged for storage operations. First prove private persistent read-write storage in an isolated test workload; then implement immutable encrypted model distribution and integrate both profiles in a separate Qwen/KServe test.
 
 This is a portable implementation plan, not a report that the features are deployed. Read the [design proposal](encrypted-model-volume-proposal.md) for the threat model and complete rationale. This handoff supplies execution order, deliverables, gates and recovery instructions. It does not authorize disruption of the existing KServe workload.

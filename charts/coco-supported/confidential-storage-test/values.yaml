@@ -1,0 +1,18 @@
+# This chart proves attachment only. It does not implement encrypted mounts.
+runtimeClassName: ""
+storageClassName: ""
+initdataConfigMap: ""
+accessMode: ReadWriteOncePod
+size: 1Gi
+image: registry.access.redhat.com/ubi9/ubi-minimal@sha256:b966f21589d418d1e02159cb8e03e261fc8c4ee9061258893f5e4e33986aac4c
+resources:
+  requests:
+    cpu: "1"
+    memory: 4Gi
+  limits:
+    cpu: "2"
+    memory: 8Gi
+probe:
+  enabled: false
+  # Separate names allow a second diagnostic pod to reuse the retained claim.
+  name: block-probe

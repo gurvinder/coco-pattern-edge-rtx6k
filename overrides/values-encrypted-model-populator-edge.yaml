@@ -1,0 +1,7 @@
+storageClassName: lvms-vg1
+registry:
+  origin: https://image-registry.openshift-image-registry.svc:5000
+openshift:
+  createImporterSCC: true
+  injectRegistryCA: true
+  buildEnabled: true

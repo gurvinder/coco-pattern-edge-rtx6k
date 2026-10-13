@@ -1,0 +1,40 @@
+{
+  "claim": "qwen-luks-bad-digest",
+  "claimUid": "28181f93-c6af-4c12-943f-dd8c014e1028",
+  "confidentialGuestTest": false,
+  "importerLog": "model population failed: ciphertext disk digest mismatch\n",
+  "importerSecurityContext": {
+    "allowPrivilegeEscalation": false,
+    "capabilities": {
+      "drop": [
+        "ALL"
+      ]
+    },
+    "privileged": false,
+    "readOnlyRootFilesystem": true
+  },
+  "importerServiceAccount": "encrypted-model-importer",
+  "importerUid": "bdc23c32-d33d-451b-b779-c4c8ee9cb99e",
+  "namespace": "confidential-storage-test",
+  "observations": [
+    {
+      "importer": "Running",
+      "prime": "Bound",
+      "target": "Pending"
+    },
+    {
+      "importer": "Failed",
+      "prime": "Bound",
+      "target": "Pending"
+    }
+  ],
+  "result": "wrong-digest-refused-no-handoff",
+  "source": {
+    "diskBytes": 2147483648,
+    "diskDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "format": "luks-verity-v1",
+    "manifestDigest": "sha256:49d4cc9827fc214fa339206c660656d8523dc8c2de1e95a9c1d9f7992934cd25",
+    "repository": "confidential-storage-test/qwen-luks-e2e"
+  },
+  "time": "2026-10-13T17:03:08.825063+00:00"
+}

@@ -1,0 +1,46 @@
+{
+  "claim": "qwen-luks-model-v1",
+  "claimUid": "997cefd0-0f9b-4325-b57e-b5220cc08d3e",
+  "confidentialGuestTest": false,
+  "importerSecurityContext": {
+    "allowPrivilegeEscalation": false,
+    "capabilities": {
+      "drop": [
+        "ALL"
+      ]
+    },
+    "privileged": false,
+    "readOnlyRootFilesystem": true
+  },
+  "importerServiceAccount": "encrypted-model-importer",
+  "importerUid": "4dcc5008-e7f0-470d-be70-cd407c004bf8",
+  "namespace": "confidential-storage-test",
+  "observations": [
+    {
+      "importer": "Running",
+      "prime": "Bound",
+      "target": "Pending"
+    },
+    {
+      "importer": null,
+      "prime": "Bound",
+      "target": "Pending"
+    },
+    {
+      "importer": null,
+      "prime": null,
+      "target": "Bound"
+    }
+  ],
+  "restartWithoutRepopulation": true,
+  "result": "ciphertext-populated-prime-and-importer-removed",
+  "source": {
+    "diskBytes": 2147483648,
+    "diskDigest": "sha256:c350a0f6ea363219ab750a3a3c7d309f7d35fc009b5171d417acde33c69fa8b7",
+    "format": "luks-verity-v1",
+    "manifestDigest": "sha256:49d4cc9827fc214fa339206c660656d8523dc8c2de1e95a9c1d9f7992934cd25",
+    "repository": "confidential-storage-test/qwen-luks-e2e"
+  },
+  "time": "2026-10-13T17:01:33.481910+00:00",
+  "volume": "pvc-53822a2f-af5c-4025-a246-1887d22005b4"
+}

@@ -1,0 +1,963 @@
+{
+  "collected_at": "2026-10-13T17:03:51.397150+00:00",
+  "evidence": "live-read-only",
+  "openshift_version": "4.22.15",
+  "nodes": [
+    {
+      "name": "9c-63-c0-dd-06-52",
+      "allocatable": {
+        "cpu": "255500m",
+        "ephemeral-storage": "862137112786",
+        "hugepages-1Gi": "0",
+        "hugepages-2Mi": "0",
+        "memory": "787545384Ki",
+        "nvidia.com/pgpu": "2",
+        "pods": "250",
+        "sev-snp.amd.com/esids": "99"
+      },
+      "node_info": {
+        "architecture": "amd64",
+        "bootID": "1e90a985-3428-412c-b39d-0a7bf933784c",
+        "containerRuntimeVersion": "cri-o://1.35.8-11.rhaos4.22.giteaf45bc.el9",
+        "kernelVersion": "5.14.0-687.48.1.el9_8.x86_64",
+        "kubeProxyVersion": "",
+        "kubeletVersion": "v1.35.6",
+        "machineID": "250377b6896c48578077cf19bf923071",
+        "operatingSystem": "linux",
+        "osImage": "Red Hat Enterprise Linux CoreOS 9.8.20260915-0 (Plow)",
+        "systemUUID": "4c4c4544-0035-3510-8033-b5c04f444234"
+      }
+    }
+  ],
+  "runtimes": [
+    {
+      "name": "kata",
+      "handler": "kata",
+      "overhead": {
+        "podFixed": {
+          "cpu": "250m",
+          "memory": "350Mi"
+        }
+      },
+      "scheduling": {
+        "nodeSelector": {
+          "node-role.kubernetes.io/master": ""
+        }
+      }
+    },
+    {
+      "name": "kata-cc",
+      "handler": "kata-snp",
+      "overhead": {
+        "podFixed": {
+          "cpu": "250m",
+          "memory": "350Mi",
+          "sev-snp.amd.com/esids": "1"
+        }
+      },
+      "scheduling": {
+        "nodeSelector": {
+          "node-role.kubernetes.io/master": ""
+        }
+      }
+    },
+    {
+      "name": "kata-cc-nvidia-gpu",
+      "handler": "kata-snp-nvidia-gpu",
+      "overhead": {
+        "podFixed": {
+          "cpu": "250m",
+          "memory": "350Mi",
+          "sev-snp.amd.com/esids": "1"
+        }
+      },
+      "scheduling": {
+        "nodeSelector": {
+          "node-role.kubernetes.io/master": ""
+        }
+      }
+    },
+    {
+      "name": "kata-nvidia-gpu",
+      "handler": "kata-nvidia-gpu",
+      "overhead": {
+        "podFixed": {
+          "cpu": "1",
+          "memory": "4Gi"
+        }
+      },
+      "scheduling": {
+        "nodeSelector": {
+          "node-role.kubernetes.io/master": ""
+        }
+      }
+    },
+    {
+      "name": "nvidia",
+      "handler": "nvidia",
+      "overhead": null,
+      "scheduling": null
+    },
+    {
+      "name": "nvidia-cdi",
+      "handler": "nvidia-cdi",
+      "overhead": null,
+      "scheduling": null
+    },
+    {
+      "name": "nvidia-legacy",
+      "handler": "nvidia-legacy",
+      "overhead": null,
+      "scheduling": null
+    }
+  ],
+  "storage_classes": [
+    {
+      "name": "lvms-vg1",
+      "provisioner": "topolvm.io",
+      "binding": "Immediate"
+    }
+  ],
+  "drivers": [
+    {
+      "name": "topolvm.io",
+      "spec": {
+        "attachRequired": false,
+        "fsGroupPolicy": "ReadWriteOnceWithFSType",
+        "podInfoOnMount": true,
+        "requiresRepublish": false,
+        "seLinuxMount": false,
+        "storageCapacity": true,
+        "volumeLifecycleModes": [
+          "Persistent"
+        ]
+      }
+    }
+  ],
+  "production_pods": [
+    {
+      "name": "encrypted-qwen-b74c678b6-74g44",
+      "uid": "3fabfd1e-5f62-4dc8-9102-dfb16ead821a",
+      "runtime": "kata-cc-nvidia-gpu",
+      "phase": "Failed",
+      "spec_sha256": "43c7da29b1c5e7174818c49d96e30dd3ee0b2b0b6badffff4c0b9b41672dc6eb",
+      "containers": [
+        {
+          "name": "vllm",
+          "image": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+          "resources": {
+            "limits": {
+              "cpu": "8",
+              "memory": "64Gi",
+              "nvidia.com/pgpu": "1"
+            },
+            "requests": {
+              "cpu": "8",
+              "memory": "64Gi",
+              "nvidia.com/pgpu": "1"
+            }
+          }
+        },
+        {
+          "name": "results",
+          "image": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2",
+          "resources": {}
+        }
+      ],
+      "status": [
+        {
+          "name": "results",
+          "ready": false,
+          "restarts": 0,
+          "image_id": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2"
+        },
+        {
+          "name": "vllm",
+          "ready": false,
+          "restarts": 0,
+          "image_id": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab"
+        }
+      ]
+    },
+    {
+      "name": "encrypted-qwen-predictor-68c686dc74-hss2g",
+      "uid": "4c6c10b0-3a5c-4c6d-a923-b03541f10074",
+      "runtime": "kata-cc-nvidia-gpu",
+      "phase": "Succeeded",
+      "spec_sha256": "bc509e4a862a42be129d04b37b755b6b721b02ff93c354fa132e97bae37ed92e",
+      "containers": [
+        {
+          "name": "kserve-container",
+          "image": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+          "resources": {
+            "limits": {
+              "cpu": "8",
+              "memory": "64Gi",
+              "nvidia.com/pgpu": "1"
+            },
+            "requests": {
+              "cpu": "8",
+              "memory": "64Gi",
+              "nvidia.com/pgpu": "1"
+            }
+          }
+        },
+        {
+          "name": "results",
+          "image": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2",
+          "resources": {}
+        }
+      ],
+      "status": [
+        {
+          "name": "kserve-container",
+          "ready": false,
+          "restarts": 0,
+          "image_id": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab"
+        },
+        {
+          "name": "results",
+          "ready": false,
+          "restarts": 0,
+          "image_id": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2"
+        }
+      ]
+    },
+    {
+      "name": "encrypted-qwen-predictor-c68947bb9-gw9ml",
+      "uid": "d5cc3080-ae0b-4490-b145-56a216732566",
+      "runtime": "kata-cc-nvidia-gpu",
+      "phase": "Running",
+      "spec_sha256": "9a50a08042da0e24883ecf4273809e22bbb890cda65dbfa042d4ed1d071e5a1a",
+      "containers": [
+        {
+          "name": "kserve-container",
+          "image": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+          "resources": {
+            "limits": {
+              "cpu": "8",
+              "memory": "64Gi",
+              "nvidia.com/pgpu": "1"
+            },
+            "requests": {
+              "cpu": "8",
+              "memory": "64Gi",
+              "nvidia.com/pgpu": "1"
+            }
+          }
+        },
+        {
+          "name": "results",
+          "image": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2",
+          "resources": {}
+        }
+      ],
+      "status": [
+        {
+          "name": "kserve-container",
+          "ready": true,
+          "restarts": 0,
+          "image_id": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab"
+        },
+        {
+          "name": "results",
+          "ready": true,
+          "restarts": 0,
+          "image_id": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2"
+        }
+      ]
+    },
+    {
+      "name": "gpu-encrypted-file-65494c4886-bz4pt",
+      "uid": "39a3c556-23c6-43fa-b6ca-09926834a8c4",
+      "runtime": "kata-cc-nvidia-gpu",
+      "phase": "Running",
+      "spec_sha256": "a8699fd7e863c6606371e70c04171f24b1b4230573950d92c0def41b2278ce41",
+      "containers": [
+        {
+          "name": "encrypted-gpu-test",
+          "image": "quay.io/openshift_sandboxed_containers/gpu-verifier@sha256:dcc55b6c51a85cda62322f7f07f5aa8d42632481254d8bf47e2e24705b245797",
+          "resources": {
+            "limits": {
+              "nvidia.com/pgpu": "1"
+            },
+            "requests": {
+              "nvidia.com/pgpu": "1"
+            }
+          }
+        },
+        {
+          "name": "results",
+          "image": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2",
+          "resources": {}
+        }
+      ],
+      "status": [
+        {
+          "name": "encrypted-gpu-test",
+          "ready": true,
+          "restarts": 0,
+          "image_id": "quay.io/openshift_sandboxed_containers/gpu-verifier@sha256:dcc55b6c51a85cda62322f7f07f5aa8d42632481254d8bf47e2e24705b245797"
+        },
+        {
+          "name": "results",
+          "ready": true,
+          "restarts": 0,
+          "image_id": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2"
+        }
+      ]
+    },
+    {
+      "name": "qwen-chat-6fd79bd4b-vvrqc",
+      "uid": "839d51fc-94fe-491b-9e77-cec5a4c1ae48",
+      "runtime": null,
+      "phase": "Running",
+      "spec_sha256": "73aa598b6720d923eab565b30d4ebea78de521db50e929ba6e8b2902e87f8937",
+      "containers": [
+        {
+          "name": "chat",
+          "image": "registry.access.redhat.com/ubi9/python-312@sha256:56fad467cb1e41666f0028b7fd71107df0556bcc9ecfc577597858c85618f55c",
+          "resources": {
+            "limits": {
+              "cpu": "1",
+              "memory": "256Mi"
+            },
+            "requests": {
+              "cpu": "50m",
+              "memory": "64Mi"
+            }
+          }
+        }
+      ],
+      "status": [
+        {
+          "name": "chat",
+          "ready": true,
+          "restarts": 0,
+          "image_id": "registry.access.redhat.com/ubi9/python-312@sha256:56fad467cb1e41666f0028b7fd71107df0556bcc9ecfc577597858c85618f55c"
+        }
+      ]
+    }
+  ],
+  "production_resources": [
+    {
+      "kind": "InferenceService",
+      "name": "encrypted-qwen",
+      "uid": "32e51be6-8c90-4c25-b5b5-a8c0509fce2d",
+      "spec_sha256": "79cf1c1ea1ddde44140169de9fce4a5239590244de41c198cf3ec2e3bc0ce62c"
+    },
+    {
+      "kind": "Deployment",
+      "name": "encrypted-qwen",
+      "uid": "23804a84-a0ea-4688-ac1c-397f653fa8c5",
+      "spec_sha256": "549b7a68e1a67e43246781d235dfd641eea5a51a9b1e7c3b99bc878d778823f2"
+    },
+    {
+      "kind": "Deployment",
+      "name": "encrypted-qwen-predictor",
+      "uid": "c50ef8d7-453f-4a4a-9ea4-59815c2248e5",
+      "spec_sha256": "b77606b48394b19e385ad44da573fcb6fc57934a067ef089b1b75f051f395ec4"
+    },
+    {
+      "kind": "Deployment",
+      "name": "gpu-encrypted-file",
+      "uid": "a9a41595-5ec5-4baf-9a32-b1ded0f58c0e",
+      "spec_sha256": "7317d4bd4c2b65674186f4f66b55caabf58490304fb1eece48b5a27e4c2a9dcf"
+    },
+    {
+      "kind": "Deployment",
+      "name": "gpu-vectoradd",
+      "uid": "b65bfb96-5ad7-4b8c-aea9-e041ce87f62a",
+      "spec_sha256": "4e7a4d81267157eca45b627cad9246338838819a39040eeaeff16af9d1a11ad3"
+    },
+    {
+      "kind": "Deployment",
+      "name": "qwen-chat",
+      "uid": "2e6a6f2a-90ed-492f-836a-9342db39f609",
+      "spec_sha256": "9772d8f9a4f73fa9a71e1e68892fa867f6c90cd00803c702ac67aa4f1b83aaba"
+    },
+    {
+      "kind": "Service",
+      "name": "encrypted-qwen",
+      "uid": "8fe7b433-5fb8-4dfb-b3e3-89e5607d88f6",
+      "spec_sha256": "70aea505c459ad6f9a9107800c9f0b4fb501fd7a23a8740990ee0866acd20107"
+    },
+    {
+      "kind": "Service",
+      "name": "encrypted-qwen-predictor",
+      "uid": "60910868-7333-4526-89cb-42cfaf545e5e",
+      "spec_sha256": "f37c1bd7a3637e18eb629c13c228839b97dde2da26fd1bfbf9da87960ed71927"
+    },
+    {
+      "kind": "Service",
+      "name": "encrypted-qwen-status",
+      "uid": "ad187c96-227d-4d5e-b4d0-e5254e68deca",
+      "spec_sha256": "89024708cff127d66338b5f1503e2eb3375353ea5a3e45e407a7665c098e925f"
+    },
+    {
+      "kind": "Service",
+      "name": "gpu-encrypted-file",
+      "uid": "f63204f2-0f2e-426a-bb40-dbd86276fb11",
+      "spec_sha256": "645b2054d6bc9c1d42fccd6e49acc6aae1028a4e6352da57911b54b617e36062"
+    },
+    {
+      "kind": "Service",
+      "name": "gpu-validation",
+      "uid": "ce8a62e1-984c-4b2d-83f5-c224c83353f8",
+      "spec_sha256": "2c9f34685b911c0239793450fb887306960fdfddc0dd59c4d76cc0d0245a5efa"
+    },
+    {
+      "kind": "Service",
+      "name": "qwen-chat",
+      "uid": "0864da64-a4d3-477a-9bf1-4bcfc62c3cde",
+      "spec_sha256": "527596f814ea276cae33f86a751eba0b6bd4700faf79a4366a29f9c94093a29d"
+    }
+  ],
+  "gitops_sources": [
+    {
+      "name": "acm",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": null,
+          "chart": null
+        },
+        {
+          "repoURL": "quay.io/validatedpatterns",
+          "targetRevision": "0.1.*",
+          "path": null,
+          "chart": "acm"
+        }
+      ]
+    },
+    {
+      "name": "baremetal",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": "charts/all/baremetal",
+          "chart": null
+        }
+      ]
+    },
+    {
+      "name": "coco-kyverno-policies",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": "charts/all/coco-kyverno-policies",
+          "chart": null
+        }
+      ]
+    },
+    {
+      "name": "coco-pattern-baremetal",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": null,
+          "chart": null
+        },
+        {
+          "repoURL": "quay.io/validatedpatterns",
+          "targetRevision": "0.9.58",
+          "path": null,
+          "chart": "clustergroup"
+        }
+      ]
+    },
+    {
+      "name": "encrypted-inference",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": "charts/coco-supported/encrypted-inference",
+          "chart": null
+        }
+      ]
+    },
+    {
+      "name": "gpu-workload",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": "charts/coco-supported/gpu-workload",
+          "chart": null
+        }
+      ]
+    },
+    {
+      "name": "hello-openshift",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": "charts/coco-supported/hello-openshift",
+          "chart": null
+        }
+      ]
+    },
+    {
+      "name": "internal-registry",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": "charts/hub/internal-registry",
+          "chart": null
+        }
+      ]
+    },
+    {
+      "name": "kbs-access-curl",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": "charts/coco-supported/kbs-access-curl",
+          "chart": null
+        }
+      ]
+    },
+    {
+      "name": "kbs-access-sealed",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": "charts/coco-supported/kbs-access-sealed",
+          "chart": null
+        }
+      ]
+    },
+    {
+      "name": "kserve",
+      "sources": [
+        {
+          "repoURL": "ghcr.io/kserve/charts",
+          "targetRevision": "v0.20.0",
+          "path": null,
+          "chart": "kserve-resources"
+        }
+      ]
+    },
+    {
+      "name": "kserve-crd",
+      "sources": [
+        {
+          "repoURL": "ghcr.io/kserve/charts",
+          "targetRevision": "v0.20.0",
+          "path": null,
+          "chart": "kserve-crd"
+        }
+      ]
+    },
+    {
+      "name": "kyverno",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": "charts/vendor/kyverno",
+          "chart": null
+        }
+      ]
+    },
+    {
+      "name": "nvidia-gpu",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": "charts/all/nvidia-gpu",
+          "chart": null
+        }
+      ]
+    },
+    {
+      "name": "openshift-external-secrets",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": null,
+          "chart": null
+        },
+        {
+          "repoURL": "quay.io/validatedpatterns",
+          "targetRevision": "0.0.*",
+          "path": null,
+          "chart": "openshift-external-secrets"
+        }
+      ]
+    },
+    {
+      "name": "qwen-chat",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": "charts/coco-supported/qwen-chat",
+          "chart": null
+        }
+      ]
+    },
+    {
+      "name": "sandbox",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": null,
+          "chart": null
+        },
+        {
+          "repoURL": "quay.io/validatedpatterns",
+          "targetRevision": "0.2.*",
+          "path": null,
+          "chart": "sandboxed-containers"
+        }
+      ]
+    },
+    {
+      "name": "sandbox-policies",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": null,
+          "chart": null
+        },
+        {
+          "repoURL": "quay.io/validatedpatterns",
+          "targetRevision": "0.2.*",
+          "path": null,
+          "chart": "sandboxed-policies"
+        }
+      ]
+    },
+    {
+      "name": "storage",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": "charts/hub/storage",
+          "chart": null
+        }
+      ]
+    },
+    {
+      "name": "trustee",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": "charts/hub/trustee-edge",
+          "chart": null
+        }
+      ]
+    },
+    {
+      "name": "vault",
+      "sources": [
+        {
+          "repoURL": "git@github.com:pmatouse/coco-pattern-edge-rtx6k.git",
+          "targetRevision": "codex/edge-rtx6k",
+          "path": null,
+          "chart": null
+        },
+        {
+          "repoURL": "quay.io/validatedpatterns",
+          "targetRevision": "0.1.*",
+          "path": null,
+          "chart": "hashicorp-vault"
+        }
+      ]
+    }
+  ],
+  "test_pods": [
+    {
+      "name": "encrypted-model-populator-2-build",
+      "uid": "3466fd67-f3ad-4663-ba8e-ef59635e2c39",
+      "runtime": null,
+      "phase": "Succeeded",
+      "spec_sha256": "83c98036b5edec71c8365322a9498dbb06b9b776dc8b2e678ab12f1dd0b038fa",
+      "containers": [
+        {
+          "name": "docker-build",
+          "image": "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c40067b82171cf588461aa855b08eceafedbbf0e213c0e422860d778af186b80",
+          "resources": {
+            "limits": {
+              "cpu": "2",
+              "memory": "2Gi"
+            },
+            "requests": {
+              "cpu": "100m",
+              "memory": "512Mi"
+            }
+          }
+        }
+      ],
+      "status": [
+        {
+          "name": "docker-build",
+          "ready": false,
+          "restarts": 0,
+          "image_id": "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c40067b82171cf588461aa855b08eceafedbbf0e213c0e422860d778af186b80"
+        }
+      ]
+    },
+    {
+      "name": "encrypted-model-populator-3-build",
+      "uid": "92823e71-3218-445b-93c1-179235311700",
+      "runtime": null,
+      "phase": "Succeeded",
+      "spec_sha256": "f2f6fe100d2a92e0798a5931369650d1275674b76eb6ad2ac63a9e2e86a9126c",
+      "containers": [
+        {
+          "name": "docker-build",
+          "image": "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c40067b82171cf588461aa855b08eceafedbbf0e213c0e422860d778af186b80",
+          "resources": {
+            "limits": {
+              "cpu": "2",
+              "memory": "2Gi"
+            },
+            "requests": {
+              "cpu": "100m",
+              "memory": "512Mi"
+            }
+          }
+        }
+      ],
+      "status": [
+        {
+          "name": "docker-build",
+          "ready": false,
+          "restarts": 0,
+          "image_id": "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c40067b82171cf588461aa855b08eceafedbbf0e213c0e422860d778af186b80"
+        }
+      ]
+    },
+    {
+      "name": "encrypted-model-populator-765779bf7f-dxgzw",
+      "uid": "afcc4654-1d8e-4a7b-a307-5ee4f018624f",
+      "runtime": null,
+      "phase": "Running",
+      "spec_sha256": "988ff6f124fb6167336bb7c7f3a0a9bd42015e660bb5d196d636874d6737f0b5",
+      "containers": [
+        {
+          "name": "controller",
+          "image": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/encrypted-model-populator@sha256:46dc94bd59c9cd8e08437eb35326f740e9327153c970b8e107923e2bfe961ded",
+          "resources": {
+            "limits": {
+              "cpu": "1",
+              "memory": "512Mi"
+            },
+            "requests": {
+              "cpu": "100m",
+              "memory": "128Mi"
+            }
+          }
+        }
+      ],
+      "status": [
+        {
+          "name": "controller",
+          "ready": true,
+          "restarts": 0,
+          "image_id": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/encrypted-model-populator@sha256:46dc94bd59c9cd8e08437eb35326f740e9327153c970b8e107923e2bfe961ded"
+        }
+      ]
+    },
+    {
+      "name": "model-import-28181f93-c6af-4c12-943f-dd8c014e1028",
+      "uid": "bdc23c32-d33d-451b-b779-c4c8ee9cb99e",
+      "runtime": null,
+      "phase": "Failed",
+      "spec_sha256": "d0e2e4e1ba50bc654c813243a0a2e3a80d8dbe25388566a592846eee6b3ff636",
+      "containers": [
+        {
+          "name": "importer",
+          "image": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/encrypted-model-populator@sha256:46dc94bd59c9cd8e08437eb35326f740e9327153c970b8e107923e2bfe961ded",
+          "resources": {
+            "limits": {
+              "cpu": "2",
+              "memory": "256Mi"
+            },
+            "requests": {
+              "cpu": "100m",
+              "memory": "64Mi"
+            }
+          }
+        }
+      ],
+      "status": [
+        {
+          "name": "importer",
+          "ready": false,
+          "restarts": 0,
+          "image_id": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/encrypted-model-populator@sha256:46dc94bd59c9cd8e08437eb35326f740e9327153c970b8e107923e2bfe961ded"
+        }
+      ]
+    },
+    {
+      "name": "storage-compiler",
+      "uid": "42da23f1-cf2b-4123-b3b8-f777c4239809",
+      "runtime": null,
+      "phase": "Running",
+      "spec_sha256": "70f016312e5f8e855b6bfb9793602dd50b270bc248b56ea77222f80495eb5d10",
+      "containers": [
+        {
+          "name": "compiler",
+          "image": "docker.io/library/rust@sha256:4ec71e955e6c08aeb238885083222ddff79d82eb87654a96c76e38e94da1a53b",
+          "resources": {
+            "limits": {
+              "cpu": "4",
+              "memory": "8Gi"
+            },
+            "requests": {
+              "cpu": "2",
+              "memory": "4Gi"
+            }
+          }
+        }
+      ],
+      "status": [
+        {
+          "name": "compiler",
+          "ready": true,
+          "restarts": 0,
+          "image_id": "docker.io/library/rust@sha256:4ec71e955e6c08aeb238885083222ddff79d82eb87654a96c76e38e94da1a53b"
+        }
+      ]
+    }
+  ],
+  "test_pvcs": [
+    {
+      "name": "prime-28181f93-c6af-4c12-943f-dd8c014e1028",
+      "spec": {
+        "accessModes": [
+          "ReadWriteOncePod"
+        ],
+        "resources": {
+          "requests": {
+            "storage": "2147483648"
+          }
+        },
+        "storageClassName": "lvms-vg1",
+        "volumeMode": "Block",
+        "volumeName": "pvc-8e8d8e04-3d10-4f19-86f0-e2c6a8eb2165"
+      },
+      "status": {
+        "accessModes": [
+          "ReadWriteOncePod"
+        ],
+        "capacity": {
+          "storage": "2Gi"
+        },
+        "phase": "Bound"
+      }
+    },
+    {
+      "name": "qwen-luks-bad-digest",
+      "spec": {
+        "accessModes": [
+          "ReadWriteOncePod"
+        ],
+        "dataSource": {
+          "apiGroup": "storage.confidentialcontainers.org",
+          "kind": "EncryptedModelSource",
+          "name": "qwen-luks-bad-digest"
+        },
+        "dataSourceRef": {
+          "apiGroup": "storage.confidentialcontainers.org",
+          "kind": "EncryptedModelSource",
+          "name": "qwen-luks-bad-digest"
+        },
+        "resources": {
+          "requests": {
+            "storage": "2147483648"
+          }
+        },
+        "storageClassName": "lvms-vg1",
+        "volumeMode": "Block"
+      },
+      "status": {
+        "phase": "Pending"
+      }
+    },
+    {
+      "name": "qwen-luks-model-v1",
+      "spec": {
+        "accessModes": [
+          "ReadWriteOncePod"
+        ],
+        "dataSource": {
+          "apiGroup": "storage.confidentialcontainers.org",
+          "kind": "EncryptedModelSource",
+          "name": "qwen-luks-model-v1"
+        },
+        "dataSourceRef": {
+          "apiGroup": "storage.confidentialcontainers.org",
+          "kind": "EncryptedModelSource",
+          "name": "qwen-luks-model-v1"
+        },
+        "resources": {
+          "requests": {
+            "storage": "2.147483648e+09"
+          }
+        },
+        "storageClassName": "lvms-vg1",
+        "volumeMode": "Block",
+        "volumeName": "pvc-53822a2f-af5c-4025-a246-1887d22005b4"
+      },
+      "status": {
+        "accessModes": [
+          "ReadWriteOncePod"
+        ],
+        "capacity": {
+          "storage": "2Gi"
+        },
+        "phase": "Bound"
+      }
+    },
+    {
+      "name": "storage-audit-data",
+      "spec": {
+        "accessModes": [
+          "ReadWriteOncePod"
+        ],
+        "resources": {
+          "requests": {
+            "storage": "1Gi"
+          }
+        },
+        "storageClassName": "lvms-vg1",
+        "volumeMode": "Block",
+        "volumeName": "pvc-fb6965a0-31f6-4bb3-b330-b91505044220"
+      },
+      "status": {
+        "accessModes": [
+          "ReadWriteOncePod"
+        ],
+        "capacity": {
+          "storage": "1Gi"
+        },
+        "phase": "Bound"
+      }
+    }
+  ],
+  "unchanged_since_baseline": {
+    "production_pods": true,
+    "production_resources": true,
+    "runtimes": true,
+    "gitops_sources": true
+  }
+}

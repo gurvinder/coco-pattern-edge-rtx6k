@@ -6,6 +6,14 @@ before making changes. The original six-phase handoff still defines completion.
 
 ## Resources left on the lab
 
+**Latest active work (13 October, model population):** the new test-only populator
+controller is running and `qwen-luks-model-v1` is a Bound 2 GiB raw-block RWOP
+claim populated from the internal registry's encrypted Qwen LUKS/verity image.
+The corresponding source CR and isolated publisher/importer RBAC exist. A
+temporary unprivileged `storage-compiler` pod is running for the next integration
+stage. See the newest checkpoint below; older resource lists describe their
+historical checkpoint, not the current lab.
+
 - Namespace `confidential-storage-test`.
 - Empty raw-block RWOP PVC `storage-audit-data`, 1 GiB, class `lvms-vg1`.
 - ConfigMaps `storage-audit-probe` and `storage-audit-no-secrets`.
@@ -394,6 +402,38 @@ See [the gateway guide](attested-authority-gateway.md) for the exact contract an
 inspection pin. No cluster resource, runtime artifact, key or policy was changed.
 All 72 authority tests passed, including 21 new gateway tests; see
 `tests/confidential-storage/evidence/2026-10-13/authority-gateway/`.
+
+## Encrypted model publication/population checkpoint (13 October)
+
+The [model publisher/populator](model-populator.md) now prepares an actual
+encrypted Qwen3-0.6B disk, publishes ciphertext to the internal registry and
+populates a raw-block CSI claim through `EncryptedModelSource`/`dataSourceRef`.
+The publisher verifies the complete verity region, every model file and read-only
+mount behavior. The importer has no key and checks the complete artifact,
+flushes and reads back the disk before handoff. The populated claim survived a
+controller restart without another import; a wrong digest left the separate test
+target unbound. Negative test resources were cleaned up.
+
+The Go controller uses pinned CSI library v3.2.0 with a documented opt-in
+same-namespace patch covering both informer events and reconciliation. Upstream
+and local tests pass. The deployed controller image digest is
+`sha256:46dc94bd59c9cd8e08437eb35326f740e9327153c970b8e107923e2bfe961ded`.
+Evidence is under `tests/confidential-storage/evidence/2026-10-13/model-populator`.
+Production audit comparison passed. No live runtime or production Trustee state
+changed.
+
+Current retained resources: source/PVC `qwen-luks-model-v1`, internal image
+repository `confidential-storage-test/qwen-luks-e2e`, controller, its Helm-defined
+RBAC/SCC/CA/build resources and the temporary compiler. The model source file in
+evidence records the exact OCI and disk digests. The separate test key is privately
+preserved outside this Git checkout; it is not provisioned to Trustee yet. Do not
+reuse a production key or replace the running inference service to complete this.
+
+This checkpoint proves ciphertext distribution, **not confidential serving or
+writable guest initialization**. The user requested continued iteration until both
+isolated examples actually run. Keep the overall goal active: the signed/fresh
+guest authorization, attested key-delivery channel, RO opener and RW first-use
+integration remain required before deploying an isolated confidential runtime.
 
 ## Next engineering step
 

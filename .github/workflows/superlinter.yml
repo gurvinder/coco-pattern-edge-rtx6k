@@ -42,8 +42,8 @@ jobs:
           VALIDATE_SHELL_SHFMT: false
           VALIDATE_YAML: false
           VALIDATE_YAML_PRETTIER: false
-          # Exclude vendored upstream charts from linting
-          FILTER_REGEX_EXCLUDE: "charts/vendor/.*"
+          # Preserve vendored upstream sources; their own tests run separately.
+          FILTER_REGEX_EXCLUDE: "(charts/vendor/.*|components/encrypted-model-populator/third_party/.*)"
           # VALIDATE_DOCKERFILE_HADOLINT: false
           # VALIDATE_MARKDOWN: false
           # VALIDATE_NATURAL_LANGUAGE: false

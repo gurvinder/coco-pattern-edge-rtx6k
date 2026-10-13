@@ -1,0 +1,7 @@
+{
+  "diskBytes": 2147483648,
+  "diskDigest": "sha256:c350a0f6ea363219ab750a3a3c7d309f7d35fc009b5171d417acde33c69fa8b7",
+  "format": "luks-verity-v1",
+  "manifestDigest": "sha256:49d4cc9827fc214fa339206c660656d8523dc8c2de1e95a9c1d9f7992934cd25",
+  "repository": "confidential-storage-test/qwen-luks-e2e"
+}

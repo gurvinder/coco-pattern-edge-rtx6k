@@ -1,0 +1,9 @@
+{
+  "controllerCanReadSecrets": false,
+  "controllerImage": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/encrypted-model-populator@sha256:46dc94bd59c9cd8e08437eb35326f740e9327153c970b8e107923e2bfe961ded",
+  "goVersion": "go1.25.11",
+  "importerCanReadSecrets": false,
+  "linuxBinarySha256": "7c86a8cb164b6cecb4f7b26a57a50d63640997d97eff1d1837a71648d0ec4f74",
+  "sourceMutationServerDryRun": "rejected: Model releases are immutable; create a new source for a new release",
+  "target": "linux/amd64 CGO_ENABLED=0"
+}

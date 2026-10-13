@@ -55,7 +55,11 @@ binding and real hardware interoperability remain separate acceptance gates.
 
 The endpoint, dedicated TLS CA, optional fixed address, full InitData and exact
 allowed resource IDs must be loaded from measured configuration. The raw InitData
-SHA-384 must equal the authority client's pinned digest. Configuration construction
+digest must equal the authority client's pinned digest. SHA-256/384/512 is selected
+by that administrator-pinned digest length, independently of the KBS-negotiated
+runtime-data hash. Trustee parses the TOML algorithm and verifies the resulting
+InitData against hardware evidence. The actual diagnostic guest uses SHA-256;
+the former hardcoded SHA-384 assumption would incorrectly reject it. Configuration construction
 alone is not a measured-boot loader; host annotations must not supply these values.
 
 TLS requires 1.3, verifies the configured hostname, trusts only the dedicated CA,

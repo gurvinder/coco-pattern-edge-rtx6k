@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "scope": "no-secret diagnostic; never approve for storage keys",
+  "calculator": "sev-snp-measure==0.0.13",
+  "files": {
+    "OVMF.amdsev.fd": "1aa196fe94e56809aa668fc4eabfc50923131288e018bcf0c6ab4dd3581bd850",
+    "vmlinuz": "0317da8a23853124ed4e4da6c56254f40a741ff4507e1afbbcb7f32e5c097206",
+    "private-aa-probe-v4.initrd": "d949fefa0716061ea88e1afc7ee66cca1b92302022af60a2e2f5faea6287290e"
+  },
+  "vcpus": 1,
+  "vcpuType": "EPYC-v4",
+  "guestFeatures": "0x1",
+  "kernelCommandLine": "tsc=reliable no_timer_check rcupdate.rcu_expedited=1 i8042.direct=1 i8042.dumbkbd=1 i8042.nopnp=1 i8042.noaux=1 noreplace-smp reboot=k cryptomgr.notests net.ifnames=0 pci=lastbus=0 console=hvc0 console=hvc1 quiet panic=1 nr_cpus=1 selinux=0 scsi_mod.scan=none agent.log=debug agent.launch_process_timeout=6 cgroup_no_v1=all systemd.unified_cgroup_hierarchy=1",
+  "launchMeasurement": "a7a7bfa08f7d4e14c2627c0ddb1f623a832867c45e4323db65fd753c20590e699651775de25cbc717061008c24ed684f",
+  "reportedTcb": {
+    "bootloader": 3,
+    "tee": 2,
+    "snp": 6,
+    "microcode": 117
+  },
+  "approvedForStorageKeys": false
+}

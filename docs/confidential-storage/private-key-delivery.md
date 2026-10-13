@@ -10,6 +10,13 @@ This is development integration, not a deployed guest or successful hardware E2E
 The installed CDH, runtime handlers, Trustee keys/policies and KServe resources
 are unchanged. No real model or PVC key was sent through the new provider.
 
+Follow-up hardware integration inspection found that the installed diagnostic
+guest uses SHA-256 InitData while the wrapper assumed SHA-384. The wrapper now
+checks the exact raw InitData against the authority-pinned SHA-256/384/512 digest,
+independently of the RCAR negotiated runtime-data algorithm. All 16 synthetic
+KBS tests pass, including the two additional digest algorithms and an incorrect
+pin rejection before any KBS request. See the `initdata-kbs` evidence directory.
+
 ## What the tests establish
 
 Evidence is under

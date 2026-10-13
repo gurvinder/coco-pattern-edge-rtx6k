@@ -1,0 +1,30 @@
+warning: use of deprecated associated function `p256::elliptic_curve::generic_array::GenericArray::<T, N>::from_slice`: please upgrade to generic-array 1.x
+  --> /build/storage-kbs-build/upstream/attestation-agent/deps/crypto/src/rust/ec.rs:98:45
+   |
+98 | ...                   P256FieldBytes::from_slice(&epk_x),
+   |                                       ^^^^^^^^^^
+   |
+   = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated associated function `p256::elliptic_curve::generic_array::GenericArray::<T, N>::from_slice`: please upgrade to generic-array 1.x
+  --> /build/storage-kbs-build/upstream/attestation-agent/deps/crypto/src/rust/ec.rs:99:45
+   |
+99 | ...                   P256FieldBytes::from_slice(&epk_y),
+   |                                       ^^^^^^^^^^
+
+warning: use of deprecated associated function `p256::elliptic_curve::generic_array::GenericArray::<T, N>::from_slice`: please upgrade to generic-array 1.x
+   --> /build/storage-kbs-build/upstream/attestation-agent/deps/crypto/src/rust/ec.rs:123:45
+    |
+123 | ...                   P521FieldBytes::from_slice(&epk_x),
+    |                                       ^^^^^^^^^^
+
+warning: use of deprecated associated function `p256::elliptic_curve::generic_array::GenericArray::<T, N>::from_slice`: please upgrade to generic-array 1.x
+   --> /build/storage-kbs-build/upstream/attestation-agent/deps/crypto/src/rust/ec.rs:124:45
+    |
+124 | ...                   P521FieldBytes::from_slice(&epk_y),
+    |                                       ^^^^^^^^^^
+
+warning: `crypto` (lib) generated 4 warnings
+   Compiling kbs_protocol v0.1.0 (/build/storage-kbs-build/upstream/attestation-agent/kbs_protocol)
+    Checking confidential-storage-kbs v0.1.0 (/build/storage-kbs-build/components/confidential-storage-kbs)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.67s

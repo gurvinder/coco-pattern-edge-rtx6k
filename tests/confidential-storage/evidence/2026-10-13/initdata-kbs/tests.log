@@ -1,0 +1,21 @@
+test_attestation_denied (test_keys.KeyTests.test_attestation_denied) ... ok
+test_changed_initdata_rejected_before_kbs_access (test_keys.KeyTests.test_changed_initdata_rejected_before_kbs_access) ... ok
+test_gpu_required_cannot_fall_back_to_cpu (test_keys.KeyTests.test_gpu_required_cannot_fall_back_to_cpu) ... ok
+test_readonly_published_model_key_permit (test_keys.KeyTests.test_readonly_published_model_key_permit) ... ok
+test_real_rcar_and_encrypted_key_response_twice (test_keys.KeyTests.test_real_rcar_and_encrypted_key_response_twice) ... ok
+test_redirect_not_followed (test_keys.KeyTests.test_redirect_not_followed) ... ok
+test_resource_not_allowlisted_makes_no_kbs_request (test_keys.KeyTests.test_resource_not_allowlisted_makes_no_kbs_request) ... ok
+test_response_size_bounded (test_keys.KeyTests.test_response_size_bounded) ... ok
+test_sha256_initdata_with_sha384_rcar_negotiation (test_keys.KeyTests.test_sha256_initdata_with_sha384_rcar_negotiation) ... ok
+test_sha512_initdata_with_sha384_rcar_negotiation (test_keys.KeyTests.test_sha512_initdata_with_sha384_rcar_negotiation) ... ok
+test_short_curve_coordinate_rejected_without_panic (test_keys.KeyTests.test_short_curve_coordinate_rejected_without_panic) ... ok
+test_short_wrapped_key_rejected_without_panic (test_keys.KeyTests.test_short_wrapped_key_rejected_without_panic) ... ok
+test_tampered_encrypted_key_denied (test_keys.KeyTests.test_tampered_encrypted_key_denied) ... ok
+test_wrong_kbs_hostname (test_keys.KeyTests.test_wrong_kbs_hostname) ... ok
+test_wrong_key_length_denied (test_keys.KeyTests.test_wrong_key_length_denied) ... ok
+test_wrong_pinned_initdata_algorithm_denied_before_kbs_access (test_keys.KeyTests.test_wrong_pinned_initdata_algorithm_denied_before_kbs_access) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 15.656s
+
+OK

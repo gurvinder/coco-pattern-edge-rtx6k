@@ -1,0 +1,34 @@
+{
+  "scope": "isolated diagnostic appraisal, not storage authorization",
+  "tests": {
+    "calculated_launch_matches": true,
+    "strict_real_ear_accepted": true,
+    "wrong_launch_reference_denied": true,
+    "wrong_tcb_reference_denied": true,
+    "wrong_guest_policy_denied": true,
+    "wrong_initdata_reference_denied": true,
+    "wrong_ear_policy_denied": true,
+    "wrong_authority_initdata_denied": true,
+    "wrong_runtime_nonce_denied": true
+  },
+  "policyId": "storage-diagnostic-v4",
+  "policySha256": "6e6eb3b981e78aa0a77ffb0b943a08a1982eda327a32d3acd6ad02550c88bf8a",
+  "launchMeasurement": "a7a7bfa08f7d4e14c2627c0ddb1f623a832867c45e4323db65fd753c20590e699651775de25cbc717061008c24ed684f",
+  "appraisal": {
+    "status": "affirming",
+    "trustVector": {
+      "instance-identity": 0,
+      "configuration": 2,
+      "executables": 3,
+      "file-system": 0,
+      "hardware": 2,
+      "runtime-opaque": 0,
+      "storage-opaque": 0,
+      "sourced-data": 0
+    }
+  },
+  "freshChallengeAndPossessionTested": false,
+  "storageKeysReleased": false,
+  "gpuAttestationTested": false,
+  "encryptedStorageE2eComplete": false
+}

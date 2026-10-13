@@ -17,9 +17,46 @@ this diagnostic guest measurement for a storage/model key.
 - The application reports UID/GID 1000, `CapEff=0`, `NoNewPrivs=1`, no private AA
   socket and no device-mapper control. Guest policy rejects `oc exec` with
   `ExecProcessRequest is blocked by policy`.
-- The default appraisal is **contraindicated**, not approved: executables=33,
+- The unchanged default appraisal is **contraindicated**, not approved: executables=33,
   hardware=97, configuration=3. No approved launch/TCB reference set is registered
   in this isolated verifier. No storage key was released; no GPU was assigned.
+
+The subsequent **isolated diagnostic** policy test is affirming: hardware=2,
+executables=3, configuration=2. `measure.py` independently computes the exact
+launch measurement from the pinned firmware/kernel/v4 initrd and fixed command
+line; it never reads a hardware quote. `measurement.json` records those inputs.
+The test policy also pins the diagnostic InitData, the recorded CPU-baseline TCB
+and the configured SNP guest policy. This approves recognition of the diagnostic
+only; its permissive no-secret agent policy is unsuitable for releasing keys.
+The policy is installed only in the disposable loopback AS. Production reference
+values, AS policies and KBS resource policies remain unchanged.
+
+Nine checks pass in `appraisal-validation.json`, including rejection for wrong
+launch measurement, TCB, guest policy and InitData references, and authority-side
+rejection of wrong EAR policy, InitData and runtime nonce. The real signed EAR
+passes the actual authority verifier. This re-appraises a previously captured
+quote: it does **not** prove a fresh live authority challenge, guest-key possession,
+key delivery or storage activation. Those remain necessary integration tests.
+
+Reproduce the independent calculation and isolated appraisal:
+
+```sh
+python3 -m pip install sev-snp-measure==0.0.13
+python3 tests/confidential-storage/private-aa-probe/measure.py \
+  --boot-files /scratch/pinned-boot-files --output /scratch/measurement.json
+# Run alongside the dedicated loopback AS, with the authority Python dependencies.
+python3 tests/confidential-storage/private-aa-probe/verify-appraisal.py \
+  --request /private/bound-request.json --signer /private/signer.pub.pem \
+  --reference /scratch/measurement.json --output /scratch/appraisal-validation.json
+```
+
+`diagnostic_cpu.rego` explicitly accepts the handler's SMT setting and does not
+require host-wide TSME; SNP private-memory protection is independent of TSME.
+The four exposed TCB SVN fields use the existing recorded baseline. The pinned
+SNP verifier validates the VCEK/report FMC match for this Turin report but does
+not export FMC as an appraisal claim. This diagnostic baseline is not a review
+of current AMD advisories or a production TCB approval. The diagnostic policy
+and permissive agent policy must never be promoted to a storage-key allowlist.
 
 Evidence is in [`../evidence/2026-10-13/private-aa-hardware/`](../evidence/2026-10-13/private-aa-hardware/).
 Raw quotes, chip IDs, certificates and test signer private material are retained

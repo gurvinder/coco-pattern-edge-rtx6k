@@ -6,6 +6,21 @@ before making changes. The original six-phase handoff still defines completion.
 
 ## Latest live checkpoint: real private-AA SNP verification
 
+Follow-up: the independent `sev-snp-measure==0.0.13` calculation matches the signed
+v4 launch measurement. A separate strict **diagnostic-only** policy now returns
+affirming (hardware=2, executables=3, configuration=2), and the actual Python
+authority EAR verifier accepts it. Nine positive/negative checks pass, including
+wrong launch/TCB/guest-policy/InitData references. The unchanged default policy
+still returns contraindicated. This uses a captured quote, not a fresh live
+authority challenge/proof; the permissive diagnostic InitData/image remains
+ineligible for storage keys. Production policies and reference values are unchanged.
+
+The KBS wrapper's hardcoded SHA-384 InitData assumption was also corrected: the
+digest algorithm follows the authority's pinned digest length, independent of
+RCAR runtime-hash negotiation. Sixteen synthetic KBS regression tests now pass,
+including SHA-256/512 InitData with SHA-384 runtime hashing. This correction is
+not a real key-release result. Evidence and reproducer are in the probe README.
+
 The approved separate probe is installed. CRI-O's SIGHUP runtime-map bug required
 one separately approved restart (PID 11809 -> 694089). Production pod identities,
 readiness/restart counts, resource specifications and GitOps sources remained

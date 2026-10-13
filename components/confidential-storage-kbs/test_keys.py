@@ -38,13 +38,7 @@ class KeyTests(unittest.TestCase):
         self.addCleanup(self.f.doCleanups)
         self.f.prepare_initialization()
         self.config = self.f.config
-        self.raw_initdata = 'version = "synthetic-storage-key-fixture"\n'
-        digest = hashlib.sha384(self.raw_initdata.encode()).hexdigest()
-        self.config["init_data"] = digest
-        self.f.f.verifier.init_data = digest
-        self.f.change_claims = lambda c: c["submods"]["cpu0"][ANNOTATED].update(
-            init_data=digest
-        )
+        self.set_initdata("sha384")
         self.key = bytes(range(32))
         self.sessions = {}
         self.public_keys = []
@@ -216,6 +210,43 @@ class KeyTests(unittest.TestCase):
         self.f.run_client()
         self.assertEqual(len(self.public_keys), 2)
         self.assertNotEqual(self.public_keys[0], self.public_keys[1])
+
+    def set_initdata(self, algorithm):
+        self.raw_initdata = (
+            f'algorithm = "{algorithm}"\nversion = "0.1.0"\n'
+            '\n[data]\n"fixture" = "synthetic, not approved for a guest"\n'
+        )
+        digest = hashlib.new(algorithm, self.raw_initdata.encode()).hexdigest()
+        self.config["init_data"] = digest
+        self.f.f.verifier.init_data = digest
+        self.f.change_claims = lambda c: c["submods"]["cpu0"][ANNOTATED].update(
+            init_data=digest
+        )
+        if "kbs" in self.config:
+            self.config["kbs"]["init_data_toml"] = self.raw_initdata
+
+    def test_sha256_initdata_with_sha384_rcar_negotiation(self):
+        self.set_initdata("sha256")
+        self.f.run_client()
+        self.assertEqual(len(self.public_keys), 2)
+
+    def test_sha512_initdata_with_sha384_rcar_negotiation(self):
+        self.set_initdata("sha512")
+        self.f.run_client()
+        self.assertEqual(len(self.public_keys), 2)
+
+    def test_wrong_pinned_initdata_algorithm_denied_before_kbs_access(self):
+        # The raw bytes still declare sha384; a sha256 pin for other bytes
+        # must not be accepted merely because that length is now supported.
+        digest = hashlib.sha256(b"different approved configuration").hexdigest()
+        self.config["init_data"] = digest
+        self.f.f.verifier.init_data = digest
+        self.f.change_claims = lambda c: c["submods"]["cpu0"][ANNOTATED].update(
+            init_data=digest
+        )
+        self.config["deny_configuration"] = True
+        self.f.run_client()
+        self.assertEqual(self.public_keys, [])
 
     def test_readonly_published_model_key_permit(self):
         authority = self.f.f.authority

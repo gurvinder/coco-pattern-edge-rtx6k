@@ -47,12 +47,10 @@ pub struct SnpCpuKbs {
 impl SnpCpuKbs {
     pub fn new<E: Evidence>(authority: &AuthorityClient<E>, config: Config) -> Result<Self> {
         let url = Url::parse(&config.origin).map_err(|_| Error::Configuration)?;
-        let init_digest: String =
-            ring::digest::digest(&ring::digest::SHA384, config.init_data_toml.as_bytes())
-                .as_ref()
-                .iter()
-                .map(|b| format!("{b:02x}"))
-                .collect();
+        let init_digest = initdata_digest(
+            config.init_data_toml.as_bytes(),
+            authority.init_data_digest(),
+        )?;
         if config.require_gpu
             || url.scheme() != "https"
             || url.host_str().is_none()
@@ -146,6 +144,23 @@ impl SnpCpuKbs {
     ) -> Result<KeyMaterial> {
         self.retrieve_inner(permit, provider).await
     }
+}
+
+/// Select from the administrator-pinned authority digest, never a server's
+/// RCAR runtime-hash negotiation. Trustee separately parses the TOML algorithm
+/// and verifies the resulting InitData against the hardware host_data binding.
+fn initdata_digest(toml: &[u8], pinned_digest: &str) -> Result<String> {
+    let algorithm = match pinned_digest.len() {
+        64 => &ring::digest::SHA256,
+        96 => &ring::digest::SHA384,
+        128 => &ring::digest::SHA512,
+        _ => return Err(Error::Configuration),
+    };
+    Ok(ring::digest::digest(algorithm, toml)
+        .as_ref()
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect())
 }
 struct PrivateSnp;
 #[async_trait::async_trait]

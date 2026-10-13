@@ -20,6 +20,43 @@ BINDING = {
 }
 
 
+PLAN = {
+    "schema_version": 1,
+    "new_volume": True,
+    "provisioning_id": "01234567-89ab-4cde-8123-456789abcdef",
+    "device_bytes": 67108864,
+    "luks_uuid": "abcdef01-2345-4678-8123-456789abcdef",
+    "filesystem": "ext4",
+    "header_bytes": 16777216,
+    "data_offset_bytes": 16777216,
+}
+
+
+def finish_steps(
+    authority,
+    peer,
+    handle,
+    header_sha256="d" * 64,
+    manifest_sha256="e" * 64,
+    volume_id="scratch",
+):
+    # Synthetic adapter assertions only; no formatter or disk is involved.
+    from initialization import STEPS
+
+    for step in STEPS:
+        decision = authority.begin_initialization_step(volume_id, peer, handle, step)
+        result = {"header_sha256": header_sha256}
+        if step == "integrity-initialize":
+            result["stack_sha256"] = "9" * 64
+        elif step == "filesystem-create":
+            result["filesystem_uuid"] = "abcdef01-2345-4678-8123-456789abcdef"
+        elif step == "durability-barrier":
+            result["manifest_sha256"] = manifest_sha256
+        authority.complete_initialization_step(
+            volume_id, peer, handle, decision["step_id"], result, "8" * 64
+        )
+
+
 def initialized(path, key=None, *, header_sha256="d" * 64, manifest_sha256="e" * 64):
     authority = Authority(path)
     peer = AttestedPeer("a" * 64, "b" * 64)
@@ -30,8 +67,10 @@ def initialized(path, key=None, *, header_sha256="d" * 64, manifest_sha256="e" *
         "kbs:///storage-test/keys/scratch-v1",
         mount_binding=BINDING,
     )
+    authority.approve_initialization("scratch", PLAN)
     initial = authority.begin("scratch", peer, "init-1", "initialize", 1)
     handle = initial["owner"]["activation_id"]
+    finish_steps(authority, peer, handle, header_sha256, manifest_sha256)
     authority.commit_ready(
         "scratch", peer, handle, header_sha256, manifest_sha256=manifest_sha256
     )
@@ -129,11 +168,13 @@ class ReceiptTests(unittest.TestCase):
             "kbs:///storage-test/keys/scratch-v1",
             mount_binding=BINDING,
         )
+        a.approve_initialization("scratch", PLAN)
         handle = a.begin("scratch", self.peer, "init-1", "initialize", 1)["owner"][
             "activation_id"
         ]
         with self.assertRaises(Denied):
             a.commit_ready("scratch", self.peer, handle, "d" * 64)
+        finish_steps(a, self.peer, handle)
         a.commit_ready("scratch", self.peer, handle, "d" * 64, manifest_sha256="e" * 64)
         with self.assertRaises(Denied):
             a.commit_ready(
@@ -158,6 +199,16 @@ class ReceiptTests(unittest.TestCase):
         owner = Authority(self.authority.path).inspect("scratch")["owner"]
         self.assertIsNotNone(owner)
         self.assertEqual(decode(self.issue())["activation_id"], owner["activation_id"])
+
+    def test_old_ready_record_without_step_journal_cannot_issue_receipt(self):
+        # Represent a pre-journal DB from an earlier development checkpoint.
+        with self.authority._transaction() as db:
+            record = self.authority._load(db, "scratch")
+            record.pop("initialization_steps")
+            self.authority._save(db, record, "synthetic-old-record")
+        with self.assertRaises(Denied):
+            self.issue()
+        self.assertIsNone(self.authority.inspect("scratch")["owner"])
 
     def test_legacy_record_cannot_issue_receipt(self):
         self.authority.register(

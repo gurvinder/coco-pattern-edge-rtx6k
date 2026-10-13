@@ -15,6 +15,7 @@ import time
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from authority import Denied, digest, identifier
+from initialization import require_ready_result
 
 AUDIENCE = "confidential-storage-guest/v1"
 TOKEN_TYPE = "confidential-storage-grant+jwt"
@@ -84,6 +85,7 @@ class ReceiptIssuer:
             raise Denied("profile mismatch")
         if record["state"] != "Ready" or not record.get("manifest_sha256"):
             raise Denied("only initialized volumes with a pinned manifest may reopen")
+        require_ready_result(record, record["header_sha256"], record["manifest_sha256"])
         now = int(self.clock())
         if not 0 <= now <= (1 << 64) - MAX_LIFETIME - 1:
             raise Denied("invalid authority clock")

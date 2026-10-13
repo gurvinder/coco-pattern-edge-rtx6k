@@ -20,9 +20,12 @@ workload PVC would invalidate the authority's trust boundary.
 | Call | Caller and effect |
 | --- | --- |
 | `register` | Trusted administrator records immutable volume, policy/profile digests and versioned KBS reference; duplicate registration fails |
-| `begin(initialize)` | Verified guest obtains one initialization operation after durable `Initializing` transition |
+| `approve_initialization` | Administrator authorizes an immutable first-use plan for a new disposable RW volume |
+| `begin(initialize)` | Verified guest obtains ownership and `plan-initialization` after durable `Initializing`; no disk operation yet |
+| `begin_initialization_step` | Records `Started` before a single `execute` decision; retries return `reconcile` or `complete` |
+| `complete_initialization_step` | Records adapter-verified result and evidence digest for the same step/activation; conflicting retry fails |
 | Retry of initialization | Same session/operation gets `resume-initialization`, never a new format grant; another session must stop for recovery |
-| `commit_ready` | After verified guest completion receipt, records immutable authenticated header digest and `Ready`; conflicting retry fails |
+| `commit_ready` | Requires all four steps complete and matching final header/manifest digests; then records `Ready` |
 | `begin(reopen)` | Only for `Ready`; returns the recorded header/profile/key reference; never initializes |
 | `close` | Same activation/session confirms teardown, then releases ordinary ownership |
 | `revoke` | Administrator denies future operations; previously released keys remain usable |
@@ -54,7 +57,7 @@ Before deployment, implement and test:
 - Guest mount lifecycle and failure cleanup. `close` trusts the adapter's teardown
   assertion and does not establish fencing against a malicious host.
 
-These unit tests cover transaction/state rules, not cryptography, disk integrity,
+The original state tests cover transaction/state rules, not cryptography, disk integrity,
 attestation, application isolation, writable rollback resistance or hardware E2E.
 
 ## Signed reopen receipts
@@ -79,6 +82,21 @@ trusted administrator; tests generate them in memory and retain only public
 signature fixtures. No real authority key was created or deployed.
 
 This implements signed response construction, not the missing attested transport,
-receipt-backed first-use initialization, signing-key distribution/rotation,
+attested first-use execution/completion, signing-key distribution/rotation,
 private CDH socket, disk backend or privileged guest mount integration. Keep the
 Kata activation gate closed until those pieces pass their respective tests.
+
+## First-use initialization journal
+
+[The initialization guide](../../docs/confidential-storage/first-use-initialization.md)
+describes the explicit approval, four durable steps, failure timeline and remaining
+guest work. `initialization.py` is an internal protocol library; it executes no
+formatting command and does not issue signed format capabilities. A missing LUKS
+header never influences authorization.
+
+New and legacy unbound records cannot begin initialization without approval.
+Approval requires a bound RW `/data` record and an explicit new-volume plan.
+Old Ready records without completed initialization history cannot obtain signed
+reopen receipts. This is a deliberate development-protocol change, not an automatic
+migration of existing storage. The test fixtures are synthetic; no production
+authority database has been upgraded or deployed.

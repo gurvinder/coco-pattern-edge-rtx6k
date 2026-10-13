@@ -76,6 +76,10 @@ class Authority:
                 PRIMARY KEY (volume_id, operation_id))"""
             )
             db.execute(
+                """CREATE TABLE IF NOT EXISTS initialization_sources (
+                provisioning_id TEXT PRIMARY KEY, volume_id TEXT UNIQUE NOT NULL)"""
+            )
+            db.execute(
                 """CREATE TABLE IF NOT EXISTS events (
                 sequence INTEGER PRIMARY KEY, volume_id TEXT NOT NULL,
                 action TEXT NOT NULL, record TEXT NOT NULL)"""
@@ -182,7 +186,7 @@ class Authority:
         *,
         request_sha256=None
     ):
-        """Commit ownership and initialization intent BEFORE returning permission."""
+        """Commit ownership; initialization effects need a separate step decision."""
         peer.validate()
         if request_sha256 is not None:
             digest(request_sha256)
@@ -198,6 +202,9 @@ class Authority:
                 raise Denied("volume or workload not authorized")
             if expected_generation != record["generation"]:
                 raise Denied("stale generation")
+            if operation == "initialize":
+                if not record.get("initialization_approval"):
+                    raise Denied("explicit first-use initialization approval required")
             owner = record["owner"]
             if owner:
                 if (
@@ -232,7 +239,7 @@ class Authority:
             self._save(db, record, "begin-" + operation)
             grant = self._grant(record)
             if operation == "initialize":
-                grant["action"] = "initialize"
+                grant["action"] = "plan-initialization"
             return grant
 
     @staticmethod
@@ -276,6 +283,9 @@ class Authority:
                 raise Denied("initialization commit not authorized")
             if record.get("mount_binding") is not None and manifest_sha256 is None:
                 raise Denied("bound mounts require an authenticated manifest digest")
+            from initialization import require_ready_result
+
+            require_ready_result(record, header_sha256, manifest_sha256)
             if record["state"] == "Ready":
                 if header_sha256 != record[
                     "header_sha256"
@@ -289,6 +299,26 @@ class Authority:
             record["manifest_sha256"] = manifest_sha256
             self._save(db, record, "commit-ready")
             return dict(record)
+
+    def approve_initialization(self, volume_id, plan):
+        """Trusted administrator explicitly authorizes first-use data destruction."""
+        from initialization import approve
+
+        return approve(self, volume_id, plan)
+
+    def begin_initialization_step(self, volume_id, peer, activation_id, step):
+        from initialization import begin_step
+
+        return begin_step(self, volume_id, peer, activation_id, step)
+
+    def complete_initialization_step(
+        self, volume_id, peer, activation_id, step_id, result, evidence_sha256
+    ):
+        from initialization import complete_step
+
+        return complete_step(
+            self, volume_id, peer, activation_id, step_id, result, evidence_sha256
+        )
 
     def close(self, volume_id, peer, activation_id):
         """Release ownership after trusted teardown; this does not provide fencing."""

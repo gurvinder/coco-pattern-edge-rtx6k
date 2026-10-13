@@ -1,0 +1,46 @@
+test_ambiguous_initialization_cannot_be_reassigned (test_authority.AuthorityTests.test_ambiguous_initialization_cannot_be_reassigned) ... ok
+test_close_retry_is_idempotent (test_authority.AuthorityTests.test_close_retry_is_idempotent) ... ok
+test_close_wrong_owner_and_stale_handle (test_authority.AuthorityTests.test_close_wrong_owner_and_stale_handle) ... ok
+test_failed_transaction_never_returns_or_records_permission (test_authority.AuthorityTests.test_failed_transaction_never_returns_or_records_permission) ... ok
+test_header_substitution_rejected_on_commit_retry (test_authority.AuthorityTests.test_header_substitution_rejected_on_commit_retry) ... ok
+test_intent_is_durable_before_return (test_authority.AuthorityTests.test_intent_is_durable_before_return) ... ok
+test_mismatched_and_unbound_evidence_denied (test_authority.AuthorityTests.test_mismatched_and_unbound_evidence_denied) ... ok
+test_no_close_during_ambiguous_initialization (test_authority.AuthorityTests.test_no_close_during_ambiguous_initialization) ... ok
+test_no_initialization_after_close (test_authority.AuthorityTests.test_no_initialization_after_close) ... ok
+test_no_reset_of_registered_volume (test_authority.AuthorityTests.test_no_reset_of_registered_volume) ... ok
+test_operation_replay_after_close (test_authority.AuthorityTests.test_operation_replay_after_close) ... ok
+test_ready_retry_is_open_not_format (test_authority.AuthorityTests.test_ready_retry_is_open_not_format) ... ok
+test_reopen_preserves_identity_and_does_not_format (test_authority.AuthorityTests.test_reopen_preserves_identity_and_does_not_format) ... ok
+test_revocation_denies_active_retry_and_new_start (test_authority.AuthorityTests.test_revocation_denies_active_retry_and_new_start) ... ok
+test_two_concurrent_owners_only_one_wins (test_authority.AuthorityTests.test_two_concurrent_owners_only_one_wins) ... ok
+test_wrong_generation (test_authority.AuthorityTests.test_wrong_generation) ... ok
+test_approval_is_exact_immutable_and_durable (test_initialization.InitializationTests.test_approval_is_exact_immutable_and_durable) ... ok
+test_cannot_skip_steps_or_commit_ready_early (test_initialization.InitializationTests.test_cannot_skip_steps_or_commit_ready_early) ... ok
+test_completion_retry_is_exact_and_bound_to_step_owner (test_initialization.InitializationTests.test_completion_retry_is_exact_and_bound_to_step_owner) ... ok
+test_failed_approval_rolls_back_provisioning_reservation (test_initialization.InitializationTests.test_failed_approval_rolls_back_provisioning_reservation) ... ok
+test_geometry_unknown_fields_and_noncanonical_ids_denied (test_initialization.InitializationTests.test_geometry_unknown_fields_and_noncanonical_ids_denied) ... ok
+test_header_identity_cannot_change_between_steps (test_initialization.InitializationTests.test_header_identity_cannot_change_between_steps) ... ok
+test_lost_completion_commit_retains_started_and_allows_only_reconciliation (test_initialization.InitializationTests.test_lost_completion_commit_retains_started_and_allows_only_reconciliation) ... ok
+test_lost_format_response_and_restart_never_reissue_execute (test_initialization.InitializationTests.test_lost_format_response_and_restart_never_reissue_execute) ... ok
+test_no_format_without_explicit_approval (test_initialization.InitializationTests.test_no_format_without_explicit_approval) ... ok
+test_only_one_concurrent_format_decision (test_initialization.InitializationTests.test_only_one_concurrent_format_decision) ... ok
+test_provisioning_identity_cannot_be_approved_under_two_volume_names (test_initialization.InitializationTests.test_provisioning_identity_cannot_be_approved_under_two_volume_names) ... ok
+test_readonly_and_legacy_records_cannot_get_format_approval (test_initialization.InitializationTests.test_readonly_and_legacy_records_cannot_get_format_approval) ... ok
+test_ready_requires_final_barrier_digests_and_prevents_reformat (test_initialization.InitializationTests.test_ready_requires_final_barrier_digests_and_prevents_reformat) ... ok
+test_revocation_blocks_initialization_and_keeps_started_intent (test_initialization.InitializationTests.test_revocation_blocks_initialization_and_keeps_started_intent) ... ok
+test_uncommitted_step_intent_never_returns_permission (test_initialization.InitializationTests.test_uncommitted_step_intent_never_returns_permission) ... ok
+test_binding_and_profile_substitution_before_ownership (test_receipts.ReceiptTests.test_binding_and_profile_substitution_before_ownership) ... ok
+test_consumed_operation_cannot_issue_new_receipt (test_receipts.ReceiptTests.test_consumed_operation_cannot_issue_new_receipt) ... ok
+test_exact_retry_same_owner_changed_nonce_denied (test_receipts.ReceiptTests.test_exact_retry_same_owner_changed_nonce_denied) ... ok
+test_legacy_record_cannot_issue_receipt (test_receipts.ReceiptTests.test_legacy_record_cannot_issue_receipt) ... ok
+test_old_ready_record_without_step_journal_cannot_issue_receipt (test_receipts.ReceiptTests.test_old_ready_record_without_step_journal_cannot_issue_receipt) ... ok
+test_ready_manifest_cannot_be_changed_on_retry (test_receipts.ReceiptTests.test_ready_manifest_cannot_be_changed_on_retry) ... ok
+test_receipt_retry_after_authority_restart (test_receipts.ReceiptTests.test_receipt_retry_after_authority_restart) ... ok
+test_signature_and_durable_owner (test_receipts.ReceiptTests.test_signature_and_durable_owner) ... ok
+test_signing_failure_keeps_committed_owner_for_exact_retry (test_receipts.ReceiptTests.test_signing_failure_keeps_committed_owner_for_exact_retry) ... ok
+test_unbound_peer_revocation_and_stale_generation (test_receipts.ReceiptTests.test_unbound_peer_revocation_and_stale_generation) ... ok
+
+----------------------------------------------------------------------
+Ran 41 tests in 0.352s
+
+OK

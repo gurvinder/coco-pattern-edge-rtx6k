@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-13",
+  "evidence": "synthetic-in-process-authority-tests",
+  "python_tests_passed": 41,
+  "new_initialization_tests": 15,
+  "old_ready_record_receipt_rejection_test": true,
+  "python_version": "3.13.7",
+  "cryptography_version": "46.0.3",
+  "fixture_generator_signature_verified": true,
+  "signed_reopen_wire_format_changed": false,
+  "format_command_executed": false,
+  "cluster_resources_changed": false,
+  "live_pvc_formatted": false,
+  "attestation_test": false,
+  "encrypted_storage_e2e": false,
+  "kata_activation_gate": "closed",
+  "limitations": [
+    "Internal execute decision is not a signed, replay-safe guest capability.",
+    "Completion evidence is synthetic and supplied by a trusted test adapter.",
+    "Exactly-once physical formatting, real key retrieval, initialization, recovery and mounted storage remain unimplemented.",
+    "Old development authority records are not automatically migrated."
+  ],
+  "unique_provisioning_reservation_tested": true
+}

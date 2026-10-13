@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from authority import AttestedPeer, Authority, Denied
+from test_receipts import BINDING, PLAN, finish_steps
 
 
 class AuthorityTests(unittest.TestCase):
@@ -18,8 +19,14 @@ class AuthorityTests(unittest.TestCase):
         self.peer = AttestedPeer("a" * 64, "b" * 64)
         self.other = AttestedPeer("a" * 64, "c" * 64)
         self.authority.register(
-            "volume-1", "a" * 64, "d" * 64, "kbs:///storage-test/keys/volume-1-v1"
+            "volume-1",
+            "a" * 64,
+            "d" * 64,
+            "kbs:///storage-test/keys/volume-1-v1",
+            mount_binding=BINDING,
         )
+
+        self.authority.approve_initialization("volume-1", PLAN)
 
     def begin(self, peer=None, operation_id="init-1", operation="initialize"):
         return self.authority.begin(
@@ -29,7 +36,12 @@ class AuthorityTests(unittest.TestCase):
     def ready(self):
         grant = self.begin()
         handle = grant["owner"]["activation_id"]
-        self.authority.commit_ready("volume-1", self.peer, handle, "e" * 64)
+        finish_steps(
+            self.authority, self.peer, handle, "e" * 64, "f" * 64, volume_id="volume-1"
+        )
+        self.authority.commit_ready(
+            "volume-1", self.peer, handle, "e" * 64, manifest_sha256="f" * 64
+        )
         return handle
 
     def test_intent_is_durable_before_return(self):
@@ -37,7 +49,7 @@ class AuthorityTests(unittest.TestCase):
         restored = Authority(self.path)
         self.assertEqual(restored.inspect("volume-1")["state"], "Initializing")
         retry = restored.begin("volume-1", self.peer, "init-1", "initialize", 1)
-        self.assertEqual(grant["action"], "initialize")
+        self.assertEqual(grant["action"], "plan-initialization")
         self.assertEqual(retry["action"], "resume-initialization")
         self.assertEqual(grant["owner"], retry["owner"])
 
@@ -89,7 +101,9 @@ class AuthorityTests(unittest.TestCase):
     def test_header_substitution_rejected_on_commit_retry(self):
         handle = self.ready()
         with self.assertRaises(Denied):
-            self.authority.commit_ready("volume-1", self.peer, handle, "f" * 64)
+            self.authority.commit_ready(
+                "volume-1", self.peer, handle, "f" * 64, manifest_sha256="f" * 64
+            )
         self.assertEqual(self.authority.inspect("volume-1")["header_sha256"], "e" * 64)
 
     def test_close_wrong_owner_and_stale_handle(self):
@@ -150,7 +164,7 @@ class AuthorityTests(unittest.TestCase):
                 self.begin()
         self.assertEqual(self.authority.inspect("volume-1")["state"], "Uninitialized")
         self.assertIsNone(self.authority.inspect("volume-1")["owner"])
-        self.assertEqual(self.begin()["action"], "initialize")
+        self.assertEqual(self.begin()["action"], "plan-initialization")
 
 
 if __name__ == "__main__":

@@ -115,6 +115,28 @@ transport, key retrieval, cryptsetup activation, first-use initialization and th
 private guest-service endpoint remain unfinished. The Kata activation gate is
 unchanged. No production key or runtime was modified.
 
+## First-use authorization checkpoint
+
+The authority now requires an immutable administrator-approved new-volume plan
+before `begin(initialize)`. Ownership alone returns `plan-initialization`, not a
+format decision. Four ordered steps record Started before the sole execute decision:
+LUKS creation, integrity initialization/verification, filesystem creation and a
+durability barrier. Retried Started steps require reconciliation; completed steps
+cannot execute again. Ready requires matching final header/manifest digests.
+
+Forty-one Python tests pass, including concurrent first-use requests, lost
+responses, authority restart, transaction failures, revocation and rejection of
+unapproved/Ready/read-only volumes. Old development records lacking the step journal
+cannot issue new signed reopen receipts. See
+[the first-use guide](first-use-initialization.md) and
+`tests/confidential-storage/evidence/2026-10-13/initialization/`.
+
+This is durable authorization bookkeeping with synthetic completion evidence.
+No formatter, guest executor, attestation adapter or recovery routine was deployed;
+no cluster resource or live PVC was changed in this checkpoint. The Kata activation
+gate remains closed. Actual format/open/mount and crash/corruption tests are still
+required before the storage is usable.
+
 ## Next engineering step
 
 Build the guest-managed mount integration in an isolated artifact before installing

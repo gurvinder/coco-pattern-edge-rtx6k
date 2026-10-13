@@ -1,0 +1,50 @@
+{
+  "callback-source-sha256.txt": {
+    "raw_sha256": "8398b660c5dd02b3f55ac4c280af4af255d1bb16df596aa4cd84556b197f3307",
+    "stored_sha256": "8398b660c5dd02b3f55ac4c280af4af255d1bb16df596aa4cd84556b197f3307"
+  },
+  "callback-build.log": {
+    "raw_sha256": "b00310fcaaafb77f5b6f74a0275f38464bf966ae403de1bb0535d427ca9f45b1",
+    "stored_sha256": "b00310fcaaafb77f5b6f74a0275f38464bf966ae403de1bb0535d427ca9f45b1"
+  },
+  "callback-tests.log": {
+    "raw_sha256": "f5edf35f9cf6e35823bf2005a1edbdf596756eb8ebacfadeac3a338224b22fad",
+    "stored_sha256": "67a3b5bfd9550a0906cb47976b7ffd0b2b9f0559d9e57e94300c44ccb5ff6cca"
+  },
+  "callback-clippy.log": {
+    "raw_sha256": "3f6bc43b078022af3d1379a6125cb80d84fc2a06c63108ebbfc3e8d5edb94f2d",
+    "stored_sha256": "3f6bc43b078022af3d1379a6125cb80d84fc2a06c63108ebbfc3e8d5edb94f2d"
+  },
+  "callback-fmt.log": {
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stored_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "callback-guest-build.log": {
+    "raw_sha256": "7b3e5d6da5499a8350ddfc877fac741fb7f1d3ce9e44c038e1f7c8782de57c99",
+    "stored_sha256": "7b3e5d6da5499a8350ddfc877fac741fb7f1d3ce9e44c038e1f7c8782de57c99"
+  },
+  "callback-guest-tests.log": {
+    "raw_sha256": "708a72cc1daabb20fe315fb49c18e56330a667d2b03db7b5b06ac3356c5c5263",
+    "stored_sha256": "d32764952913084fa3ff3a6836d073ed0dccbb1b21fa4ec1f9fe6dfd0b6ca8f0"
+  },
+  "callback-summary.log": {
+    "raw_sha256": "eb66be84dfd2352e231456a0829c13b349d14bdeea4da5ddcc25b23a7ca6397c",
+    "stored_sha256": "eb66be84dfd2352e231456a0829c13b349d14bdeea4da5ddcc25b23a7ca6397c"
+  },
+  "initialize.log": {
+    "raw_sha256": "2b27b19eda8d8cbf7badf38f04b1252ef6c657c1469a7c561eeeae34725b0af2",
+    "stored_sha256": "75d5ca8d0ea014d449fe9e541372a476ef0dbbdece8806b02afed91455ece655"
+  },
+  "reopen.log": {
+    "raw_sha256": "b98c67f62d34b8b6366120ce593077ec08a92c58e4af1ac427757b4f3369bf2a",
+    "stored_sha256": "27389ce1e3de105866f502ef71d146180c75f40c5068d66aa98f25bcba8e4f89"
+  },
+  "wrong-key.log": {
+    "raw_sha256": "f804fa75434d68620ea906e75f02348311190658d8a3c0feaa1d706fa1262bde",
+    "stored_sha256": "c553caebc7587c9278d1379301c890c7512492fd084da5afa675638d0cea4611"
+  },
+  "corruption.log": {
+    "raw_sha256": "2fd356521227a9d876d492b372b2b140bfba7821b15cf67414b8aa97cfd08f94",
+    "stored_sha256": "8efd5fe64b84dce5bbe4a03e890f263ba52dce77f280cb99a776c2e2f07bfc13"
+  }
+}

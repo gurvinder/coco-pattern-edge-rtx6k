@@ -3,3 +3,4 @@
 //! attested provider is installed. The transport patch's hard gate stays closed.
 mod process_guard;
 pub mod runtime;
+mod start_fifo;

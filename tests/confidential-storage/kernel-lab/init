@@ -49,6 +49,9 @@ case "$phase" in
         if [ -x /usr/sbin/runtime-process-lab ]; then
             /usr/sbin/runtime-process-lab || fail runtime-process-probe
         fi
+        if [ -x /usr/sbin/runtime-callback-lab ]; then
+            /usr/sbin/runtime-callback-lab || fail runtime-callback-probe
+        fi
         journal_start luks-format
         cryptsetup luksFormat --batch-mode --type luks2 --cipher aes-xts-plain64 \
             --key-size 512 --integrity hmac-sha256 --sector-size 4096 \

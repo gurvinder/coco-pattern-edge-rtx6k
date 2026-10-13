@@ -21,6 +21,7 @@ def main():
     p.add_argument("--work", type=Path, required=True)
     p.add_argument("--opener", type=Path)
     p.add_argument("--runtime-probe", type=Path)
+    p.add_argument("--callback-probe", type=Path)
     a = p.parse_args()
     tools = a.tools.resolve(strict=True)
     work = a.work.absolute()
@@ -92,6 +93,8 @@ def main():
         ("usr/bin/setpriv", "/usr/bin/setpriv"),
     ]:
         copy_binary(tools / src, dest)
+    if a.callback_probe:
+        copy_binary(a.callback_probe.resolve(strict=True), "/usr/sbin/runtime-callback-lab")
     if a.runtime_probe:
         copy_binary(a.runtime_probe.resolve(strict=True), "/usr/sbin/runtime-process-lab")
     if a.opener:

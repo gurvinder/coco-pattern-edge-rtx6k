@@ -276,7 +276,35 @@ Five distinct adapter tests, 45 guest regressions, strict Clippy and all four Li
 VM boots passed. The compiler was removed and production state is unchanged.
 Evidence is under `tests/confidential-storage/evidence/2026-10-13/kata-adapter/`.
 
+## Real Kata callback checkpoint
+
+The runtime adapter now bounds its FIFO readiness handshake and the disposable
+lab exercises real rustjail create/start/quiesce/destroy callbacks. Normal startup,
+a dead prepared child, FIFO replacement, cancellation before start and a foreign
+cgroup overmount all have explicit checks. Cleanup refusal retains the namespace
+handles; removing the overmount permits successful quiescence/destruction. Repeat
+quiesce/destroy succeeds and premature/repeated startup is refused.
+
+The application runs in its own root/mount/PID namespaces as UID/GID 1000, with all
+five capability sets empty and NoNewPrivs enabled. It cannot see the fixture key
+or raw disk. The FIFO test also covers a missing reader and reader death after
+handshake, before the start write. Five adapter unit tests, 45 guest regressions,
+formatting, strict Clippy and all four storage VM boots passed. See
+`tests/confidential-storage/evidence/2026-10-13/kata-callback/`.
+
+The callback application's directory is ordinary test storage. The encrypted
+backend regression still uses its separate synthetic runtime. These two tested
+pieces must next be connected through `Agent<LinuxBackend, KataRuntime>` in the
+lab, with real mount attachment and teardown ordered around the paused Kata init.
+Then integrate Sandbox/reaper/IO/RPC ownership. Partial-create/destruction recovery
+and attested providers remain required; no live runtime or activation gate changed.
+
 ## Next engineering step
+
+The immediate isolated test is the combined real Kata runtime plus encrypted
+Linux backend described above. Do not jump from these callback tests to installing
+a shim or opening the activation gate. Verify application IO, no inherited private
+staging alias, cleanup ordering and ownership retention with failure injection.
 
 Build the guest-managed mount integration in an isolated artifact before installing
 anything on the node. The installed Go runtime still lacks the new adapter. The

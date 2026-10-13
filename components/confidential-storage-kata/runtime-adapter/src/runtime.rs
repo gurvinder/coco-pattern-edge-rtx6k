@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Owns one prepared rustjail container for one sandbox lifetime. Not registered
 //! with Kata's RPC server or reaper yet; do not install this development adapter.
-use crate::process_guard::Guard;
+use crate::{process_guard::Guard, start_fifo::StartFifo};
 use async_trait::async_trait;
 use confidential_storage_guest::{
     agent_lifecycle::{Identity, Runtime},
@@ -36,6 +36,7 @@ struct State {
     process: Option<Process>,
     guard: Option<Arc<StdMutex<Guard>>>,
     phase: Phase,
+    fifo: Option<StartFifo>,
 }
 pub struct KataRuntime {
     identity: Identity,
@@ -121,6 +122,7 @@ impl KataRuntime {
                 process: Some(process),
                 guard: None,
                 phase: Phase::Fresh,
+                fifo: None,
             }),
         })
     }
@@ -155,6 +157,7 @@ impl Runtime for KataRuntime {
             .map_err(|_| invalid())?;
         let (namespace, root) = guard.handles().map_err(|_| invalid())?;
         s.guard = Some(Arc::new(StdMutex::new(guard)));
+        s.fifo = Some(StartFifo::capture(Path::new(&s.container.root)).map_err(|_| invalid())?);
         s.phase = Phase::Prepared;
         Ok(ConsumerHandles {
             namespace,
@@ -176,7 +179,35 @@ impl Runtime for KataRuntime {
             .check_start()
             .map_err(|_| invalid())?;
         s.phase = Phase::Starting;
-        s.container.exec().await.map_err(|_| invalid())?;
+        let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(5);
+        let armed = loop {
+            s.guard
+                .as_ref()
+                .ok_or_else(invalid)?
+                .lock()
+                .map_err(|_| invalid())?
+                .check_start()
+                .map_err(|_| invalid())?;
+            if let Some(armed) = s
+                .fifo
+                .as_ref()
+                .ok_or_else(invalid)?
+                .arm()
+                .map_err(|_| invalid())?
+            {
+                break armed;
+            }
+            if tokio::time::Instant::now() >= deadline {
+                return Err(invalid());
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        };
+        let result = s.container.exec().await;
+        // The pinned implementation writes exactly one byte without yielding.
+        // Drop the anchor after either outcome; ambiguous starts cannot retry.
+        drop(armed);
+        s.fifo = None;
+        result.map_err(|_| invalid())?;
         s.phase = Phase::Running;
         Ok(())
     }
@@ -198,6 +229,7 @@ impl Runtime for KataRuntime {
         })
         .await
         .map_err(|_| invalid())??;
+        s.fifo = None;
         s.phase = Phase::Quiesced;
         Ok(())
     }

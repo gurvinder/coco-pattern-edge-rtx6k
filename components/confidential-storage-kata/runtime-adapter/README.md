@@ -17,7 +17,7 @@ runtime handler, modifies the cluster, or grants privileges to the application.
 | --- | --- | --- |
 | Constructor | Check bound container identity, Created state, unused init, matching OCI process, non-root/NNP/explicitly empty capability sets, no hooks/terminal, private mount/PID namespaces, cgroupfs and agent reaper status | Reject a prestarted container, inherited namespaces, process substitution and unsupported runtime configurations |
 | Prepare | Hold Kata's `WAIT_PID_LOCKER` across `LinuxContainer::start` and descriptor capture; retain pidfd, proc directory, mount namespace, root and cgroup v2 directory | Partial create/capture failure remains uncertain; it does not authorize storage activation or claim successful cleanup |
-| Start | Recheck retained process/cgroup identity; call `LinuxContainer::exec` to release its FIFO | Record Starting before the call; failure is ambiguous and cannot be retried as a fresh start |
+| Start | Recheck process/cgroup identity; complete a bounded FIFO-reader handshake, then call `LinuxContainer::exec` | Record Starting before effects; identity failure, child death or five-second timeout retains cleanup ownership and cannot retry as a fresh start |
 | Quiesce | Write to the retained group's `cgroup.kill`; wait for `cgroup.events` to report `populated 0` and the init pidfd to report exit | Covers descendants; bounded five-second wait; errors preserve ownership; root/namespace stay pinned |
 | Destroy | Only after coordinator storage cleanup: check quiescence, suppress rustjail's cached numeric-PID signaling, call its remaining destruction path, then verify the pinned cgroup is actually gone | Preserve uncertain state on failure; path replacement is refused; log-only cgroup deletion failure cannot become success |
 
@@ -27,6 +27,30 @@ Process objects remain owned for the future IO/reaper integration. The runtime's
 normal lazy rootfs detach occurs only after the coordinator has removed encrypted
 bind/staging mounts and mappings. It is not used to make encrypted-volume cleanup
 succeed.
+
+## Bounded FIFO handshake
+
+The pinned Kata `exec()` opens its FIFO for a blocking one-byte write. Checking
+process liveness alone cannot prevent a hang if the child dies immediately after
+that check. The adapter therefore pins the FIFO at prepare with `O_PATH` and
+requires a root-owned path with no symlinks or group/other-writable ancestors.
+
+At start it checks the retained inode and attempts `O_WRONLY | O_NONBLOCK` against
+the pinned descriptor. `ENXIO` means there is no child reader yet: it rechecks the
+pidfd/cgroup and retries for at most five seconds. Only after that writer opens
+does it acquire a nonblocking read anchor. Neither anchor transfers bytes. The
+writer holds a live child at its read until Kata sends the start byte; the reader
+prevents a subsequent child death from hanging Kata's open or causing SIGPIPE.
+Creating the read anchor first would falsely satisfy readiness and is forbidden.
+
+The pipe must be empty, only the owned runtime can write it, and the state machine
+permits one start write. Both descriptors remain open through Kata's single-byte
+write and are then dropped. Path mutation by another trusted service must also
+be excluded. These guarantees depend on the pinned implementation, root-owned
+runtime paths and hooks being rejected; review them when changing Kata versions.
+The handshake bounds FIFO readiness, not all of `prepare`, filesystem operations,
+or the application's successful exec/readiness. A child may exit immediately
+following startup; exit reporting still needs the production reaper integration.
 
 ## Process and cgroup ownership
 
@@ -64,7 +88,7 @@ cd components/confidential-storage-kata/runtime-adapter
 cargo test --locked --all-targets
 cargo fmt --check
 cargo clippy --locked --all-targets -- -D warnings
-cargo build --locked --release --example process_lab
+cargo build --locked --release --examples
 ```
 
 `libc` is pinned to `0.2.186`, the version in the pinned Kata source's Cargo.lock.
@@ -79,6 +103,7 @@ Run the process probe only inside the disposable kernel lab:
 python3 tests/confidential-storage/kernel-lab/run.py \
   --tools /build/debian/tools --work /build/adapter-kernel \
   --runtime-probe /build/components/confidential-storage-kata/runtime-adapter/target/release/examples/process_lab \
+  --callback-probe /build/components/confidential-storage-kata/runtime-adapter/target/release/examples/callback_lab \
   --opener /build/components/confidential-storage-guest/target/release/examples/kernel_opener_lab
 ```
 
@@ -91,10 +116,17 @@ LUKS2/dm-integrity initialization, reopen, wrong keys and corruption.
 
 ## Remaining integration gates
 
-This compiles actual Kata callback calls and kernel-tests their process/cgroup
-helper. It **does not run a complete rustjail container through the adapter**.
-In particular, prepare/FIFO/destroy/IO callbacks have not been exercised together
-in a VM. The lab probe creates its child with `unshare`, not Kata.
+The callback lab runs real `LinuxContainer` prepare/start/quiesce/destroy
+operations. The example handles Kata's `init` re-exec before creating its Tokio
+runtime. It uses a private mount namespace and tmpfs agent root because the
+kernel's original initramfs root cannot be pivoted. The application has its own
+root, mount/PID namespaces, UID/GID 1000, no capabilities and NoNewPrivs. It receives
+neither the fixture key nor the scratch disk. The callback VM uses 2 GiB RAM.
+
+This test does **not yet connect the real Kata callbacks to `LinuxBackend`**:
+the callback application uses an ordinary test directory. The encrypted-volume
+regression separately runs the existing synthetic runtime/backend. Agent RPCs,
+production reaper/IO ownership and attested providers remain absent.
 
 Before enabling the mount request:
 
@@ -106,13 +138,13 @@ Before enabling the mount request:
    reporting and IO cleanup. The object must not simultaneously live in the
    ordinary container map. Do not call prepare while holding the sandbox lock:
    Kata's SIGCHLD handler takes the reaper lock before that lock.
-3. Exercise the actual `start`/FIFO/destroy callbacks and partial-create cleanup.
-   A failed create before process capture currently requires recovery. A partial
-   runtime destruction may also remain blocked. Neither path retries creation or
-   returns fabricated success. Kata's existing FIFO open is blocking; process death
-   at that boundary can stall start and needs a bounded integration test/fix.
+3. Combine the real runtime callbacks with the storage coordinator/backend and
+   test partial-create/destruction recovery. A failed create before process capture
+   still requires recovery. A partial runtime destruction may remain blocked.
+   Neither path retries creation or returns fabricated success. Callback tests
+   cover quiescence refusal/retry, not every partial rustjail destruction boundary.
 4. Connect attested authority/CDH/device providers and the approved guest artifact.
    There is no attestation/channel adapter or production key delivery in this crate.
 
 See [the coordinator guide](../../../docs/confidential-storage/agent-lifecycle.md)
-and [test evidence](../../../tests/confidential-storage/evidence/2026-10-13/kata-adapter/README.md).
+and [callback evidence](../../../tests/confidential-storage/evidence/2026-10-13/kata-callback/README.md).

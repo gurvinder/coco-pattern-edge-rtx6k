@@ -133,6 +133,13 @@ boots remain regression checks, not confidential-storage E2E acceptance.
 Evidence: [agent lifecycle checkpoint](../../tests/confidential-storage/evidence/2026-10-13/agent-lifecycle/README.md).
 
 A [concrete Kata callback adapter](../../components/confidential-storage-kata/runtime-adapter/README.md)
-now compiles against the pinned rustjail source and supplies process/cgroup handle
-management. Its kernel-tested helper is a further checkpoint; full callback-flow,
-RPC/reaper/IO integration and attested provider gates remain open.
+now runs real rustjail prepare/start/quiesce/destroy callbacks in the disposable
+kernel lab. A bounded FIFO-reader handshake protects the start write from child
+death. The application stays unprivileged; negative cases cover dead init, replaced
+FIFO, cancelled startup and a replaced cgroup path that blocks cleanup until fixed.
+See [callback evidence](../../tests/confidential-storage/evidence/2026-10-13/kata-callback/README.md).
+
+The real callback test and encrypted backend test are still separate. Next connect
+`KataRuntime` to `Agent` and `LinuxBackend` in that lab; only afterward wire the
+Sandbox/reaper/IO/RPC entry points. Partial creation/destruction recovery and
+attested provider gates remain open.

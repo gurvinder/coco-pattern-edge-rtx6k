@@ -17,6 +17,7 @@ def main():
     parser.add_argument("--work", type=Path, required=True)
     parser.add_argument("--opener", type=Path)
     parser.add_argument("--runtime-probe", type=Path)
+    parser.add_argument("--callback-probe", type=Path)
     args = parser.parse_args()
     tools = args.tools.resolve(strict=True)
     work = args.work.absolute()
@@ -33,7 +34,8 @@ def main():
         + (
             ["--runtime-probe", str(args.runtime_probe.resolve(strict=True))]
             if args.runtime_probe else []
-        ),
+        )
+        + (["--callback-probe", str(args.callback_probe.resolve(strict=True))] if args.callback_probe else []),
         check=True,
     )
     env = os.environ | {
@@ -66,7 +68,7 @@ def main():
             "-cpu",
             "max",
             "-m",
-            "1024",
+            "2048" if args.callback_probe else "1024",
             "-smp",
             "2",
             "-nodefaults",
@@ -105,6 +107,8 @@ def main():
             result.returncode
             or "COCO_TEST_FAIL:" in text
             or f"COCO_TEST_PASS:{phase}" not in text
+            or (args.callback_probe and phase == "initialize"
+                and "COCO_TEST_PASS:rustjail-callback-lifecycle" not in text)
             or (
                 args.runtime_probe and phase == "initialize"
                 and "COCO_TEST_PASS:pinned-process-cgroup-subtree-quiescence" not in text

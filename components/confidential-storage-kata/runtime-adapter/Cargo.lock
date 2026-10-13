@@ -450,6 +450,7 @@ dependencies = [
  "runtime-spec",
  "rustjail",
  "serde_json",
+ "slog",
  "tokio",
 ]
 

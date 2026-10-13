@@ -170,3 +170,19 @@ to the initialize boot. It mounts cgroup v2 only inside the disposable VM and te
 subtree termination, path replacement rejection and retained namespace/root
 handles. Its required pass marker is separate from the normal initialize marker.
 It does not run the full Kata adapter or allocate a host cgroup.
+
+The optional `--callback-probe` adds the real rustjail callback example and raises
+VM memory to 2 GiB for its larger initramfs. It requires
+`COCO_TEST_PASS:rustjail-callback-lifecycle` in addition to the normal initialize
+marker. The probe creates a private mount namespace and tmpfs agent root, then
+runs real Kata init re-exec, preparation, FIFO startup, cgroup quiescence and
+destruction. Applications run with no capabilities, UID/GID 1000 and NoNewPrivs.
+A normal container and four failure/cancellation scenarios are checked, along
+with the FIFO reader-death race. See [callback evidence](../evidence/2026-10-13/kata-callback/README.md).
+
+The callback application uses ordinary test storage. Combining it with the
+existing encrypted `LinuxBackend` through `Agent` is the next test; neither this
+probe nor the runner's success implies installed agent RPC integration or TEE
+attestation. The test's tmpfs root is needed because the kernel's original
+initramfs root cannot be used as the old root for `pivot_root`. It does not relax
+the adapter's prohibition on `no_pivot_root`.

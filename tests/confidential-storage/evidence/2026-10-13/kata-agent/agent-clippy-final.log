@@ -1,0 +1,5 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /build/kata/src/agent/Cargo.toml
+workspace: /build/kata/Cargo.toml
+    Checking kata-agent v0.1.0 (/build/kata/src/agent)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.62s

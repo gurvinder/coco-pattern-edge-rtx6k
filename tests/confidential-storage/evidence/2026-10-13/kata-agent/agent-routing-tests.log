@@ -1,0 +1,22 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /build/kata/src/agent/Cargo.toml
+workspace: /build/kata/Cargo.toml
+   Compiling protocols v0.1.0 (/build/kata/src/libs/protocols)
+   Compiling rustjail v0.1.0 (/build/kata/src/agent/rustjail)
+   Compiling kata-agent-policy v0.1.0 (/build/kata/src/agent/policy)
+   Compiling confidential-storage-kata-adapter v0.1.0 (/build/kata/src/libs/confidential-storage-kata-adapter)
+   Compiling kata-agent v0.1.0 (/build/kata/src/agent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.93s
+     Running unittests src/main.rs (target/debug/deps/kata_agent-e59ba897389f3435)
+
+running 8 tests
+test rpc::managed_storage_tests::managed_storage_cancelled_remove_keeps_service_worker ... ok
+test rpc::managed_storage_tests::managed_storage_dispatch_preserves_ordinary_wait ... ok
+test rpc::managed_storage_tests::managed_storage_failure_retained_and_sandbox_shutdown_ordered ... ok
+test rpc::managed_storage_tests::managed_storage_real_sigchld_unblocks_rpc_wait_and_teardown ... ok
+test rpc::managed_storage_tests::managed_storage_registry_refuses_existing_ordinary_owner ... ok
+test rpc::managed_storage_tests::managed_storage_remove_failure_denies_restart_and_retries ... ok
+test rpc::managed_storage_tests::managed_storage_rpc_routes_and_rejects_bypasses ... ok
+test rpc::managed_storage_tests::managed_storage_timeout_keeps_service_worker ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 375 filtered out; finished in 1.05s

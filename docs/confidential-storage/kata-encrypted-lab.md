@@ -111,10 +111,10 @@ compare the production inventory against its baseline afterward.
 
 ## Remaining work
 
-The next implementation boundary is ownership of real Kata Sandbox/process state:
-route create/start/exec/remove and sandbox teardown through the coordinator;
-connect the tested process facade to the production SIGCHLD loop and streaming IO
-without racing PID capture or duplicating container ownership. Add partial-create/destruction recovery tests. Keep the
+The [agent integration patch](kata-agent-integration.md) now routes actual
+Sandbox/RPC/SIGCHLD source paths through the owned coordinator/process interface.
+The next boundary is to run that complete agent path with authenticated storage
+providers and production streaming IO in the disposable VM. Add partial-create/destruction recovery tests. Keep the
 single-consumer guest restriction and prohibit ordinary entry points from bypassing
 it or inheriting private staging mounts.
 

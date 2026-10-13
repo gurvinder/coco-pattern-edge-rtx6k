@@ -338,19 +338,49 @@ adapter unit tests, 45 guest regressions, strict Clippy and formatting passed.
 See [the process guide](kata-process-lifecycle.md) and
 `tests/confidential-storage/evidence/2026-10-13/kata-process/`.
 
-This is still a non-TEE library/lab checkpoint. The actual Sandbox, RPC server and
-production SIGCHLD loop are not patched. Bounded development capture is not
+This was a non-TEE library/lab checkpoint. At that point the actual Sandbox, RPC
+server and production SIGCHLD loop were not patched; the next checkpoint adds
+source-level routing. Bounded development capture is not
 production streaming IO. No runtime activation or attested provider was enabled.
+
+## Actual agent ownership/routing checkpoint (13 October)
+
+The cumulative `confidential-agent-v1.patch` now adds the managed registry to
+actual Kata Sandbox state, routes start/wait/remove/stdin-close RPC helpers to the
+coordinator/process facade, and dispatches SIGCHLD through the same workspace
+rustjail reaper lock. Ordinary create/exec also take that lock before Sandbox.
+Managed removal is service-owned and retains failures/tombstones; a failed close
+blocks restart. Sandbox shutdown waits for managed cleanup without holding the
+Sandbox lock, retaining the shutdown sender on failure. Unsupported managed
+streaming IO, exec and ordinary mutable runtime lookups remain refused.
+
+Eight agent routing tests passed, including real managed/ordinary child exits,
+concurrent reaping and teardown, timeout, cancellation, wrong IDs and cleanup
+retry. The 12 transport/preflight tests, two signal tests, 43 guest library tests
+and six adapter unit tests passed. Strict agent Clippy, formatting and compilation
+without optional features passed. The workspace lock adds only the two local
+packages; both agent and adapter use one local rustjail instance.
+
+The preparation script verifies the cumulative patch and 29 source-overlay files,
+rewrites the three adapter dependency paths, and reproduces the tested sources
+from a clean pinned checkout. Details are in
+[the agent integration guide](kata-agent-integration.md); evidence is in
+`tests/confidential-storage/evidence/2026-10-13/kata-agent/`.
+
+The tests use in-memory managed owners and real child processes, not an activated
+storage provider or serialized ttrpc connection. No host RPC calls the trusted
+installation seam, and the hard activation error remains. The patch is not
+installed on the live cluster.
 
 ## Next engineering step
 
-Integrate the tested process facade and coordinator into actual Sandbox ownership,
-RPC dispatch and the unified SIGCHLD loop, keeping reaper-before-sandbox lock
-ordering and a single owner of runtime state. Route every
-create/start/exec/remove/teardown path through that boundary. Preserve ordinary
-and bootstrap-child exit handling. Add authenticated production streaming IO;
-do not silently replace ReadStream with the bounded development capture. Extend partial-create/destruction recovery tests before deployment;
-keep the activation gate closed pending attested providers and an approved artifact.
+Connect authorized CreateContainer preparation to the tested guest-only installation
+seam, with authenticated authority/CDH/device providers and ownership of rootfs,
+shared mounts and remaining generic resources. Add policy-controlled production
+streaming IO and the required managed process RPC semantics. Then test the patched
+agent and real storage backend together in the disposable VM through serialized
+RPCs, including partial-create/destruction recovery. Keep the activation gate
+closed until those providers and the approved artifact exist.
 
 Build the guest-managed mount integration in an isolated artifact before installing
 anything on the node. The installed Go runtime still lacks the new adapter. The

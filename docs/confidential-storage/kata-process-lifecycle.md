@@ -6,7 +6,8 @@ stdin closure and IO cleanup status without returning mutable runtime objects.
 The storage coordinator retains exclusive control of prepare/start/quiesce/destroy.
 
 This is a library and disposable-VM checkpoint, **not a deployed Kata agent**.
-The production Sandbox map, RPC handlers and SIGCHLD loop have not been patched.
+A separate [agent integration patch](kata-agent-integration.md) now wires the
+actual Sandbox map, RPC handlers and SIGCHLD loop; it is not deployed.
 The experimental activation gate remains closed; no attested provider is added.
 
 ## Ownership and lock ordering
@@ -106,8 +107,9 @@ boot in addition to the encrypted-storage markers.
 
 ## Next integration boundary
 
-Patch and test the actual agent Sandbox/RPC/SIGCHLD routing against an approved
-source baseline. Managed IDs must resolve to the coordinator and observation
+The [agent patch](kata-agent-integration.md) provides source-level
+Sandbox/RPC/SIGCHLD routing on the experimental baseline. Port it to the approved
+downstream baseline and exercise the complete agent with real storage providers. Managed IDs must resolve to the coordinator and observation
 handle; ordinary create/exec/remove/teardown paths must not bypass that ownership.
 Reaper dispatch must preserve existing handling for unmanaged and helper children.
 Replace the bounded development capture with authenticated production IO semantics

@@ -1,0 +1,2488 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index eeb69b4..1ce0ced 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -1119,6 +1119,37 @@ dependencies = [
+  "crossbeam-utils",
+ ]
+ 
++[[package]]
++name = "confidential-storage-guest"
++version = "0.1.0"
++dependencies = [
++ "async-trait",
++ "base64 0.22.1",
++ "libc",
++ "ring",
++ "serde",
++ "serde_json",
++ "thiserror 2.0.18",
++ "tokio",
++]
++
++[[package]]
++name = "confidential-storage-kata-adapter"
++version = "0.1.0"
++dependencies = [
++ "async-trait",
++ "base64 0.22.1",
++ "confidential-storage-guest",
++ "libc",
++ "oci-spec 0.8.4",
++ "ring",
++ "runtime-spec",
++ "rustjail",
++ "serde_json",
++ "slog",
++ "tokio",
++]
++
+ [[package]]
+ name = "const_format"
+ version = "0.2.36"
+@@ -3492,6 +3523,8 @@ dependencies = [
+  "cfg-if 1.0.4",
+  "cgroups-rs 0.3.5",
+  "clap",
++ "confidential-storage-guest",
++ "confidential-storage-kata-adapter",
+  "const_format",
+  "container-device-interface",
+  "derivative",
+diff --git a/Cargo.toml b/Cargo.toml
+index 8fbf549..294e398 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -6,6 +6,8 @@ rust-version = "1.94"
+ 
+ [workspace]
+ members = [
++  "src/libs/confidential-storage-guest",
++  "src/libs/confidential-storage-kata-adapter",
+   # libs
+   "src/libs/kata-sys-util",
+   "src/libs/kata-types",
+diff --git a/src/agent/Cargo.toml b/src/agent/Cargo.toml
+index b4c5676..d7badc9 100644
+--- a/src/agent/Cargo.toml
++++ b/src/agent/Cargo.toml
+@@ -6,6 +6,8 @@ edition.workspace = true
+ license.workspace = true
+ 
+ [dependencies]
++confidential-storage-guest = { path = "../libs/confidential-storage-guest" }
++confidential-storage-kata-adapter = { path = "../libs/confidential-storage-kata-adapter" }
+ oci-spec.workspace = true
+ lazy_static.workspace = true
+ ttrpc.workspace = true
+diff --git a/src/agent/src/confidential_mount/contract.rs b/src/agent/src/confidential_mount/contract.rs
+new file mode 100644
+index 0000000..f2a938a
+--- /dev/null
++++ b/src/agent/src/confidential_mount/contract.rs
+@@ -0,0 +1,260 @@
++// Copyright (c) 2026 Red Hat, Inc.
++// SPDX-License-Identifier: Apache-2.0
++
++//! Versioned transport validation. Device locators never authorize key release.
++use anyhow::{bail, ensure, Result};
++use serde::{Deserialize, Serialize};
++
++pub const DRIVER: &str = "confidential-scsi-v1";
++pub const ROOT: &str = "/run/kata-containers/confidential-mounts";
++pub const POLICY_KEY: &str = "confidential-mounts.json";
++
++#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
++#[serde(rename_all = "camelCase", deny_unknown_fields)]
++pub struct Request {
++    pub schema_version: u32,
++    pub volume_id: String,
++    pub profile_digest: String,
++    pub manifest_uri: String,
++    pub container_name: String,
++    pub device_path: String,
++    pub destination: String,
++    pub access: String,
++    pub operation: String,
++}
++
++/// Measured allowlist. Matching this alone is NOT an attestation verification:
++/// Trustee must require the approved InitData digest before releasing any key.
++#[derive(Clone, Debug, Deserialize, Serialize)]
++#[serde(rename_all = "camelCase", deny_unknown_fields)]
++pub struct Policy {
++    pub schema_version: u32,
++    pub grants: Vec<Grant>,
++}
++
++#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
++#[serde(rename_all = "camelCase", deny_unknown_fields)]
++pub struct Grant {
++    pub volume_id: String,
++    pub profile_digest: String,
++    pub manifest_uri: String,
++    pub container_name: String,
++    pub destination: String,
++    pub access: String,
++    pub operation: String,
++}
++
++fn identifier(value: &str) -> bool {
++    (1..=63).contains(&value.len())
++        && (value.as_bytes()[0].is_ascii_lowercase() || value.as_bytes()[0].is_ascii_digit())
++        && value
++            .bytes()
++            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
++}
++
++pub fn parse(raw: &str) -> Result<Request> {
++    ensure!(raw.len() <= 4096, "mount request too large");
++    let req: Request = serde_json::from_str(raw)?;
++    ensure!(req.schema_version == 1, "unknown mount schema");
++    ensure!(
++        identifier(&req.volume_id) && identifier(&req.container_name),
++        "invalid mount identity"
++    );
++    let digest = req.profile_digest.strip_prefix("sha256:").unwrap_or("");
++    ensure!(
++        digest.len() == 64
++            && digest
++                .bytes()
++                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)),
++        "invalid profile digest"
++    );
++    let parts: Vec<_> = req
++        .manifest_uri
++        .strip_prefix("kbs:///")
++        .unwrap_or("")
++        .split('/')
++        .collect();
++    ensure!(
++        parts.len() == 3 && parts.iter().all(|p| identifier(p)),
++        "invalid manifest URI"
++    );
++    ensure!(
++        identifier(req.device_path.strip_prefix("/dev/").unwrap_or("")),
++        "invalid device locator"
++    );
++    ensure!(req.operation == "reopen", "initialization is not supported");
++    ensure!(
++        (req.access == "rw" && req.destination == "/data")
++            || (req.access == "ro" && req.destination == "/models"),
++        "unsupported access/destination"
++    );
++    Ok(req)
++}
++
++impl Request {
++    pub fn grant(&self) -> Grant {
++        Grant {
++            volume_id: self.volume_id.clone(),
++            profile_digest: self.profile_digest.clone(),
++            manifest_uri: self.manifest_uri.clone(),
++            container_name: self.container_name.clone(),
++            destination: self.destination.clone(),
++            access: self.access.clone(),
++            operation: self.operation.clone(),
++        }
++    }
++    pub fn authorize(&self, measured_policy: &str, actual_container: &str) -> Result<()> {
++        ensure!(measured_policy.len() <= 65536, "mount policy too large");
++        let policy: Policy = serde_json::from_str(measured_policy)?;
++        ensure!(
++            policy.schema_version == 1 && !policy.grants.is_empty() && policy.grants.len() <= 16,
++            "invalid measured policy"
++        );
++        ensure!(
++            self.container_name == actual_container,
++            "container does not own mount"
++        );
++        let matching: Vec<_> = policy
++            .grants
++            .iter()
++            .filter(|g| g.volume_id == self.volume_id)
++            .collect();
++        if matching.len() != 1 || matching[0] != &self.grant() {
++            bail!("mount is not uniquely authorized by measured policy");
++        }
++        Ok(())
++    }
++    pub fn mount_point(&self, cid: &str) -> Result<String> {
++        ensure!(
++            !cid.is_empty()
++                && cid.len() <= 128
++                && cid.as_bytes()[0].is_ascii_alphanumeric()
++                && cid
++                    .bytes()
++                    .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_'),
++            "invalid container ID"
++        );
++        Ok(format!("{ROOT}/{cid}/{}", self.volume_id))
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    fn request() -> Request {
++        Request {
++            schema_version: 1,
++            volume_id: "scratch".into(),
++            profile_digest: format!("sha256:{}", "a".repeat(64)),
++            manifest_uri: "kbs:///default/volume-records/scratch".into(),
++            container_name: "app".into(),
++            device_path: "/dev/encrypted-data".into(),
++            destination: "/data".into(),
++            access: "rw".into(),
++            operation: "reopen".into(),
++        }
++    }
++    fn policy(r: &Request) -> String {
++        serde_json::to_string(&Policy {
++            schema_version: 1,
++            grants: vec![r.grant()],
++        })
++        .unwrap()
++    }
++    #[test]
++    fn valid_request_and_locator_not_authorization() {
++        let mut r = request();
++        let p = policy(&r);
++        r.device_path = "/dev/another".into();
++        let r = parse(&serde_json::to_string(&r).unwrap()).unwrap();
++        r.authorize(&p, "app").unwrap();
++        assert_eq!(
++            r.mount_point("container-123").unwrap(),
++            format!("{ROOT}/container-123/scratch")
++        );
++        assert!(r.mount_point("../escape").is_err());
++    }
++    #[test]
++    fn denies_substitution_of_every_authorization_field() {
++        let r = request();
++        let p = policy(&r);
++        for field in [
++            "volumeId",
++            "profileDigest",
++            "manifestUri",
++            "containerName",
++            "destination",
++            "access",
++            "operation",
++        ] {
++            let mut v = serde_json::to_value(&r).unwrap();
++            v[field] = "substituted".into();
++            let changed: Request = serde_json::from_value(v).unwrap();
++            assert!(changed.authorize(&p, "app").is_err(), "{}", field);
++        }
++        assert!(r.authorize(&p, "sidecar").is_err());
++        assert!(r.authorize("{}", "app").is_err());
++    }
++    #[test]
++    fn rejects_duplicate_grants_and_fields() {
++        let r = request();
++        let p = serde_json::to_string(&Policy {
++            schema_version: 1,
++            grants: vec![r.grant(), r.grant()],
++        })
++        .unwrap();
++        assert!(r.authorize(&p, "app").is_err());
++        let raw = serde_json::to_string(&r).unwrap();
++        assert!(parse(&raw.replacen(
++            "\"schemaVersion\":1",
++            "\"schemaVersion\":1,\"schemaVersion\":1",
++            1
++        ))
++        .is_err());
++        assert!(parse(&(raw + " {} ")).is_err());
++    }
++    #[test]
++    fn no_initialize_or_unsafe_paths() {
++        let r = request();
++        for (field, value) in [
++            ("operation", "initialize"),
++            ("devicePath", "/dev/../etc"),
++            ("destination", "/etc"),
++            ("access", "ro"),
++            ("manifestUri", "http://host/key"),
++            ("volumeId", "../escape"),
++        ] {
++            let mut v = serde_json::to_value(&r).unwrap();
++            v[field] = value.into();
++            assert!(parse(&v.to_string()).is_err(), "{}", field);
++        }
++        assert!(parse("null").is_err());
++        assert!(parse(&format!(
++            "{}{}",
++            " ".repeat(4097),
++            serde_json::to_string(&r).unwrap()
++        ))
++        .is_err());
++    }
++}
++
++#[cfg(test)]
++mod fixtures {
++    use super::*;
++    #[derive(Deserialize)]
++    struct Case {
++        name: String,
++        accept: bool,
++        raw: String,
++    }
++    #[test]
++    fn shared_go_rust_contract() {
++        let cases: Vec<Case> = serde_json::from_str(include_str!(
++            "../../../libs/protocols/confidential-mount-v1-fixtures.json"
++        ))
++        .unwrap();
++        for case in cases {
++            assert_eq!(parse(&case.raw).is_ok(), case.accept, "{}", case.name);
++        }
++    }
++}
+diff --git a/src/agent/src/confidential_mount/mod.rs b/src/agent/src/confidential_mount/mod.rs
+new file mode 100644
+index 0000000..8346466
+--- /dev/null
++++ b/src/agent/src/confidential_mount/mod.rs
+@@ -0,0 +1,348 @@
++// Copyright (c) 2026 Red Hat, Inc.
++// SPDX-License-Identifier: Apache-2.0
++
++//! Fail-closed preflight for guest-owned persistent filesystem mounts.
++//! Kept unavailable until CDH can bind profile, authority receipt and session.
++mod contract;
++
++use anyhow::{bail, ensure, Context, Result};
++use kata_types::initdata::InitData;
++use oci_spec::runtime as oci;
++use protocols::agent::CreateContainerRequest;
++use std::path::Path;
++
++pub fn preflight(req: &CreateContainerRequest, spec: &oci::Spec) -> Result<()> {
++    let mounts: Vec<_> = req
++        .storages
++        .iter()
++        .filter(|s| s.driver == contract::DRIVER)
++        .collect();
++    let reserved_bind = spec.mounts().as_ref().is_some_and(|mounts| {
++        mounts.iter().any(|m| {
++            m.source()
++                .as_ref()
++                .is_some_and(|s| s.starts_with(contract::ROOT))
++        })
++    });
++    if mounts.is_empty() {
++        ensure!(
++            !reserved_bind,
++            "reserved confidential mount source without storage request"
++        );
++        return Ok(());
++    }
++    ensure!(
++        cfg!(feature = "agent-policy") && cfg!(feature = "init-data"),
++        "confidential mounts require measured policy support"
++    );
++    ensure!(
++        mounts.len() == 1,
++        "only one confidential mount per container is supported"
++    );
++    let storage = mounts[0];
++    ensure!(
++        storage.driver_options.len() == 1,
++        "expected one typed mount request"
++    );
++    let request = contract::parse(&storage.driver_options[0])?;
++    let content =
++        std::fs::read(crate::initdata::INITDATA_TOML_PATH).context("missing guest InitData")?;
++    let initdata: InitData = toml::from_slice(&content).context("invalid guest InitData")?;
++    initdata.validate()?;
++    let policy = initdata
++        .get_coco_data(contract::POLICY_KEY)
++        .context("missing measured mount policy")?;
++    request.authorize(policy, &kata_types::k8s::container_name(spec))?;
++    validate_transport(req, spec, &request)?;
++    // The prototype ActivateVolume RPC only carries device_id + manifest_uri.
++    // It cannot enforce this request's profile/session/authority bindings. Do not
++    // silently drop those fields or fall back to ephemeral SecureMount.
++    bail!("confidential filesystem activation unavailable: profile-bound authority/CDH API is required")
++}
++
++fn validate_transport(
++    req: &CreateContainerRequest,
++    spec: &oci::Spec,
++    request: &contract::Request,
++) -> Result<()> {
++    let selected: Vec<_> = req
++        .storages
++        .iter()
++        .filter(|s| s.driver == contract::DRIVER)
++        .collect();
++    ensure!(selected.len() == 1, "expected one confidential storage");
++    let storage = selected[0];
++    let mount_point = request.mount_point(&req.container_id)?;
++    for other in &req.storages {
++        if std::ptr::eq(other, storage) {
++            continue;
++        }
++        ensure!(
++            !Path::new(&other.mount_point).starts_with(contract::ROOT)
++                && !Path::new(contract::ROOT).starts_with(&other.mount_point),
++            "storage overlaps private guest mount tree"
++        );
++    }
++    ensure!(
++        storage.mount_point == mount_point
++            && storage.fstype == "ext4"
++            && !storage.shared
++            && storage.fs_group.is_none(),
++        "unsupported filesystem mount metadata"
++    );
++    ensure!(
++        storage.options == [request.access.as_str(), "nosuid", "nodev", "noexec"],
++        "unsafe filesystem options"
++    );
++    let scsi: Vec<_> = storage.source.split(':').collect();
++    ensure!(
++        scsi.len() == 2
++            && scsi
++                .iter()
++                .all(|v| !v.is_empty() && v.bytes().all(|b| b.is_ascii_digit())),
++        "invalid SCSI locator"
++    );
++    ensure!(
++        req.devices
++            .iter()
++            .all(|d| d.container_path != request.device_path
++                && d.type_ != "scsi"
++                && d.type_ != "blk"
++                && d.type_ != "secure-volume"),
++        "raw storage device exposed to application"
++    );
++    let process = spec
++        .process()
++        .as_ref()
++        .context("missing application process")?;
++    ensure!(
++        process.user().uid() != 0 && process.no_new_privileges().unwrap_or(false),
++        "application must be non-root with no-new-privileges"
++    );
++    if let Some(caps) = process.capabilities() {
++        ensure!(
++            [
++                caps.bounding(),
++                caps.effective(),
++                caps.permitted(),
++                caps.inheritable(),
++                caps.ambient()
++            ]
++            .iter()
++            .all(|set| set.as_ref().is_none_or(|set| set.is_empty())),
++            "application capabilities must be dropped"
++        );
++    }
++    let linux = spec.linux().as_ref().context("missing Linux spec")?;
++    if let Some(devices) = linux.devices() {
++        ensure!(
++            devices.iter().all(|d| d.typ() != oci::LinuxDeviceType::B),
++            "raw block device exposed to application"
++        );
++    }
++    let app_mounts = spec
++        .mounts()
++        .as_ref()
++        .context("missing application mounts")?;
++    let selected: Vec<_> = app_mounts
++        .iter()
++        .filter(|m| m.destination() == Path::new(&request.destination))
++        .collect();
++    ensure!(selected.len() == 1, "expected exactly one application bind");
++    let bind = selected[0];
++    ensure!(
++        bind.source().as_deref() == Some(Path::new(&mount_point))
++            && bind.typ().as_deref() == Some("bind"),
++        "redirected application bind"
++    );
++    let expected: Vec<String> = ["bind", request.access.as_str(), "nosuid", "nodev", "noexec"]
++        .iter()
++        .map(|v| (*v).to_owned())
++        .collect();
++    ensure!(
++        bind.options().as_ref() == Some(&expected),
++        "unsafe application bind options"
++    );
++    for m in app_mounts {
++        if std::ptr::eq(m, bind) {
++            continue;
++        }
++        let dest = m.destination();
++        ensure!(
++            !dest.starts_with(&request.destination)
++                && !Path::new(&request.destination).starts_with(dest),
++            "overlapping destination"
++        );
++        if let Some(source) = m.source() {
++            ensure!(
++                !source.starts_with(contract::ROOT)
++                    && !Path::new(contract::ROOT).starts_with(source),
++                "aliased confidential mount source"
++            );
++        }
++    }
++    // Refcount reuse must not bypass request validation or substitute a source.
++    ensure!(
++        req.storages
++            .iter()
++            .filter(|s| s.mount_point == mount_point)
++            .count()
++            == 1,
++        "duplicate storage mount point"
++    );
++    Ok(())
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use protocols::agent::Storage;
++    use std::collections::HashMap;
++
++    fn fixture() -> (CreateContainerRequest, oci::Spec, contract::Request) {
++        let request = contract::Request {
++            schema_version: 1,
++            volume_id: "scratch".into(),
++            profile_digest: format!("sha256:{}", "a".repeat(64)),
++            manifest_uri: "kbs:///default/volume-records/scratch".into(),
++            container_name: "app".into(),
++            device_path: "/dev/encrypted-data".into(),
++            destination: "/data".into(),
++            access: "rw".into(),
++            operation: "reopen".into(),
++        };
++        let mount_point = request.mount_point("container-123").unwrap();
++        let storage = Storage {
++            driver: contract::DRIVER.into(),
++            source: "1:0".into(),
++            fstype: "ext4".into(),
++            mount_point: mount_point.clone(),
++            options: vec![
++                "rw".into(),
++                "nosuid".into(),
++                "nodev".into(),
++                "noexec".into(),
++            ],
++            driver_options: vec![serde_json::to_string(&request).unwrap()],
++            ..Default::default()
++        };
++        let req = CreateContainerRequest {
++            container_id: "container-123".into(),
++            storages: vec![storage],
++            ..Default::default()
++        };
++        let mut spec = oci::Spec::default();
++        spec.set_linux(Some(oci::Linux::default()));
++        let mut process = oci::Process::default();
++        let mut user = oci::User::default();
++        user.set_uid(1000);
++        user.set_gid(1000);
++        process.set_user(user);
++        process.set_no_new_privileges(Some(true));
++        process.set_capabilities(None);
++        spec.set_process(Some(process));
++        spec.set_annotations(Some(HashMap::from([(
++            "io.kubernetes.cri-o.ContainerName".into(),
++            "app".into(),
++        )])));
++        let mut mount = oci::Mount::default();
++        mount.set_destination("/data".into());
++        mount.set_source(Some(mount_point.into()));
++        mount.set_typ(Some("bind".into()));
++        mount.set_options(Some(vec![
++            "bind".into(),
++            "rw".into(),
++            "nosuid".into(),
++            "nodev".into(),
++            "noexec".into(),
++        ]));
++        spec.set_mounts(Some(vec![mount]));
++        (req, spec, request)
++    }
++    #[test]
++    fn transport_checks_bind_and_denies_unsafe_options() {
++        let (mut req, spec, request) = fixture();
++        validate_transport(&req, &spec, &request).unwrap();
++        req.storages[0].options.push("exec".into());
++        assert!(validate_transport(&req, &spec, &request).is_err());
++    }
++    #[test]
++    fn denies_duplicate_and_redirected_storage() {
++        let (mut req, spec, request) = fixture();
++        req.storages.push(req.storages[0].clone());
++        assert!(validate_transport(&req, &spec, &request).is_err());
++        req.storages.pop();
++        req.storages[0].mount_point = "/other".into();
++        assert!(validate_transport(&req, &spec, &request).is_err());
++    }
++    #[test]
++    fn denies_raw_device_exposure() {
++        let (mut req, spec, request) = fixture();
++        req.devices.push(protocols::agent::Device {
++            type_: "scsi".into(),
++            container_path: request.device_path.clone(),
++            ..Default::default()
++        });
++        assert!(validate_transport(&req, &spec, &request).is_err());
++    }
++    #[test]
++    fn ordinary_requests_pass_but_reserved_mount_never_does() {
++        let req = CreateContainerRequest::default();
++        preflight(&req, &oci::Spec::default()).unwrap();
++        let (_, spec, _) = fixture();
++        assert!(preflight(&req, &spec).is_err());
++    }
++    #[test]
++    fn unavailable_activation_never_falls_back() {
++        let (req, spec, _) = fixture();
++        // No InitData is installed by this unit test; no CDH call is made.
++        assert!(preflight(&req, &spec).is_err());
++    }
++    #[test]
++    fn denies_privileged_application_and_storage_alias() {
++        let (mut req, mut spec, request) = fixture();
++        spec.process_mut().as_mut().unwrap().user_mut().set_uid(0);
++        assert!(validate_transport(&req, &spec, &request).is_err());
++        spec.process_mut()
++            .as_mut()
++            .unwrap()
++            .user_mut()
++            .set_uid(1000);
++        spec.process_mut()
++            .as_mut()
++            .unwrap()
++            .set_no_new_privileges(Some(false));
++        assert!(validate_transport(&req, &spec, &request).is_err());
++        spec.process_mut()
++            .as_mut()
++            .unwrap()
++            .set_no_new_privileges(Some(true));
++        req.storages.push(Storage {
++            driver: "local".into(),
++            mount_point: contract::ROOT.into(),
++            ..Default::default()
++        });
++        assert!(validate_transport(&req, &spec, &request).is_err());
++    }
++}
++
++#[cfg(test)]
++mod wire_test {
++    use super::*;
++    use base64::{engine::general_purpose::STANDARD, Engine};
++    use protobuf::Message;
++    #[test]
++    fn consumes_actual_go_protobuf_request() {
++        let wire = STANDARD
++            .decode(include_str!("../../../libs/protocols/confidential-mount-v1-wire.b64").trim())
++            .unwrap();
++        let req = CreateContainerRequest::parse_from_bytes(&wire).unwrap();
++        let spec: oci::Spec = req.OCI.clone().into_option().unwrap().into();
++        let request = contract::parse(&req.storages[0].driver_options[0]).unwrap();
++        validate_transport(&req, &spec, &request).unwrap();
++        assert_eq!(request.volume_id, "scratch");
++        assert_eq!(request.access, "rw");
++        assert!(req.devices.is_empty());
++        assert!(preflight(&req, &spec).is_err());
++    }
++}
+diff --git a/src/agent/src/main.rs b/src/agent/src/main.rs
+index a362396..2fb04ff 100644
+--- a/src/agent/src/main.rs
++++ b/src/agent/src/main.rs
+@@ -39,6 +39,7 @@ use std::sync::Arc;
+ use tracing::{instrument, span};
+ 
+ mod confidential_data_hub;
++mod confidential_mount;
+ mod config;
+ mod console;
+ mod device;
+@@ -46,6 +47,7 @@ mod features;
+ mod guest_extension_image;
+ mod initdata;
+ mod linux_abi;
++mod managed_storage;
+ mod metrics;
+ mod mount;
+ mod namespace;
+diff --git a/src/agent/src/managed_storage.rs b/src/agent/src/managed_storage.rs
+new file mode 100644
+index 0000000..cd96308
+--- /dev/null
++++ b/src/agent/src/managed_storage.rs
+@@ -0,0 +1,246 @@
++// SPDX-License-Identifier: Apache-2.0
++//! Inert until a guest-authenticated provider calls install(). No host RPC can
++//! register an owner, and the confidential_mount preflight still fails closed.
++use crate::sandbox::Sandbox;
++use anyhow::{anyhow, ensure, Result};
++use async_trait::async_trait;
++use confidential_storage_guest::{
++    agent_lifecycle::{Agent, ConsumerBackend, Identity},
++    linux_backend::ConsumerHandles,
++    receipt::VerifiedGrant,
++};
++use confidential_storage_kata_adapter::{
++    process::{ChildExit, ProcessHandle},
++    runtime::KataRuntime,
++};
++use rustjail::{container::LinuxContainer, process::Process};
++use std::{
++    collections::BTreeMap,
++    fmt,
++    sync::{
++        atomic::{AtomicBool, Ordering},
++        Arc,
++    },
++};
++use tokio::sync::{Mutex, OwnedMutexGuard};
++
++#[async_trait]
++pub(crate) trait Managed: Send + Sync {
++    async fn start(&self) -> Result<()>;
++    async fn close(&self) -> Result<()>;
++    async fn wait(&self) -> Result<i32>;
++    async fn close_stdin(&self) -> Result<()>;
++    async fn observe(&self, event: &ChildExit<'_>) -> Result<bool>;
++}
++
++pub(crate) struct Entry {
++    id: String,
++    owner: Arc<dyn Managed>,
++    operations: Mutex<()>,
++    closed: AtomicBool,
++    removing: AtomicBool,
++}
++impl fmt::Debug for Entry {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        f.debug_struct("ManagedStorageEntry")
++            .field("id", &self.id)
++            .field("closed", &self.closed())
++            .finish_non_exhaustive()
++    }
++}
++impl Entry {
++    fn new(id: String, owner: Arc<dyn Managed>) -> Arc<Self> {
++        Arc::new(Self {
++            id,
++            owner,
++            operations: Mutex::new(()),
++            closed: AtomicBool::new(false),
++            removing: AtomicBool::new(false),
++        })
++    }
++    pub fn closed(&self) -> bool {
++        self.closed.load(Ordering::Acquire)
++    }
++    pub async fn start(self: &Arc<Self>) -> Result<()> {
++        let entry = self.clone();
++        tokio::spawn(async move {
++            let _operation = entry.operations.lock().await;
++            ensure!(
++                !entry.removing.load(Ordering::Acquire),
++                "managed container is closing or closed"
++            );
++            entry.owner.start().await
++        })
++        .await
++        .map_err(|_| anyhow!("managed start worker failed; ownership retained"))?
++    }
++    pub async fn close(self: &Arc<Self>) -> Result<()> {
++        let entry = self.clone();
++        tokio::spawn(async move {
++            let _operation = entry.operations.lock().await;
++            if entry.closed() {
++                return Ok(());
++            }
++            entry.removing.store(true, Ordering::Release);
++            entry.owner.close().await?;
++            entry.closed.store(true, Ordering::Release);
++            Ok(())
++        })
++        .await
++        .map_err(|_| anyhow!("managed close worker failed; ownership retained"))?
++    }
++    pub fn check_exec(&self, exec_id: &str) -> Result<()> {
++        ensure!(
++            exec_id.is_empty() || exec_id == self.id,
++            "managed exec ID is not the owned init"
++        );
++        Ok(())
++    }
++    pub async fn wait(&self, exec_id: &str) -> Result<i32> {
++        self.check_exec(exec_id)?;
++        self.owner.wait().await
++    }
++    pub async fn close_stdin(&self, exec_id: &str) -> Result<()> {
++        self.check_exec(exec_id)?;
++        self.owner.close_stdin().await
++    }
++    pub async fn observe(&self, event: &ChildExit<'_>) -> Result<bool> {
++        self.owner.observe(event).await
++    }
++}
++
++#[derive(Debug, Default)]
++pub(crate) struct Registry {
++    pub gate: Arc<Mutex<()>>,
++    entries: BTreeMap<String, Arc<Entry>>,
++    pub shutting_down: bool,
++}
++impl Registry {
++    pub fn entry(&self, cid: &str) -> Option<Arc<Entry>> {
++        self.entries.get(cid).cloned()
++    }
++    pub fn entries(&self) -> Vec<Arc<Entry>> {
++        self.entries.values().cloned().collect()
++    }
++    pub fn ordinary_allowed(&self) -> Result<()> {
++        ensure!(
++            !self.shutting_down && self.entries.is_empty(),
++            "guest reserved for managed confidential storage or teardown"
++        );
++        Ok(())
++    }
++    pub fn all_closed(&self) -> bool {
++        self.entries.values().all(|e| e.closed())
++    }
++    fn insert(
++        &mut self,
++        id: String,
++        owner: Arc<dyn Managed>,
++        ordinary_count: usize,
++    ) -> Result<Arc<Entry>> {
++        self.ordinary_allowed()?;
++        ensure!(
++            ordinary_count == 0,
++            "ordinary containers already own this guest"
++        );
++        kata_sys_util::validate::verify_id(&id)?;
++        let entry = Entry::new(id.clone(), owner);
++        self.entries.insert(id, entry.clone());
++        Ok(entry)
++    }
++    #[cfg(test)]
++    pub fn insert_test(
++        &mut self,
++        id: &str,
++        owner: Arc<dyn Managed>,
++        ordinary_count: usize,
++    ) -> Result<Arc<Entry>> {
++        self.insert(id.into(), owner, ordinary_count)
++    }
++}
++
++/// Gate precedes reaper/Sandbox/runtime locks. Clone it under Sandbox, release
++/// Sandbox, then await the gate. The reaper never acquires this operation gate.
++pub(crate) async fn operation(sandbox: &Arc<Mutex<Sandbox>>) -> OwnedMutexGuard<()> {
++    let gate = sandbox.lock().await.managed_storage.gate.clone();
++    gate.lock_owned().await
++}
++
++#[allow(dead_code)] // No provider/factory is wired through the hard activation gate.
++struct Owner<B: ConsumerBackend<ConsumerHandles>> {
++    agent: Arc<Agent<B, KataRuntime>>,
++    process: ProcessHandle,
++    id: String,
++}
++#[async_trait]
++impl<B: ConsumerBackend<ConsumerHandles>> Managed for Owner<B> {
++    async fn start(&self) -> Result<()> {
++        Ok(self.agent.start(&self.id).await?)
++    }
++    async fn close(&self) -> Result<()> {
++        Ok(self.agent.close(&self.id).await?)
++    }
++    async fn wait(&self) -> Result<i32> {
++        Ok(self.process.wait().await?)
++    }
++    async fn close_stdin(&self) -> Result<()> {
++        Ok(self.process.close_stdin().await?)
++    }
++    async fn observe(&self, event: &ChildExit<'_>) -> Result<bool> {
++        Ok(self.process.observe(event).await?)
++    }
++}
++
++/// Trusted guest-only seam. The caller must have authenticated the authority
++/// session/grant and performed measured OCI/device preflight. Never call from a
++/// host request by interpreting its annotation as a VerifiedGrant. No such caller
++/// exists in this patch. Install before preparing so failed effects retain an owner.
++#[allow(dead_code)]
++pub(crate) async fn install<B: ConsumerBackend<ConsumerHandles>>(
++    sandbox: Arc<Mutex<Sandbox>>,
++    container: LinuxContainer,
++    process: Process,
++    backend: B,
++    grant: VerifiedGrant,
++    device: String,
++    session: String,
++) -> Result<()> {
++    tokio::spawn(async move {
++        let _operation = operation(&sandbox).await;
++        ensure!(
++            session == grant.claims().session_sha256,
++            "authority session mismatch"
++        );
++        {
++            let s = sandbox.lock().await;
++            s.managed_storage.ordinary_allowed()?;
++            ensure!(
++                s.containers.is_empty(),
++                "ordinary containers already own this guest"
++            );
++        }
++        let id = Identity {
++            container_id: container.id.clone(),
++            container_name: grant.claims().container_name.clone(),
++            activation_id: grant.claims().activation_id.clone(),
++        };
++        let runtime = KataRuntime::new(id.clone(), container, process)?;
++        let observer = runtime.process_handle(&id).await?;
++        let agent = Agent::new(backend, runtime, session, 1);
++        let owner = Arc::new(Owner {
++            agent: agent.clone(),
++            process: observer,
++            id: id.container_id.clone(),
++        });
++        {
++            let mut s = sandbox.lock().await;
++            let count = s.containers.len();
++            s.managed_storage
++                .insert(id.container_id.clone(), owner, count)?;
++        }
++        agent.prepare(id.container_id, grant, device).await?;
++        Ok(())
++    })
++    .await
++    .map_err(|_| anyhow!("managed install worker failed; ownership retained"))?
++}
+diff --git a/src/agent/src/rpc.rs b/src/agent/src/rpc.rs
+index 963e803..0a57a99 100644
+--- a/src/agent/src/rpc.rs
++++ b/src/agent/src/rpc.rs
+@@ -209,11 +209,40 @@ pub struct AgentService {
+ }
+ 
+ impl AgentService {
++    async fn do_destroy_sandbox(&self) -> Result<()> {
++        let _operation = crate::managed_storage::operation(&self.sandbox).await;
++        let managed = {
++            let mut s = self.sandbox.lock().await;
++            s.managed_storage.shutting_down = true;
++            s.managed_storage.entries()
++        };
++        // No Sandbox lock across managed cleanup: the reaper needs it.
++        for entry in managed {
++            entry.close().await?;
++        }
++        let mut sandbox = self.sandbox.lock().await;
++        sandbox.destroy().await?;
++        drop(sandbox.event_tx.take());
++        sandbox
++            .sender
++            .take()
++            .ok_or_else(|| anyhow!("failed to get sandbox sender channel"))?
++            .send(1)
++            .map_err(|_| anyhow!("sandbox shutdown receiver unavailable"))?;
++        Ok(())
++    }
++
+     #[instrument]
+     async fn do_create_container(
+         &self,
+         req: protocols::agent::CreateContainerRequest,
+     ) -> Result<()> {
++        let _operation = crate::managed_storage::operation(&self.sandbox).await;
++        self.sandbox
++            .lock()
++            .await
++            .managed_storage
++            .ordinary_allowed()?;
+         let cid = req.container_id.clone();
+         let result = self.do_create_container_inner(req).await;
+         if result.is_err() {
+@@ -240,7 +269,7 @@ impl AgentService {
+ 
+         let use_sandbox_pidns = req.sandbox_pidns();
+ 
+-        let mut oci = match req.OCI.into_option() {
++        let mut oci = match req.OCI.clone().into_option() {
+             Some(spec) => spec.into(),
+             None => {
+                 error!(sl(), "no oci spec in the create container request!");
+@@ -248,6 +277,8 @@ impl AgentService {
+             }
+         };
+ 
++        crate::confidential_mount::preflight(&req, &oci)?;
++
+         let container_name = k8s::container_name(&oci);
+ 
+         info!(sl(), "receive createcontainer, spec: {:?}", &oci);
+@@ -313,6 +344,7 @@ impl AgentService {
+             .await
+             .map_err(|e| anyhow!("failed to handle sealed secrets: {}", e))?;
+ 
++        let _reaper = rustjail::container::WAIT_PID_LOCKER.lock().await;
+         let mut s = self.sandbox.lock().await;
+         s.container_mounts.insert(cid.clone(), m);
+ 
+@@ -388,7 +420,7 @@ impl AgentService {
+ 
+         s.update_shared_pidns(&ctr)?;
+         s.setup_shared_mounts(&ctr, &req.shared_mounts)?;
+-        s.add_container(ctr);
++        s.add_container(ctr)?;
+         info!(sl(), "created container!");
+ 
+         Ok(())
+@@ -396,6 +428,15 @@ impl AgentService {
+ 
+     #[instrument]
+     async fn do_start_container(&self, req: protocols::agent::StartContainerRequest) -> Result<()> {
++        let _operation = crate::managed_storage::operation(&self.sandbox).await;
++        let managed = {
++            let s = self.sandbox.lock().await;
++            anyhow::ensure!(!s.managed_storage.shutting_down, "sandbox is shutting down");
++            s.managed_storage.entry(&req.container_id)
++        };
++        if let Some(entry) = managed {
++            return entry.start().await;
++        }
+         let mut s = self.sandbox.lock().await;
+         let sid = s.id.clone();
+         let cid = req.container_id.clone();
+@@ -424,6 +465,24 @@ impl AgentService {
+         &self,
+         req: protocols::agent::RemoveContainerRequest,
+     ) -> Result<()> {
++        let _operation = crate::managed_storage::operation(&self.sandbox).await;
++        let managed = self
++            .sandbox
++            .lock()
++            .await
++            .managed_storage
++            .entry(&req.container_id);
++        if let Some(entry) = managed {
++            // Entry owns a service task: deadline/caller cancellation does not
++            // abandon storage effects. Keep its tombstone and retry state.
++            return if req.timeout == 0 {
++                entry.close().await
++            } else {
++                tokio::time::timeout(Duration::from_secs(req.timeout.into()), entry.close())
++                    .await
++                    .map_err(|_| anyhow!("managed cleanup pending; ownership retained"))?
++            };
++        }
+         let cid = req.container_id;
+ 
+         // Drop the host guest mapping for this container so we can reuse the
+@@ -464,6 +523,12 @@ impl AgentService {
+ 
+     #[instrument]
+     async fn do_exec_process(&self, req: protocols::agent::ExecProcessRequest) -> Result<()> {
++        let _operation = crate::managed_storage::operation(&self.sandbox).await;
++        self.sandbox
++            .lock()
++            .await
++            .managed_storage
++            .ordinary_allowed()?;
+         let cid = req.container_id;
+         let exec_id = req.exec_id;
+ 
+@@ -477,6 +542,7 @@ impl AgentService {
+             None
+         };
+ 
++        let _reaper = rustjail::container::WAIT_PID_LOCKER.lock().await;
+         let mut sandbox = self.sandbox.lock().await;
+         let mut process = req
+             .process
+@@ -608,6 +674,17 @@ impl AgentService {
+         &self,
+         req: protocols::agent::WaitProcessRequest,
+     ) -> Result<protocols::agent::WaitProcessResponse> {
++        let managed = self
++            .sandbox
++            .lock()
++            .await
++            .managed_storage
++            .entry(&req.container_id);
++        if let Some(entry) = managed {
++            let mut response = WaitProcessResponse::new();
++            response.status = entry.wait(&req.exec_id).await?;
++            return Ok(response);
++        }
+         let cid = req.container_id;
+         let mut eid = req.exec_id;
+         let mut resp = WaitProcessResponse::new();
+@@ -742,6 +819,20 @@ impl AgentService {
+         &self,
+         req: protocols::agent::WriteStreamRequest,
+     ) -> Result<protocols::agent::WriteStreamResponse> {
++        let managed = self
++            .sandbox
++            .lock()
++            .await
++            .managed_storage
++            .entry(&req.container_id);
++        if let Some(entry) = managed {
++            anyhow::ensure!(
++                req.data.is_empty(),
++                "managed streaming stdin is unavailable"
++            );
++            entry.close_stdin(&req.exec_id).await?;
++            return Ok(WriteStreamResponse::new());
++        }
+         let cid = req.container_id;
+         let eid = req.exec_id;
+ 
+@@ -779,6 +870,15 @@ impl AgentService {
+         req: &protocols::agent::ReadStreamRequest,
+         stdout: bool,
+     ) -> Result<protocols::agent::ReadStreamResponse> {
++        anyhow::ensure!(
++            self.sandbox
++                .lock()
++                .await
++                .managed_storage
++                .entry(&req.container_id)
++                .is_none(),
++            "managed streaming output is unavailable; bounded capture is not ReadStream"
++        );
+         let cid = &req.container_id;
+         let eid = &req.exec_id;
+ 
+@@ -1043,6 +1143,13 @@ impl agent_ttrpc::AgentService for AgentService {
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "remove_stale_virtiofs_share_mounts", req);
+         is_allowed(&req).await?;
++        let _operation = crate::managed_storage::operation(&self.sandbox).await;
++        self.sandbox
++            .lock()
++            .await
++            .managed_storage
++            .ordinary_allowed()
++            .map_ttrpc_err(same)?;
+         let mount_infos = parse_mount_table("/proc/self/mountinfo").map_ttrpc_err(same)?;
+         for m in &mount_infos {
+             if m.mount_point.starts_with(KATA_GUEST_SHARE_DIR) {
+@@ -1104,6 +1211,16 @@ impl agent_ttrpc::AgentService for AgentService {
+         trace_rpc_call!(ctx, "close_stdin", req);
+         is_allowed(&req).await?;
+ 
++        let managed = self
++            .sandbox
++            .lock()
++            .await
++            .managed_storage
++            .entry(&req.container_id);
++        if let Some(entry) = managed {
++            entry.close_stdin(&req.exec_id).await.map_ttrpc_err(same)?;
++            return Ok(Empty::new());
++        }
+         let cid = req.container_id;
+         let eid = req.exec_id;
+         let mut sandbox = self.sandbox.lock().await;
+@@ -1279,6 +1396,13 @@ impl agent_ttrpc::AgentService for AgentService {
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "update_mounts", req);
+         is_allowed(&req).await?;
++        let _operation = crate::managed_storage::operation(&self.sandbox).await;
++        self.sandbox
++            .lock()
++            .await
++            .managed_storage
++            .ordinary_allowed()
++            .map_ttrpc_err(same)?;
+ 
+         update_ephemeral_mounts(sl(), &req.storages, &self.sandbox)
+             .await
+@@ -1471,6 +1595,13 @@ impl agent_ttrpc::AgentService for AgentService {
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "create_sandbox", req);
+         is_allowed(&req).await?;
++        let _operation = crate::managed_storage::operation(&self.sandbox).await;
++        self.sandbox
++            .lock()
++            .await
++            .managed_storage
++            .ordinary_allowed()
++            .map_ttrpc_err(same)?;
+ 
+         {
+             let mut s = self.sandbox.lock().await;
+@@ -1530,22 +1661,7 @@ impl agent_ttrpc::AgentService for AgentService {
+         trace_rpc_call!(ctx, "destroy_sandbox", req);
+         is_allowed(&req).await?;
+ 
+-        let mut sandbox = self.sandbox.lock().await;
+-        // destroy all containers, clean up, notify agent to exit etc.
+-        sandbox.destroy().await.map_ttrpc_err(same)?;
+-        // Close get_oom_event connection,
+-        // otherwise it will block the shutdown of ttrpc.
+-        drop(sandbox.event_tx.take());
+-
+-        sandbox
+-            .sender
+-            .take()
+-            .map_ttrpc_err(
+-                ttrpc::Code::INTERNAL,
+-                "failed to get sandbox sender channel",
+-            )?
+-            .send(1)
+-            .map_ttrpc_err(same)?;
++        self.do_destroy_sandbox().await.map_ttrpc_err(same)?;
+ 
+         Ok(Empty::new())
+     }
+@@ -1676,6 +1792,13 @@ impl agent_ttrpc::AgentService for AgentService {
+         }
+         #[cfg(not(feature = "agent-policy"))]
+         is_allowed(&req).await?;
++        let _operation = crate::managed_storage::operation(&self.sandbox).await;
++        self.sandbox
++            .lock()
++            .await
++            .managed_storage
++            .ordinary_allowed()
++            .map_ttrpc_err(same)?;
+ 
+         do_copy_file(&req).map_ttrpc_err(same)?;
+ 
+@@ -1776,6 +1899,13 @@ impl agent_ttrpc::AgentService for AgentService {
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "add_swap", req);
+         is_allowed(&req).await?;
++        let _operation = crate::managed_storage::operation(&self.sandbox).await;
++        self.sandbox
++            .lock()
++            .await
++            .managed_storage
++            .ordinary_allowed()
++            .map_ttrpc_err(same)?;
+ 
+         do_add_swap(&self.sandbox, &req).await.map_ttrpc_err(same)?;
+ 
+@@ -1789,6 +1919,13 @@ impl agent_ttrpc::AgentService for AgentService {
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "add_swap_path", req);
+         is_allowed(&req).await?;
++        let _operation = crate::managed_storage::operation(&self.sandbox).await;
++        self.sandbox
++            .lock()
++            .await
++            .managed_storage
++            .ordinary_allowed()
++            .map_ttrpc_err(same)?;
+ 
+         do_add_swap_path(&req).await.map_ttrpc_err(same)?;
+ 
+@@ -2996,7 +3133,7 @@ mod tests {
+                     .processes
+                     .insert(exec_process.exec_id.clone(), exec_process);
+ 
+-                sandbox.add_container(linux_container);
++                sandbox.add_container(linux_container).unwrap();
+             }
+ 
+             let agent_service = Box::new(AgentService {
+@@ -3762,3 +3899,442 @@ COMMIT
+         assert_eq!(ids, vec!["container-1", "container-2"]);
+     }
+ }
++
++#[cfg(test)]
++mod managed_storage_tests {
++    use super::*;
++    use crate::managed_storage::{Entry, Managed};
++    use confidential_storage_kata_adapter::process::ChildExit;
++    use std::sync::atomic::{AtomicBool, AtomicI32, AtomicUsize, Ordering};
++    use tokio::sync::{watch, Notify};
++
++    struct TestOwner {
++        starts: AtomicUsize,
++        closes: AtomicUsize,
++        stdin_closes: AtomicUsize,
++        fail_close: AtomicBool,
++        block_close: AtomicBool,
++        wait_on_exit: AtomicBool,
++        entered: Notify,
++        finish: Notify,
++        pid: AtomicI32,
++        exit: watch::Sender<Option<i32>>,
++    }
++    impl TestOwner {
++        fn new() -> Arc<Self> {
++            Arc::new(Self {
++                starts: AtomicUsize::new(0),
++                closes: AtomicUsize::new(0),
++                stdin_closes: AtomicUsize::new(0),
++                fail_close: AtomicBool::new(false),
++                block_close: AtomicBool::new(false),
++                wait_on_exit: AtomicBool::new(false),
++                entered: Notify::new(),
++                finish: Notify::new(),
++                pid: AtomicI32::new(-1),
++                exit: watch::channel(None).0,
++            })
++        }
++    }
++    #[async_trait]
++    impl Managed for TestOwner {
++        async fn start(&self) -> Result<()> {
++            self.starts.fetch_add(1, Ordering::SeqCst);
++            Ok(())
++        }
++        async fn close(&self) -> Result<()> {
++            self.closes.fetch_add(1, Ordering::SeqCst);
++            self.entered.notify_one();
++            if self.block_close.load(Ordering::SeqCst) {
++                self.finish.notified().await;
++            }
++            if self.wait_on_exit.load(Ordering::SeqCst) {
++                self.wait().await?;
++            }
++            anyhow::ensure!(
++                !self.fail_close.load(Ordering::SeqCst),
++                "injected storage cleanup failure"
++            );
++            Ok(())
++        }
++        async fn wait(&self) -> Result<i32> {
++            let mut rx = self.exit.subscribe();
++            loop {
++                if let Some(code) = *rx.borrow() {
++                    return Ok(code);
++                }
++                rx.changed().await?;
++            }
++        }
++        async fn close_stdin(&self) -> Result<()> {
++            self.stdin_closes.fetch_add(1, Ordering::SeqCst);
++            Ok(())
++        }
++        async fn observe(&self, event: &ChildExit<'_>) -> Result<bool> {
++            if event.pid() != self.pid.load(Ordering::SeqCst) {
++                return Ok(false);
++            }
++            self.exit.send_replace(Some(event.code()));
++            Ok(true)
++        }
++    }
++    fn service() -> Arc<AgentService> {
++        Arc::new(AgentService {
++            sandbox: Arc::new(Mutex::new(
++                Sandbox::new(&slog::Logger::root(slog::Discard, o!())).unwrap(),
++            )),
++            init_mode: false,
++            oma: None,
++        })
++    }
++    async fn install(service: &AgentService, owner: Arc<TestOwner>) -> Arc<Entry> {
++        service
++            .sandbox
++            .lock()
++            .await
++            .managed_storage
++            .insert_test("managed", owner, 0)
++            .unwrap()
++    }
++    fn start() -> protocols::agent::StartContainerRequest {
++        protocols::agent::StartContainerRequest {
++            container_id: "managed".into(),
++            ..Default::default()
++        }
++    }
++    fn remove() -> protocols::agent::RemoveContainerRequest {
++        protocols::agent::RemoveContainerRequest {
++            container_id: "managed".into(),
++            ..Default::default()
++        }
++    }
++    fn wait() -> protocols::agent::WaitProcessRequest {
++        protocols::agent::WaitProcessRequest {
++            container_id: "managed".into(),
++            ..Default::default()
++        }
++    }
++
++    #[tokio::test]
++    async fn managed_storage_rpc_routes_and_rejects_bypasses() {
++        let service = service();
++        let owner = TestOwner::new();
++        let entry = install(&service, owner.clone()).await;
++        service.do_start_container(start()).await.unwrap();
++        assert_eq!(owner.starts.load(Ordering::SeqCst), 1);
++        assert!(service.sandbox.lock().await.containers.is_empty());
++        assert!(service
++            .sandbox
++            .lock()
++            .await
++            .managed_storage
++            .insert_test("other", TestOwner::new(), 0)
++            .is_err());
++        assert!(service
++            .do_create_container(Default::default())
++            .await
++            .unwrap_err()
++            .to_string()
++            .contains("reserved"));
++        assert!(service
++            .do_exec_process(protocols::agent::ExecProcessRequest {
++                container_id: "managed".into(),
++                ..Default::default()
++            })
++            .await
++            .is_err());
++        assert!(service
++            .do_signal_process(protocols::agent::SignalProcessRequest {
++                container_id: "managed".into(),
++                signal: 9,
++                ..Default::default()
++            })
++            .await
++            .is_err());
++        assert!(service
++            .do_write_stream(protocols::agent::WriteStreamRequest {
++                container_id: "managed".into(),
++                data: vec![1],
++                ..Default::default()
++            })
++            .await
++            .is_err());
++        assert!(service
++            .do_read_stream(
++                &protocols::agent::ReadStreamRequest {
++                    container_id: "managed".into(),
++                    ..Default::default()
++                },
++                true
++            )
++            .await
++            .unwrap_err()
++            .to_string()
++            .contains("not ReadStream"));
++        service
++            .do_write_stream(protocols::agent::WriteStreamRequest {
++                container_id: "managed".into(),
++                ..Default::default()
++            })
++            .await
++            .unwrap();
++        assert_eq!(owner.stdin_closes.load(Ordering::SeqCst), 1);
++        let mut wrong = wait();
++        wrong.exec_id = "other".into();
++        assert!(service.do_wait_process(wrong).await.is_err());
++        owner.exit.send_replace(Some(42));
++        let (a, b) = tokio::join!(
++            service.do_wait_process(wait()),
++            service.do_wait_process(wait())
++        );
++        assert_eq!((a.unwrap().status, b.unwrap().status), (42, 42));
++        assert!(!entry.closed());
++        service.do_remove_container(remove()).await.unwrap();
++        service.do_remove_container(remove()).await.unwrap();
++        assert!(entry.closed());
++        assert_eq!(owner.closes.load(Ordering::SeqCst), 1);
++        assert_eq!(service.do_wait_process(wait()).await.unwrap().status, 42);
++        assert!(service.do_start_container(start()).await.is_err());
++        assert!(service
++            .do_create_container(Default::default())
++            .await
++            .is_err());
++    }
++
++    #[tokio::test]
++    async fn managed_storage_failure_retained_and_sandbox_shutdown_ordered() {
++        let service = service();
++        let owner = TestOwner::new();
++        let entry = install(&service, owner.clone()).await;
++        let (tx, mut rx) = tokio::sync::oneshot::channel();
++        service.sandbox.lock().await.sender = Some(tx);
++        owner.fail_close.store(true, Ordering::SeqCst);
++        assert!(service.sandbox.lock().await.destroy().await.is_err());
++        assert!(service.do_destroy_sandbox().await.is_err());
++        assert!(!entry.closed());
++        assert!(rx.try_recv().is_err());
++        assert!(service.sandbox.lock().await.sender.is_some());
++        assert!(service.do_start_container(start()).await.is_err());
++        assert!(service
++            .do_create_container(Default::default())
++            .await
++            .is_err());
++        owner.fail_close.store(false, Ordering::SeqCst);
++        service.do_destroy_sandbox().await.unwrap();
++        assert_eq!(rx.await.unwrap(), 1);
++        assert!(entry.closed());
++        assert_eq!(owner.closes.load(Ordering::SeqCst), 2);
++    }
++
++    #[tokio::test]
++    async fn managed_storage_cancelled_remove_keeps_service_worker() {
++        let service = service();
++        let owner = TestOwner::new();
++        let entry = install(&service, owner.clone()).await;
++        owner.block_close.store(true, Ordering::SeqCst);
++        let caller = {
++            let s = service.clone();
++            tokio::spawn(async move { s.do_remove_container(remove()).await })
++        };
++        owner.entered.notified().await;
++        caller.abort();
++        assert!(caller.await.unwrap_err().is_cancelled());
++        assert!(!entry.closed());
++        owner.finish.notify_one();
++        tokio::time::timeout(Duration::from_secs(2), async {
++            while !entry.closed() {
++                tokio::task::yield_now().await;
++            }
++        })
++        .await
++        .unwrap();
++        service.do_remove_container(remove()).await.unwrap();
++        assert_eq!(owner.closes.load(Ordering::SeqCst), 1);
++    }
++
++    #[tokio::test]
++    async fn managed_storage_timeout_keeps_service_worker() {
++        let service = service();
++        let owner = TestOwner::new();
++        let entry = install(&service, owner.clone()).await;
++        owner.block_close.store(true, Ordering::SeqCst);
++        let mut req = remove();
++        req.timeout = 1;
++        assert!(service
++            .do_remove_container(req)
++            .await
++            .unwrap_err()
++            .to_string()
++            .contains("pending"));
++        assert!(!entry.closed());
++        owner.finish.notify_one();
++        tokio::time::timeout(Duration::from_secs(2), async {
++            while !entry.closed() {
++                tokio::task::yield_now().await;
++            }
++        })
++        .await
++        .unwrap();
++        service.do_remove_container(remove()).await.unwrap();
++        assert_eq!(owner.closes.load(Ordering::SeqCst), 1);
++    }
++
++    #[tokio::test]
++    async fn managed_storage_real_sigchld_unblocks_rpc_wait_and_teardown() {
++        let service = service();
++        let owner = TestOwner::new();
++        install(&service, owner.clone()).await;
++        // This is the agent's actual dispatcher and a real child, but the owner
++        // is a test double: this test does not attest or mount storage.
++        let child = std::process::Command::new("/bin/sh")
++            .args(["-c", "exit 37"])
++            .spawn()
++            .unwrap();
++        owner.pid.store(child.id() as i32, Ordering::SeqCst);
++        let unknown = std::process::Command::new("/bin/sh")
++            .args(["-c", "exit 19"])
++            .spawn()
++            .unwrap();
++        let waiter = {
++            let s = service.clone();
++            tokio::spawn(async move { s.do_wait_process(wait()).await.unwrap().status })
++        };
++        owner.wait_on_exit.store(true, Ordering::SeqCst);
++        let (tx, rx) = tokio::sync::oneshot::channel();
++        service.sandbox.lock().await.sender = Some(tx);
++        let teardown = {
++            let s = service.clone();
++            tokio::spawn(async move { s.do_destroy_sandbox().await })
++        };
++        owner.entered.notified().await;
++        tokio::time::timeout(Duration::from_secs(3), async {
++            loop {
++                crate::signal::handle_sigchild(
++                    slog::Logger::root(slog::Discard, o!()),
++                    service.sandbox.clone(),
++                )
++                .await
++                .unwrap();
++                if waiter.is_finished() {
++                    break;
++                }
++                tokio::time::sleep(Duration::from_millis(5)).await;
++            }
++        })
++        .await
++        .unwrap();
++        assert_eq!(waiter.await.unwrap(), 37);
++        tokio::time::timeout(Duration::from_secs(2), teardown)
++            .await
++            .unwrap()
++            .unwrap()
++            .unwrap();
++        assert_eq!(rx.await.unwrap(), 1);
++        // Drain the unknown helper too; the managed status remains unchanged.
++        tokio::time::sleep(Duration::from_millis(10)).await;
++        crate::signal::handle_sigchild(
++            slog::Logger::root(slog::Discard, o!()),
++            service.sandbox.clone(),
++        )
++        .await
++        .unwrap();
++        assert_eq!(service.do_wait_process(wait()).await.unwrap().status, 37);
++        drop((child, unknown));
++    }
++
++    #[tokio::test]
++    async fn managed_storage_registry_refuses_existing_ordinary_owner() {
++        let mut registry = crate::managed_storage::Registry::default();
++        assert!(registry
++            .insert_test("managed", TestOwner::new(), 1)
++            .is_err());
++        assert!(registry.entries().is_empty());
++        registry.ordinary_allowed().unwrap();
++    }
++    #[tokio::test]
++    async fn managed_storage_remove_failure_denies_restart_and_retries() {
++        let service = service();
++        let owner = TestOwner::new();
++        let entry = install(&service, owner.clone()).await;
++        owner.fail_close.store(true, Ordering::SeqCst);
++        assert!(service.do_remove_container(remove()).await.is_err());
++        assert!(!entry.closed());
++        assert!(service.do_start_container(start()).await.is_err());
++        assert_eq!(owner.starts.load(Ordering::SeqCst), 0);
++        owner.fail_close.store(false, Ordering::SeqCst);
++        service.do_remove_container(remove()).await.unwrap();
++        assert!(entry.closed());
++        assert_eq!(owner.closes.load(Ordering::SeqCst), 2);
++    }
++
++    #[tokio::test]
++    async fn managed_storage_dispatch_preserves_ordinary_wait() {
++        let service = service();
++        let logger = slog::Logger::root(slog::Discard, o!());
++        let child = std::process::Command::new("/bin/sh")
++            .args(["-c", "exit 23"])
++            .spawn()
++            .unwrap();
++        let mut p =
++            Process::new(&logger, &oci::Process::default(), "ordinary", true, 0, None).unwrap();
++        p.pid = child.id() as i32;
++        // A bookkeeping fixture, not a started rustjail container. Close the
++        // unused child pipe ends and register parent streams for normal cleanup.
++        for fd in
++            IntoIterator::into_iter([p.stdin.take(), p.stdout.take(), p.stderr.take()]).flatten()
++        {
++            assert_eq!(unsafe { libc::close(fd) }, 0);
++        }
++        drop(p.get_reader(StreamType::ParentStdout));
++        drop(p.get_reader(StreamType::ParentStderr));
++        let ctr = LinuxContainer {
++            id: "ordinary".into(),
++            root: String::new(),
++            config: CreateOpts::default(),
++            cgroup_manager: Box::new(
++                rustjail::cgroups::mock::Manager::new("", &oci::Spec::default(), None).unwrap(),
++            ),
++            init_process_pid: p.pid,
++            init_process_start_time: 0,
++            uid_map_path: String::new(),
++            gid_map_path: String::new(),
++            processes: std::iter::once(("ordinary".into(), p)).collect(),
++            status: Default::default(),
++            created: std::time::SystemTime::now(),
++            logger: logger.clone(),
++        };
++        service.sandbox.lock().await.add_container(ctr).unwrap();
++        let waiter = {
++            let s = service.clone();
++            tokio::spawn(async move {
++                s.do_wait_process(protocols::agent::WaitProcessRequest {
++                    container_id: "ordinary".into(),
++                    ..Default::default()
++                })
++                .await
++                .unwrap()
++                .status
++            })
++        };
++        tokio::time::timeout(Duration::from_secs(3), async {
++            while !waiter.is_finished() {
++                crate::signal::handle_sigchild(logger.clone(), service.sandbox.clone())
++                    .await
++                    .unwrap();
++                tokio::time::sleep(Duration::from_millis(5)).await;
++            }
++        })
++        .await
++        .unwrap();
++        assert_eq!(waiter.await.unwrap(), 23);
++        assert!(service
++            .sandbox
++            .lock()
++            .await
++            .get_container("ordinary")
++            .unwrap()
++            .processes
++            .is_empty());
++        drop(child);
++    }
++}
+diff --git a/src/agent/src/sandbox.rs b/src/agent/src/sandbox.rs
+index fa1cc5e..2756caf 100644
+--- a/src/agent/src/sandbox.rs
++++ b/src/agent/src/sandbox.rs
+@@ -117,6 +117,7 @@ pub struct Sandbox {
+     pub id: String,
+     pub hostname: String,
+     pub containers: HashMap<String, LinuxContainer>,
++    pub(crate) managed_storage: crate::managed_storage::Registry,
+     pub network: Network,
+     pub mounts: Vec<String>,
+     pub container_mounts: HashMap<String, Vec<String>>,
+@@ -156,6 +157,7 @@ impl Sandbox {
+             hostname: String::new(),
+             network: Network::new(),
+             containers: HashMap::new(),
++            managed_storage: Default::default(),
+             mounts: Vec::new(),
+             container_mounts: HashMap::new(),
+             container_verity_devices: HashMap::new(),
+@@ -292,8 +294,14 @@ impl Sandbox {
+         Ok(())
+     }
+ 
+-    pub fn add_container(&mut self, c: LinuxContainer) {
++    pub fn add_container(&mut self, c: LinuxContainer) -> Result<()> {
++        self.managed_storage.ordinary_allowed()?;
++        anyhow::ensure!(
++            !self.containers.contains_key(&c.id),
++            "container already exists"
++        );
+         self.containers.insert(c.id.clone(), c);
++        Ok(())
+     }
+ 
+     pub fn get_container(&mut self, id: &str) -> Option<&mut LinuxContainer> {
+@@ -342,6 +350,10 @@ impl Sandbox {
+ 
+     #[instrument]
+     pub async fn destroy(&mut self) -> Result<()> {
++        anyhow::ensure!(
++            self.managed_storage.all_closed(),
++            "managed storage cleanup must complete before Sandbox destruction"
++        );
+         for ctr in self.containers.values_mut() {
+             ctr.destroy().await?;
+         }
+@@ -982,7 +994,7 @@ mod tests {
+         let mut s = Sandbox::new(&logger).unwrap();
+         let (linux_container, _root) = create_linuxcontainer();
+ 
+-        s.add_container(linux_container);
++        s.add_container(linux_container).unwrap();
+         assert!(s.get_container("some_id").is_some());
+     }
+ 
+@@ -1082,7 +1094,7 @@ mod tests {
+             .processes
+             .insert("exec-123".to_string(), exec_process);
+ 
+-        s.add_container(linux_container);
++        s.add_container(linux_container).unwrap();
+ 
+         // empty exec-id will return init process
+         let p = s.find_container_process(cid, "");
+@@ -1134,7 +1146,7 @@ mod tests {
+             let test_exec_id = test_process.exec_id.clone();
+             linux_container.processes.insert(test_exec_id, test_process);
+ 
+-            s.add_container(linux_container);
++            s.add_container(linux_container).unwrap();
+ 
+             let find_result = s.find_process(test_pid);
+ 
+diff --git a/src/agent/src/signal.rs b/src/agent/src/signal.rs
+index 286e292..f575929 100644
+--- a/src/agent/src/signal.rs
++++ b/src/agent/src/signal.rs
+@@ -7,20 +7,22 @@
+ use crate::sandbox::Sandbox;
+ use anyhow::{anyhow, Result};
+ use capctl::prctl::set_subreaper;
+-use nix::sys::wait::WaitPidFlag;
+-use nix::sys::wait::{self, WaitStatus};
+-use nix::unistd;
++use confidential_storage_kata_adapter::process::Reaper;
++#[cfg(test)]
++use nix::sys::wait::WaitStatus;
++#[cfg(test)]
++use nix::unistd::Pid;
+ use slog::{error, info, o, Logger};
+ use std::sync::Arc;
+ use tokio::select;
+ use tokio::signal::unix::{signal, SignalKind};
+ use tokio::sync::watch::Receiver;
+ use tokio::sync::Mutex;
+-use unistd::Pid;
+ 
+ // Offset added to a signal number to derive the exit code of a process that
+ // was terminated by that signal, following the conventional shell semantics
+ // described in https://tldp.org/LDP/abs/html/exitcodes.html.
++#[cfg(test)]
+ const SIGNAL_EXIT_CODE_BASE: i32 = 128;
+ 
+ /// Derive a process exit code from its `WaitStatus`.
+@@ -29,6 +31,7 @@ const SIGNAL_EXIT_CODE_BASE: i32 = 128;
+ /// terminated by a signal reports `128 + signal_number` (e.g. SIGKILL(9) ->
+ /// 137, SIGTERM(15) -> 143). Returns `None` for statuses that do not represent
+ /// process termination (e.g. stopped/continued), which the caller should skip.
++#[cfg(test)]
+ fn exit_code_from_wait_status(wait_status: WaitStatus) -> Option<i32> {
+     match wait_status {
+         WaitStatus::Exited(_, code) => Some(code),
+@@ -37,69 +40,42 @@ fn exit_code_from_wait_status(wait_status: WaitStatus) -> Option<i32> {
+     }
+ }
+ 
+-async fn handle_sigchild(logger: Logger, sandbox: Arc<Mutex<Sandbox>>) -> Result<()> {
+-    info!(logger, "handling signal"; "signal" => "SIGCHLD");
+-
++pub(crate) async fn handle_sigchild(logger: Logger, sandbox: Arc<Mutex<Sandbox>>) -> Result<()> {
+     loop {
+-        // Avoid reaping the undesirable child's signal, e.g., execute_hook's
+-        // The lock should be released immediately.
+-        let _locker = rustjail::container::WAIT_PID_LOCKER.lock().await;
+-        let result = wait::waitpid(
+-            Some(Pid::from_raw(-1)),
+-            Some(WaitPidFlag::WNOHANG | WaitPidFlag::__WALL),
+-        );
+-
+-        let wait_status = match result {
+-            Ok(s) => {
+-                if s == WaitStatus::StillAlive {
+-                    return Ok(());
+-                }
+-                s
+-            }
+-            Err(e) => return Err(anyhow!(e).context("waitpid reaper failed")),
++        // Shared exclusion covers waitpid, ownership dispatch and publication.
++        // Preparation takes this lock before Sandbox or owned runtime state.
++        let reaper = Reaper::lock().await;
++        let Some(event) = reaper
++            .next_exit()
++            .map_err(|e| anyhow!(e).context("waitpid reaper failed"))?
++        else {
++            return Ok(());
+         };
+-
+-        info!(logger, "wait_status"; "wait_status result" => format!("{:?}", wait_status));
+-
+-        if let Some(pid) = wait_status.pid() {
+-            let raw_pid = pid.as_raw();
+-            let child_pid = format!("{raw_pid}");
+-
+-            let logger = logger.new(o!("child-pid" => child_pid));
+-
+-            let sandbox_ref = sandbox.clone();
+-            let mut sandbox = sandbox_ref.lock().await;
+-
+-            let process = sandbox.find_process(raw_pid);
+-            if process.is_none() {
+-                info!(logger, "child exited unexpectedly");
+-                continue;
+-            }
+-
+-            let p = process.unwrap();
+-
+-            let ret: i32 = match exit_code_from_wait_status(wait_status) {
+-                Some(code) => code,
+-                None => {
+-                    info!(logger, "got wrong status for process";
+-                                  "child-status" => format!("{:?}", wait_status));
+-                    continue;
+-                }
+-            };
+-
+-            // In passfd io mode, we need to wait for the copy task end.
+-            if let Some(proc_io) = &mut p.proc_io {
+-                proc_io.wg_output.wait().await;
++        let entries = sandbox.lock().await.managed_storage.entries();
++        let mut managed = false;
++        for entry in entries {
++            if entry.observe(&event).await? {
++                managed = true;
++                break;
+             }
++        }
++        if managed {
++            continue;
++        }
+ 
+-            p.exit_code = ret;
+-            let _ = p.exit_tx.take();
+-
+-            info!(logger, "notify term to close");
+-            // close the socket file to notify readStdio to close terminal specifically
+-            // in case this process's terminal has been inherited by its children.
+-            p.notify_term_close();
++        // Ordinary containers and bootstrap/helper children retain their existing
++        // route. Never reap an unmatched event a second time.
++        let mut sandbox = sandbox.lock().await;
++        let Some(p) = sandbox.find_process(event.pid()) else {
++            info!(logger, "unowned child exit"; "pid" => event.pid(), "status" => event.code());
++            continue;
++        };
++        if let Some(proc_io) = &mut p.proc_io {
++            proc_io.wg_output.wait().await;
+         }
++        p.exit_code = event.code();
++        let _ = p.exit_tx.take();
++        p.notify_term_close();
+     }
+ }
+ 
+diff --git a/src/libs/protocols/confidential-mount-v1-fixtures.json b/src/libs/protocols/confidential-mount-v1-fixtures.json
+new file mode 100644
+index 0000000..8d88cc8
+--- /dev/null
++++ b/src/libs/protocols/confidential-mount-v1-fixtures.json
+@@ -0,0 +1,87 @@
++[
++  {
++    "name": "rw",
++    "accept": true,
++    "raw": "{\"schemaVersion\": 1, \"volumeId\": \"scratch\", \"profileDigest\": \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"manifestUri\": \"kbs:///default/volume-records/scratch\", \"containerName\": \"app\", \"devicePath\": \"/dev/encrypted-data\", \"destination\": \"/data\", \"access\": \"rw\", \"operation\": \"reopen\"}"
++  },
++  {
++    "name": "ro",
++    "accept": true,
++    "raw": "{\"schemaVersion\": 1, \"volumeId\": \"scratch\", \"profileDigest\": \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"manifestUri\": \"kbs:///default/volume-records/scratch\", \"containerName\": \"app\", \"devicePath\": \"/dev/encrypted-data\", \"destination\": \"/models\", \"access\": \"ro\", \"operation\": \"reopen\"}"
++  },
++  {
++    "name": "initialize",
++    "accept": false,
++    "raw": "{\"schemaVersion\": 1, \"volumeId\": \"scratch\", \"profileDigest\": \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"manifestUri\": \"kbs:///default/volume-records/scratch\", \"containerName\": \"app\", \"devicePath\": \"/dev/encrypted-data\", \"destination\": \"/data\", \"access\": \"rw\", \"operation\": \"initialize\"}"
++  },
++  {
++    "name": "path-traversal",
++    "accept": false,
++    "raw": "{\"schemaVersion\": 1, \"volumeId\": \"scratch\", \"profileDigest\": \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"manifestUri\": \"kbs:///default/volume-records/scratch\", \"containerName\": \"app\", \"devicePath\": \"/dev/../etc\", \"destination\": \"/data\", \"access\": \"rw\", \"operation\": \"reopen\"}"
++  },
++  {
++    "name": "mount-path",
++    "accept": false,
++    "raw": "{\"schemaVersion\": 1, \"volumeId\": \"scratch\", \"profileDigest\": \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"manifestUri\": \"kbs:///default/volume-records/scratch\", \"containerName\": \"app\", \"devicePath\": \"/dev/encrypted-data\", \"destination\": \"/etc\", \"access\": \"rw\", \"operation\": \"reopen\"}"
++  },
++  {
++    "name": "model-write",
++    "accept": false,
++    "raw": "{\"schemaVersion\": 1, \"volumeId\": \"scratch\", \"profileDigest\": \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"manifestUri\": \"kbs:///default/volume-records/scratch\", \"containerName\": \"app\", \"devicePath\": \"/dev/encrypted-data\", \"destination\": \"/models\", \"access\": \"rw\", \"operation\": \"reopen\"}"
++  },
++  {
++    "name": "missing-digest",
++    "accept": false,
++    "raw": "{\"schemaVersion\": 1, \"volumeId\": \"scratch\", \"profileDigest\": \"\", \"manifestUri\": \"kbs:///default/volume-records/scratch\", \"containerName\": \"app\", \"devicePath\": \"/dev/encrypted-data\", \"destination\": \"/data\", \"access\": \"rw\", \"operation\": \"reopen\"}"
++  },
++  {
++    "name": "uri-query",
++    "accept": false,
++    "raw": "{\"schemaVersion\": 1, \"volumeId\": \"scratch\", \"profileDigest\": \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"manifestUri\": \"kbs:///default/volume-records/scratch?version=2\", \"containerName\": \"app\", \"devicePath\": \"/dev/encrypted-data\", \"destination\": \"/data\", \"access\": \"rw\", \"operation\": \"reopen\"}"
++  },
++  {
++    "name": "unknown-field",
++    "accept": false,
++    "raw": "{\"schemaVersion\": 1, \"volumeId\": \"scratch\", \"profileDigest\": \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"manifestUri\": \"kbs:///default/volume-records/scratch\", \"containerName\": \"app\", \"devicePath\": \"/dev/encrypted-data\", \"destination\": \"/data\", \"access\": \"rw\", \"operation\": \"reopen\", \"format\": true}"
++  },
++  {
++    "name": "null-operation",
++    "accept": false,
++    "raw": "{\"schemaVersion\": 1, \"volumeId\": \"scratch\", \"profileDigest\": \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"manifestUri\": \"kbs:///default/volume-records/scratch\", \"containerName\": \"app\", \"devicePath\": \"/dev/encrypted-data\", \"destination\": \"/data\", \"access\": \"rw\", \"operation\": null}"
++  },
++  {
++    "name": "float-version",
++    "accept": false,
++    "raw": "{\"schemaVersion\": 1.0, \"volumeId\": \"scratch\", \"profileDigest\": \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"manifestUri\": \"kbs:///default/volume-records/scratch\", \"containerName\": \"app\", \"devicePath\": \"/dev/encrypted-data\", \"destination\": \"/data\", \"access\": \"rw\", \"operation\": \"reopen\"}"
++  },
++  {
++    "name": "unknown-version",
++    "accept": false,
++    "raw": "{\"schemaVersion\": 2, \"volumeId\": \"scratch\", \"profileDigest\": \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"manifestUri\": \"kbs:///default/volume-records/scratch\", \"containerName\": \"app\", \"devicePath\": \"/dev/encrypted-data\", \"destination\": \"/data\", \"access\": \"rw\", \"operation\": \"reopen\"}"
++  },
++  {
++    "name": "duplicate-field",
++    "accept": false,
++    "raw": "{\"schemaVersion\": 1, \"schemaVersion\": 1, \"volumeId\": \"scratch\", \"profileDigest\": \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"manifestUri\": \"kbs:///default/volume-records/scratch\", \"containerName\": \"app\", \"devicePath\": \"/dev/encrypted-data\", \"destination\": \"/data\", \"access\": \"rw\", \"operation\": \"reopen\"}"
++  },
++  {
++    "name": "case-alias",
++    "accept": false,
++    "raw": "{\"schemaVersion\": 1, \"VolumeId\": \"scratch\", \"profileDigest\": \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"manifestUri\": \"kbs:///default/volume-records/scratch\", \"containerName\": \"app\", \"devicePath\": \"/dev/encrypted-data\", \"destination\": \"/data\", \"access\": \"rw\", \"operation\": \"reopen\"}"
++  },
++  {
++    "name": "trailing",
++    "accept": false,
++    "raw": "{\"schemaVersion\": 1, \"volumeId\": \"scratch\", \"profileDigest\": \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"manifestUri\": \"kbs:///default/volume-records/scratch\", \"containerName\": \"app\", \"devicePath\": \"/dev/encrypted-data\", \"destination\": \"/data\", \"access\": \"rw\", \"operation\": \"reopen\"} {}"
++  },
++  {
++    "name": "null",
++    "accept": false,
++    "raw": "null"
++  },
++  {
++    "name": "oversize",
++    "accept": false,
++    "raw": "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 {\"schemaVersion\": 1, \"volumeId\": \"scratch\", \"profileDigest\": \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"manifestUri\": \"kbs:///default/volume-records/scratch\", \"containerName\": \"app\", \"devicePath\": \"/dev/encrypted-data\", \"destination\": \"/data\", \"access\": \"rw\", \"operation\": \"reopen\"}"
++  }
++]
+diff --git a/src/libs/protocols/confidential-mount-v1-wire.b64 b/src/libs/protocols/confidential-mount-v1-wire.b64
+new file mode 100644
+index 0000000..f436767
+--- /dev/null
++++ b/src/libs/protocols/confidential-mount-v1-wire.b64
+@@ -0,0 +1 @@
++Cg1jb250YWluZXItMTIzEg1jb250YWluZXItMTIzKqkDChRjb25maWRlbnRpYWwtc2NzaS12MRKqAnsic2NoZW1hVmVyc2lvbiI6MSwidm9sdW1lSWQiOiJzY3JhdGNoIiwicHJvZmlsZURpZ2VzdCI6InNoYTI1NjphYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhIiwibWFuaWZlc3RVcmkiOiJrYnM6Ly8vZGVmYXVsdC92b2x1bWUtcmVjb3Jkcy9zY3JhdGNoIiwiY29udGFpbmVyTmFtZSI6ImFwcCIsImRldmljZVBhdGgiOiIvZGV2L2VuY3J5cHRlZC1kYXRhIiwiZGVzdGluYXRpb24iOiIvZGF0YSIsImFjY2VzcyI6InJ3Iiwib3BlcmF0aW9uIjoicmVvcGVuIn0aAzE6MCIEZXh0NCoCcncqBm5vc3VpZCoFbm9kZXYqBm5vZXhlYzI+L3J1bi9rYXRhLWNvbnRhaW5lcnMvY29uZmlkZW50aWFsLW1vdW50cy9jb250YWluZXItMTIzL3NjcmF0Y2gywgQSChoGCOgHEOgHSAEqEwoFL3Byb2MSBHByb2MaBHByb2MqbgoFL2RhdGESPi9ydW4va2F0YS1jb250YWluZXJzL2NvbmZpZGVudGlhbC1tb3VudHMvY29udGFpbmVyLTEyMy9zY3JhdGNoGgRiaW5kIgRiaW5kIgJydyIGbm9zdWlkIgVub2RldiIGbm9leGVjOtYCCidpby5rYXRhY29udGFpbmVycy5jb25maWRlbnRpYWwtbW91bnQudjESqgJ7InNjaGVtYVZlcnNpb24iOjEsInZvbHVtZUlkIjoic2NyYXRjaCIsInByb2ZpbGVEaWdlc3QiOiJzaGEyNTY6YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYSIsIm1hbmlmZXN0VXJpIjoia2JzOi8vL2RlZmF1bHQvdm9sdW1lLXJlY29yZHMvc2NyYXRjaCIsImNvbnRhaW5lck5hbWUiOiJhcHAiLCJkZXZpY2VQYXRoIjoiL2Rldi9lbmNyeXB0ZWQtZGF0YSIsImRlc3RpbmF0aW9uIjoiL2RhdGEiLCJhY2Nlc3MiOiJydyIsIm9wZXJhdGlvbiI6InJlb3BlbiJ9OigKIWlvLmt1YmVybmV0ZXMuY3JpLW8uQ29udGFpbmVyTmFtZRIDYXBwQiwiFgoKCAESAWMqA3J3bQoIEgFiKgNyd206EgoJL2Rldi9udWxsEgFjGAEgAw==
+diff --git a/src/runtime/pkg/confidentialmount/mount.go b/src/runtime/pkg/confidentialmount/mount.go
+new file mode 100644
+index 0000000..71513c4
+--- /dev/null
++++ b/src/runtime/pkg/confidentialmount/mount.go
+@@ -0,0 +1,197 @@
++// Copyright (c) 2026 Red Hat, Inc.
++// SPDX-License-Identifier: Apache-2.0
++
++// Package confidentialmount transports an untrusted volume locator to the guest.
++// It does not authorize mounts, release credentials, or initialize storage.
++package confidentialmount
++
++import (
++	"encoding/json"
++	"fmt"
++	"io"
++	"path"
++	"regexp"
++	"strings"
++
++	grpc "github.com/kata-containers/kata-containers/src/runtime/virtcontainers/pkg/agent/protocols/grpc"
++	specs "github.com/opencontainers/runtime-spec/specs-go"
++)
++
++const Annotation = "io.katacontainers.confidential-mount.v1"
++const Driver = "confidential-scsi-v1"
++const GuestRoot = "/run/kata-containers/confidential-mounts"
++const MaxRequestBytes = 4096
++
++// Request describes one existing filesystem. A trusted guest policy must match
++// all authorization fields; DevicePath is only an untrusted device locator.
++type Request struct {
++	SchemaVersion int    `json:"schemaVersion"`
++	VolumeID      string `json:"volumeId"`
++	ProfileDigest string `json:"profileDigest"`
++	ManifestURI   string `json:"manifestUri"`
++	ContainerName string `json:"containerName"`
++	DevicePath    string `json:"devicePath"`
++	Destination   string `json:"destination"`
++	Access        string `json:"access"`
++	Operation     string `json:"operation"`
++}
++
++var identifier = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,62}$`)
++var digest = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
++var resource = regexp.MustCompile(`^kbs:///[a-z0-9][a-z0-9-]{0,62}/[a-z0-9][a-z0-9-]{0,62}/[a-z0-9][a-z0-9-]{0,62}$`)
++
++// Parse rejects ambiguous/unknown fields rather than permitting differences
++// between the Go and Rust JSON parsers at the security boundary.
++func Parse(raw string) (Request, error) {
++	var req Request
++	if len(raw) > MaxRequestBytes {
++		return req, fmt.Errorf("confidential mount request too large")
++	}
++	dec := json.NewDecoder(strings.NewReader(raw))
++	token, err := dec.Token()
++	if err != nil || token != json.Delim('{') {
++		return req, fmt.Errorf("expected mount object")
++	}
++	seen := map[string]bool{}
++	for dec.More() {
++		token, err = dec.Token()
++		if err != nil {
++			return req, err
++		}
++		key, ok := token.(string)
++		if !ok || seen[key] {
++			return req, fmt.Errorf("duplicate mount field")
++		}
++		seen[key] = true
++		var value json.RawMessage
++		if err = dec.Decode(&value); err != nil {
++			return req, err
++		}
++	}
++	if _, err = dec.Token(); err != nil {
++		return req, err
++	}
++	if _, err = dec.Token(); err != io.EOF {
++		return req, fmt.Errorf("trailing mount data")
++	}
++	dec = json.NewDecoder(strings.NewReader(raw))
++	dec.DisallowUnknownFields()
++	if err = dec.Decode(&req); err != nil {
++		return req, err
++	}
++	// encoding/json otherwise accepts case-insensitive field aliases.
++	for key := range seen {
++		switch key {
++		case "schemaVersion", "volumeId", "profileDigest", "manifestUri", "containerName", "devicePath", "destination", "access", "operation":
++		default:
++			return req, fmt.Errorf("unknown mount field %q", key)
++		}
++	}
++	if req.SchemaVersion != 1 || !identifier.MatchString(req.VolumeID) || !identifier.MatchString(req.ContainerName) || !digest.MatchString(req.ProfileDigest) || !resource.MatchString(req.ManifestURI) {
++		return req, fmt.Errorf("invalid confidential mount identity")
++	}
++	if req.Operation != "reopen" {
++		return req, fmt.Errorf("only reopening existing volumes is supported")
++	}
++	if (req.Access != "rw" || req.Destination != "/data") && (req.Access != "ro" || req.Destination != "/models") {
++		return req, fmt.Errorf("unsupported access/destination")
++	}
++	if !strings.HasPrefix(req.DevicePath, "/dev/") || path.Clean(req.DevicePath) != req.DevicePath || !identifier.MatchString(strings.TrimPrefix(req.DevicePath, "/dev/")) {
++		return req, fmt.Errorf("invalid source device path")
++	}
++	return req, nil
++}
++
++// Convert removes the app's raw device and replaces it with a guest filesystem
++// bind. An old agent rejects the distinct driver instead of mounting plaintext.
++// All checks precede mutations, so failures leave the original spec intact.
++func Convert(spec *specs.Spec, devices []*grpc.Device, cid string) ([]*grpc.Device, []*grpc.Storage, error) {
++	raw, enabled := spec.Annotations[Annotation]
++	if !enabled {
++		return devices, nil, nil
++	}
++	req, err := Parse(raw)
++	if err != nil {
++		return nil, nil, err
++	}
++	name := spec.Annotations["io.kubernetes.cri.container-name"]
++	if name == "" {
++		name = spec.Annotations["io.kubernetes.cri-o.ContainerName"]
++	}
++	if name == "" {
++		return nil, nil, fmt.Errorf("missing container identity")
++	}
++	if name != req.ContainerName {
++		return devices, nil, nil
++	}
++	if !regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$`).MatchString(cid) {
++		return nil, nil, fmt.Errorf("invalid container ID")
++	}
++	if spec.Linux == nil {
++		return nil, nil, fmt.Errorf("missing Linux spec")
++	}
++	selected := -1
++	for i, d := range devices {
++		if d.ContainerPath == req.DevicePath {
++			if selected >= 0 || d.Type != "scsi" || !regexp.MustCompile(`^[0-9]+:[0-9]+$`).MatchString(d.Id) {
++				return nil, nil, fmt.Errorf("ambiguous or unsupported source device")
++			}
++			selected = i
++		}
++	}
++	if selected < 0 {
++		return nil, nil, fmt.Errorf("source device not attached")
++	}
++	rawIndex := -1
++	for i, d := range spec.Linux.Devices {
++		if d.Type == "b" {
++			if d.Path != req.DevicePath || rawIndex >= 0 {
++				return nil, nil, fmt.Errorf("only one raw block source is supported")
++			}
++			rawIndex = i
++		} else if d.Path == req.DevicePath {
++			return nil, nil, fmt.Errorf("source is not a block device")
++		}
++	}
++	if rawIndex < 0 {
++		return nil, nil, fmt.Errorf("source absent from OCI spec")
++	}
++	mountPoint := path.Join(GuestRoot, cid, req.VolumeID)
++	for _, m := range spec.Mounts {
++		if overlaps(m.Destination, req.Destination) || overlaps(m.Source, GuestRoot) {
++			return nil, nil, fmt.Errorf("overlapping mount")
++		}
++	}
++	data, _ := json.Marshal(req)
++	storage := &grpc.Storage{Driver: Driver, Source: devices[selected].Id, Fstype: "ext4", MountPoint: mountPoint, DriverOptions: []string{string(data)}, Options: []string{req.Access, "nosuid", "nodev", "noexec"}}
++	remaining := make([]*grpc.Device, 0, len(devices)-1)
++	for i, d := range devices {
++		if i != selected {
++			remaining = append(remaining, d)
++		}
++	}
++	linuxDevices := append([]specs.LinuxDevice{}, spec.Linux.Devices[:rawIndex]...)
++	linuxDevices = append(linuxDevices, spec.Linux.Devices[rawIndex+1:]...)
++	spec.Linux.Devices = linuxDevices
++	if spec.Linux.Resources != nil {
++		rules := make([]specs.LinuxDeviceCgroup, 0)
++		for _, rule := range spec.Linux.Resources.Devices {
++			if rule.Allow && (rule.Type == "b" || rule.Type == "a" || rule.Type == "") {
++				continue
++			}
++			rules = append(rules, rule)
++		}
++		spec.Linux.Resources.Devices = rules
++	}
++	spec.Mounts = append(spec.Mounts, specs.Mount{Destination: req.Destination, Type: "bind", Source: mountPoint, Options: []string{"bind", req.Access, "nosuid", "nodev", "noexec"}})
++	return remaining, []*grpc.Storage{storage}, nil
++}
++
++func overlaps(a, b string) bool {
++	if a == "" {
++		return false
++	}
++	a = path.Clean(a)
++	b = path.Clean(b)
++	return a == b || a == "/" || b == "/" || strings.HasPrefix(a, b+"/") || strings.HasPrefix(b, a+"/")
++}
+diff --git a/src/runtime/pkg/confidentialmount/mount_test.go b/src/runtime/pkg/confidentialmount/mount_test.go
+new file mode 100644
+index 0000000..a9a7939
+--- /dev/null
++++ b/src/runtime/pkg/confidentialmount/mount_test.go
+@@ -0,0 +1,197 @@
++// Copyright (c) 2026 Red Hat, Inc.
++// SPDX-License-Identifier: Apache-2.0
++package confidentialmount
++
++import (
++	"bytes"
++	"encoding/base64"
++	"encoding/json"
++	grpc "github.com/kata-containers/kata-containers/src/runtime/virtcontainers/pkg/agent/protocols/grpc"
++	specs "github.com/opencontainers/runtime-spec/specs-go"
++	"google.golang.org/protobuf/proto"
++	"os"
++	"reflect"
++	"strings"
++	"testing"
++)
++
++func valid() Request {
++	return Request{1, "scratch", "sha256:" + strings.Repeat("a", 64), "kbs:///default/volume-records/scratch", "app", "/dev/encrypted-data", "/data", "rw", "reopen"}
++}
++func encode(r Request) string { b, _ := json.Marshal(r); return string(b) }
++func fixture() (*specs.Spec, []*grpc.Device) {
++	return &specs.Spec{Process: &specs.Process{User: specs.User{UID: 1000, GID: 1000}, NoNewPrivileges: true}, Annotations: map[string]string{Annotation: encode(valid()), "io.kubernetes.cri-o.ContainerName": "app"}, Linux: &specs.Linux{Devices: []specs.LinuxDevice{{Path: "/dev/encrypted-data", Type: "b", Major: 8, Minor: 16}, {Path: "/dev/null", Type: "c", Major: 1, Minor: 3}}, Resources: &specs.LinuxResources{Devices: []specs.LinuxDeviceCgroup{{Allow: true, Type: "b", Access: "rwm"}, {Allow: true, Type: "c", Access: "rwm"}, {Allow: false, Type: "b", Access: "rwm"}}}}, Mounts: []specs.Mount{{Destination: "/proc", Type: "proc", Source: "proc"}}}, []*grpc.Device{{Type: "scsi", Id: "1:0", ContainerPath: "/dev/encrypted-data"}}
++}
++func TestConversionRemovesRawDevice(t *testing.T) {
++	for _, access := range []string{"rw", "ro"} {
++		t.Run(access, func(t *testing.T) {
++			spec, devices := fixture()
++			r := valid()
++			r.Access = access
++			if access == "ro" {
++				r.Destination = "/models"
++			}
++			spec.Annotations[Annotation] = encode(r)
++			remaining, storages, err := Convert(spec, devices, "container-123")
++			if err != nil {
++				t.Fatal(err)
++			}
++			if len(remaining) != 0 || len(storages) != 1 || len(spec.Linux.Devices) != 1 || spec.Linux.Devices[0].Type != "c" {
++				t.Fatal("raw device leaked")
++			}
++			for _, rule := range spec.Linux.Resources.Devices {
++				if rule.Allow && rule.Type == "b" {
++					t.Fatal("block access leaked")
++				}
++			}
++			if storages[0].Driver != Driver || storages[0].Source != "1:0" || storages[0].Shared {
++				t.Fatal("bad storage translation")
++			}
++			m := spec.Mounts[len(spec.Mounts)-1]
++			if m.Source != storages[0].MountPoint || m.Destination != r.Destination || !reflect.DeepEqual(m.Options, []string{"bind", access, "nosuid", "nodev", "noexec"}) {
++				t.Fatal("bad filesystem bind")
++			}
++		})
++	}
++}
++func TestInvalidRequests(t *testing.T) {
++	raw := encode(valid())
++	cases := map[string]string{
++		"duplicate":  strings.Replace(raw, `"schemaVersion":1`, `"schemaVersion":1,"schemaVersion":1`, 1),
++		"case-alias": strings.Replace(raw, "volumeId", "VolumeId", 1),
++		"unknown":    strings.Replace(raw, `"schemaVersion":1`, `"schemaVersion":1,"format":true`, 1),
++		"trailing":   raw + " {}", "null": "null", "oversize": strings.Repeat(" ", 4097) + raw,
++	}
++	mutations := map[string]func(*Request){
++		"format":        func(r *Request) { r.Operation = "initialize" },
++		"version":       func(r *Request) { r.SchemaVersion = 2 },
++		"traversal":     func(r *Request) { r.DevicePath = "/dev/../etc/shadow" },
++		"nested-device": func(r *Request) { r.DevicePath = "/dev/mapper/secret" },
++		"target":        func(r *Request) { r.Destination = "/etc" },
++		"model-rw":      func(r *Request) { r.Destination = "/models" },
++		"profile":       func(r *Request) { r.ProfileDigest = "latest" },
++		"uri-query":     func(r *Request) { r.ManifestURI += "?x=1" },
++		"uri-http":      func(r *Request) { r.ManifestURI = "http://host/record" },
++		"identity":      func(r *Request) { r.VolumeID = "../scratch" },
++	}
++	for name, change := range mutations {
++		r := valid()
++		change(&r)
++		cases[name] = encode(r)
++	}
++	for name, raw := range cases {
++		t.Run(name, func(t *testing.T) {
++			if _, err := Parse(raw); err == nil {
++				t.Fatal("accepted invalid request")
++			}
++		})
++	}
++}
++func TestFailureDoesNotMutateSpec(t *testing.T) {
++	cases := map[string]func(*specs.Spec, []*grpc.Device){
++		"other-block": func(s *specs.Spec, d []*grpc.Device) {
++			s.Linux.Devices = append(s.Linux.Devices, specs.LinuxDevice{Path: "/dev/alias", Type: "b", Major: 8, Minor: 16})
++		},
++		"wrong-driver":   func(s *specs.Spec, d []*grpc.Device) { d[0].Type = "blk" },
++		"missing-source": func(s *specs.Spec, d []*grpc.Device) { d[0].ContainerPath = "/dev/other" },
++		"bad-locator":    func(s *specs.Spec, d []*grpc.Device) { d[0].Id = "../1:0" },
++		"missing-oci":    func(s *specs.Spec, d []*grpc.Device) { s.Linux.Devices = nil },
++		"target-overlap": func(s *specs.Spec, d []*grpc.Device) {
++			s.Mounts = append(s.Mounts, specs.Mount{Destination: "/data/child", Source: "tmpfs"})
++		},
++		"source-overlap": func(s *specs.Spec, d []*grpc.Device) {
++			s.Mounts = append(s.Mounts, specs.Mount{Destination: "/other", Source: GuestRoot})
++		},
++	}
++	for name, change := range cases {
++		t.Run(name, func(t *testing.T) {
++			s, d := fixture()
++			change(s, d)
++			before, _ := json.Marshal(s)
++			if _, _, err := Convert(s, d, "container-123"); err == nil {
++				t.Fatal("accepted invalid transport")
++			}
++			after, _ := json.Marshal(s)
++			if string(before) != string(after) {
++				t.Fatal("partially mutated OCI")
++			}
++		})
++	}
++}
++func TestNotSelected(t *testing.T) {
++	s, d := fixture()
++	s.Annotations["io.kubernetes.cri-o.ContainerName"] = "sidecar"
++	remaining, m, err := Convert(s, d, "container-123")
++	if err != nil || len(m) != 0 || !reflect.DeepEqual(remaining, d) {
++		t.Fatal("unrelated container changed")
++	}
++}
++func TestDuplicateDeviceAndInvalidContainerID(t *testing.T) {
++	s, d := fixture()
++	if _, _, err := Convert(s, append(d, d[0]), "container-123"); err == nil {
++		t.Fatal("duplicate device accepted")
++	}
++	s, d = fixture()
++	if _, _, err := Convert(s, d, "../escape"); err == nil {
++		t.Fatal("container traversal accepted")
++	}
++}
++
++func TestSharedContractFixtures(t *testing.T) {
++	data, err := os.ReadFile("../../../libs/protocols/confidential-mount-v1-fixtures.json")
++	if err != nil {
++		t.Fatal(err)
++	}
++	var cases []struct {
++		Name   string `json:"name"`
++		Accept bool   `json:"accept"`
++		Raw    string `json:"raw"`
++	}
++	if err = json.Unmarshal(data, &cases); err != nil {
++		t.Fatal(err)
++	}
++	for _, c := range cases {
++		t.Run(c.Name, func(t *testing.T) {
++			_, err := Parse(c.Raw)
++			if (err == nil) != c.Accept {
++				t.Fatalf("accept=%v error=%v", c.Accept, err)
++			}
++		})
++	}
++}
++
++// The Rust agent consumes these exact protobuf bytes. Regeneration is explicit;
++// normal test runs compare against the checked-in fixture.
++func TestWireFixture(t *testing.T) {
++	spec, devices := fixture()
++	devices, storages, err := Convert(spec, devices, "container-123")
++	if err != nil {
++		t.Fatal(err)
++	}
++	oci, err := grpc.OCItoGRPC(spec)
++	if err != nil {
++		t.Fatal(err)
++	}
++	request := &grpc.CreateContainerRequest{ContainerId: "container-123", ExecId: "container-123", OCI: oci, Devices: devices, Storages: storages}
++	wire, err := proto.MarshalOptions{Deterministic: true}.Marshal(request)
++	if err != nil {
++		t.Fatal(err)
++	}
++	const fixturePath = "../../../libs/protocols/confidential-mount-v1-wire.b64"
++	if os.Getenv("UPDATE_CONFIDENTIAL_MOUNT_FIXTURE") == "1" {
++		if err = os.WriteFile(fixturePath, []byte(base64.StdEncoding.EncodeToString(wire)+"\n"), 0644); err != nil {
++			t.Fatal(err)
++		}
++	}
++	data, err := os.ReadFile(fixturePath)
++	if err != nil {
++		t.Fatal(err)
++	}
++	expected, err := base64.StdEncoding.DecodeString(strings.TrimSpace(string(data)))
++	if err != nil {
++		t.Fatal(err)
++	}
++	if !bytes.Equal(wire, expected) {
++		t.Fatal("wire format differs from shared Rust fixture")
++	}
++}
+diff --git a/src/runtime/virtcontainers/kata_agent.go b/src/runtime/virtcontainers/kata_agent.go
+index d613957..4112088 100644
+--- a/src/runtime/virtcontainers/kata_agent.go
++++ b/src/runtime/virtcontainers/kata_agent.go
+@@ -23,6 +23,7 @@ import (
+ 	"time"
+ 
+ 	"github.com/docker/go-units"
++	"github.com/kata-containers/kata-containers/src/runtime/pkg/confidentialmount"
+ 	"github.com/kata-containers/kata-containers/src/runtime/pkg/device/api"
+ 	"github.com/kata-containers/kata-containers/src/runtime/pkg/device/config"
+ 	"github.com/kata-containers/kata-containers/src/runtime/pkg/device/drivers"
+@@ -1698,6 +1699,12 @@ func (k *kataAgent) createContainer(ctx context.Context, sandbox *Sandbox, c *Co
+ 	// rootfs because the rootfs depends on them (it's an overlay of the layers).
+ 	ctrStorages = append(layerStorages, ctrStorages...)
+ 
++	ctrDevices, confidentialStorages, err := confidentialmount.Convert(ociSpec, ctrDevices, c.id)
++	if err != nil {
++		return nil, err
++	}
++	ctrStorages = append(ctrStorages, confidentialStorages...)
++
+ 	grpcSpec, err := grpc.OCItoGRPC(ociSpec)
+ 	if err != nil {
+ 		return nil, err

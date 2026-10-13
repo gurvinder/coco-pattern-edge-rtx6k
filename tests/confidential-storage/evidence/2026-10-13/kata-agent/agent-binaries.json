@@ -1,0 +1,10 @@
+{
+  "testExecutables": [
+    {
+      "name": "kata_agent-e59ba897389f3435",
+      "sha256": "d5bf00655eb4abee0f846ac3ff173c003849b10f1a081c99f857eca147dfe228",
+      "bytes": 366098296
+    }
+  ],
+  "deploymentArtifact": false
+}

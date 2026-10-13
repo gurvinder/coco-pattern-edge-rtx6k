@@ -1,0 +1,32 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /build/kata/src/agent/Cargo.toml
+workspace: /build/kata/Cargo.toml
+    Checking serde_json v1.0.149
+   Compiling tempfile v3.27.0
+   Compiling getrandom v0.3.4
+    Checking safe-path v0.1.0 (/build/kata/src/libs/safe-path)
+    Checking mem-agent v0.2.0 (/build/kata/src/libs/mem-agent)
+   Compiling protobuf-parse v3.7.2
+   Compiling prost-build v0.8.0
+    Checking oci-spec v0.8.4
+    Checking ahash v0.8.12
+    Checking runtime-spec v0.1.0 (/build/kata/src/libs/runtime-spec)
+   Compiling protobuf-codegen v3.7.2
+    Checking referencing v0.33.0
+    Checking reqwest v0.12.28
+    Checking confidential-storage-guest v0.1.0 (/build/kata/src/libs/confidential-storage-guest)
+   Compiling ttrpc-compiler v0.8.0
+   Compiling ttrpc-codegen v0.6.0
+    Checking jsonschema v0.33.0
+   Compiling ttrpc v0.8.6
+   Compiling protocols v0.1.0 (/build/kata/src/libs/protocols)
+    Checking kata-types v0.1.0 (/build/kata/src/libs/kata-types)
+    Checking slog-json v2.6.1
+    Checking logging v0.1.0 (/build/kata/src/libs/logging)
+    Checking container-device-interface v0.1.2
+    Checking vsock-exporter v0.1.0 (/build/kata/src/agent/vsock-exporter)
+    Checking kata-sys-util v0.1.0 (/build/kata/src/libs/kata-sys-util)
+    Checking rustjail v0.1.0 (/build/kata/src/agent/rustjail)
+    Checking confidential-storage-kata-adapter v0.1.0 (/build/kata/src/libs/confidential-storage-kata-adapter)
+    Checking kata-agent v0.1.0 (/build/kata/src/agent)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 16.38s

@@ -176,12 +176,31 @@ with cryptsetup and dm-integrity before proposing any node installation.
 The [agent lifecycle guide](../../docs/confidential-storage/agent-lifecycle.md)
 now identifies the concrete create/FIFO/destroy integration points in the pinned
 Kata source. A tested coordinator exists in the guest library, including the Linux
-backend adapter. No RPC is connected to it yet. The ordinary storage-before-create
-and destroy-before-storage-cleanup ordering must be changed for this path; the
-activation gate remains unchanged until those callbacks and attested providers exist.
+backend adapter. The cumulative agent patch below connects lifecycle RPC helpers
+to it, while authorized CreateContainer preparation remains unwired. The ordinary
+storage-before-create path must not be used for confidential volumes; the
+activation gate remains unchanged until that preparation and attested providers exist.
 
 A [concrete rustjail runtime adapter](runtime-adapter/README.md) now implements the
 coordinator callbacks against the pinned experimental Kata Git dependency. Its
-process/cgroup guard is kernel-tested, but a complete Kata container has not yet
-run through those callbacks. RPC/reaper/IO wiring, partial-create recovery and
-attested providers remain gates; no activation path was enabled.
+callbacks and encrypted backend have now been tested together in the disposable
+VM. The source-level agent integration below adds RPC/reaper routing; full guest
+RPC execution, streaming IO, partial-create recovery and attested providers remain
+gates. No activation path was enabled.
+
+## Actual agent ownership integration
+
+The cumulative [agent patch](confidential-agent-v1.patch) now connects actual
+Sandbox/RPC/SIGCHLD paths to the coordinator and process facade. It is prepared
+with `scripts/confidential-storage/apply-kata-agent.py`, using
+`agent-integration-lock.json`; apply it to a clean pinned checkout instead of
+applying the transport patch first. It copies hash-locked guest-library sources
+and uses the same workspace rustjail instance for both agent and adapter.
+
+The real-Kata encrypted-volume library tests and agent routing tests are now
+recorded separately. The agent tests use test owners and real child exits; they
+do not activate encrypted storage or exercise serialized host RPCs. Production
+streaming IO and attested providers remain missing, and no host request invokes
+the trusted installation seam. The hard activation error remains unchanged.
+See the [agent integration guide](../../docs/confidential-storage/kata-agent-integration.md)
+for reproduction, tested behavior and the remaining gates.

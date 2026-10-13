@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "status": "development-only-activation-disabled",
+  "sourceCommit": "e53adb460e6040e6aa9719a735e17301462c4fa9",
+  "patch": {
+    "file": "confidential-agent-v1.patch",
+    "sha256": "e70d6c444e36f879d7415e263163827c6fc348dfbf5c2feaa01c9a4af572ae21",
+    "cumulativeIncludesTransport": true
+  },
+  "overlay": [
+    {
+      "source": "components/confidential-storage-guest/Cargo.toml",
+      "destination": "src/libs/confidential-storage-guest/Cargo.toml",
+      "sourceSha256": "b6c066efd3c25ec442fb94e89ed22b4add9c64b661b0705ba76412ba0dc5598f",
+      "outputSha256": "b6c066efd3c25ec442fb94e89ed22b4add9c64b661b0705ba76412ba0dc5598f"
+    },
+    {
+      "source": "components/confidential-storage-guest/examples/kernel_opener_lab/lifecycle_lab.rs",
+      "destination": "src/libs/confidential-storage-guest/examples/kernel_opener_lab/lifecycle_lab.rs",
+      "sourceSha256": "9a4f9eaf513f89161edd3f5a4fbd7bf3473f93fc2ec0bff7a46bfc511a4e50d4",
+      "outputSha256": "9a4f9eaf513f89161edd3f5a4fbd7bf3473f93fc2ec0bff7a46bfc511a4e50d4"
+    },
+    {
+      "source": "components/confidential-storage-guest/examples/kernel_opener_lab.rs",
+      "destination": "src/libs/confidential-storage-guest/examples/kernel_opener_lab.rs",
+      "sourceSha256": "843423f7325924a2d64d75bea6536ce208c4f8df0e1bce9813c7bdde0dcc951b",
+      "outputSha256": "843423f7325924a2d64d75bea6536ce208c4f8df0e1bce9813c7bdde0dcc951b"
+    },
+    {
+      "source": "components/confidential-storage-guest/profiles/rw-luks2-v1.json",
+      "destination": "src/libs/confidential-storage-guest/profiles/rw-luks2-v1.json",
+      "sourceSha256": "d8d4bd81023565806a8996efb6702b2eb785b792929cf8b8a2733286eb2e10cb",
+      "outputSha256": "d8d4bd81023565806a8996efb6702b2eb785b792929cf8b8a2733286eb2e10cb"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/agent_lifecycle/tests.rs",
+      "destination": "src/libs/confidential-storage-guest/src/agent_lifecycle/tests.rs",
+      "sourceSha256": "4841578cf55e3eefdc6444f623254e33b61afb84a545dd04b5bf9cd4c798e5d6",
+      "outputSha256": "4841578cf55e3eefdc6444f623254e33b61afb84a545dd04b5bf9cd4c798e5d6"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/agent_lifecycle.rs",
+      "destination": "src/libs/confidential-storage-guest/src/agent_lifecycle.rs",
+      "sourceSha256": "4dfb9e1becdcb9622c09658f1c95feceaa06d0f5e06d805c9e7e00895354854c",
+      "outputSha256": "4dfb9e1becdcb9622c09658f1c95feceaa06d0f5e06d805c9e7e00895354854c"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/consumer.rs",
+      "destination": "src/libs/confidential-storage-guest/src/consumer.rs",
+      "sourceSha256": "23f1bdad652083311cba71fab1ebe980b16ddd76bce43e0690755614cd33cea1",
+      "outputSha256": "23f1bdad652083311cba71fab1ebe980b16ddd76bce43e0690755614cd33cea1"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/guest_mount.rs",
+      "destination": "src/libs/confidential-storage-guest/src/guest_mount.rs",
+      "sourceSha256": "2975c03811d9a32f5244860f303548a35a72194beb139dbefdd29fac2e3ee069",
+      "outputSha256": "2975c03811d9a32f5244860f303548a35a72194beb139dbefdd29fac2e3ee069"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/lib.rs",
+      "destination": "src/libs/confidential-storage-guest/src/lib.rs",
+      "sourceSha256": "3a54c0c3c3d56036ce5376457f76e689b08c5c711afaab529a1fb47bee5ae56f",
+      "outputSha256": "3a54c0c3c3d56036ce5376457f76e689b08c5c711afaab529a1fb47bee5ae56f"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/lifecycle/tests.rs",
+      "destination": "src/libs/confidential-storage-guest/src/lifecycle/tests.rs",
+      "sourceSha256": "d57a3a3a29bb44e6b1c6d25d00a6eef38da67e75fba662f7ec53f83f7be0f1f2",
+      "outputSha256": "d57a3a3a29bb44e6b1c6d25d00a6eef38da67e75fba662f7ec53f83f7be0f1f2"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/lifecycle.rs",
+      "destination": "src/libs/confidential-storage-guest/src/lifecycle.rs",
+      "sourceSha256": "bd88744b4e691b305c4e67d77cfc87e548dc4ff21b2d2d9f0d213b68a2b3fc6c",
+      "outputSha256": "bd88744b4e691b305c4e67d77cfc87e548dc4ff21b2d2d9f0d213b68a2b3fc6c"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/linux_backend.rs",
+      "destination": "src/libs/confidential-storage-guest/src/linux_backend.rs",
+      "sourceSha256": "6cac3b3279c946564acdf4cf3028558fd69bd4f39309abaecbabe9449a067143",
+      "outputSha256": "6cac3b3279c946564acdf4cf3028558fd69bd4f39309abaecbabe9449a067143"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/opener/tests.rs",
+      "destination": "src/libs/confidential-storage-guest/src/opener/tests.rs",
+      "sourceSha256": "e44beecae5179848bf7625e3ddf6c906b03add597e7fc08bfb33a6c677ffb9d2",
+      "outputSha256": "e44beecae5179848bf7625e3ddf6c906b03add597e7fc08bfb33a6c677ffb9d2"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/opener.rs",
+      "destination": "src/libs/confidential-storage-guest/src/opener.rs",
+      "sourceSha256": "94e449834c4e47ec1f085dbf31fa69b7d0d2cb8d1dd9acebbe76680cabe24d80",
+      "outputSha256": "94e449834c4e47ec1f085dbf31fa69b7d0d2cb8d1dd9acebbe76680cabe24d80"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/profile/tests.rs",
+      "destination": "src/libs/confidential-storage-guest/src/profile/tests.rs",
+      "sourceSha256": "3c2b953c64e1691dbaa53a00eded4aa1e2262bad432dcc08d298fa0c181913bc",
+      "outputSha256": "3c2b953c64e1691dbaa53a00eded4aa1e2262bad432dcc08d298fa0c181913bc"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/profile.rs",
+      "destination": "src/libs/confidential-storage-guest/src/profile.rs",
+      "sourceSha256": "54154a59349f4d01913b9723032a63e6150321180129e389d72c7f618b731ad3",
+      "outputSha256": "54154a59349f4d01913b9723032a63e6150321180129e389d72c7f618b731ad3"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/receipt.rs",
+      "destination": "src/libs/confidential-storage-guest/src/receipt.rs",
+      "sourceSha256": "5109010b0ce7cd56db7493e6b6983b482d6b9227c401730f38623fa0e3d693fe",
+      "outputSha256": "5109010b0ce7cd56db7493e6b6983b482d6b9227c401730f38623fa0e3d693fe"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/sealed_header.rs",
+      "destination": "src/libs/confidential-storage-guest/src/sealed_header.rs",
+      "sourceSha256": "6b2c38ee1e550229b5b6d51f69a23d45aae3434afe4cbf746b3109614afcc5f9",
+      "outputSha256": "6b2c38ee1e550229b5b6d51f69a23d45aae3434afe4cbf746b3109614afcc5f9"
+    },
+    {
+      "source": "components/confidential-storage-guest/tests/receipt-fixture.json",
+      "destination": "src/libs/confidential-storage-guest/tests/receipt-fixture.json",
+      "sourceSha256": "40dd78f5604b01667ac03fed52ce89ee7fb752ebbb2b58f24694d65d9cf07725",
+      "outputSha256": "40dd78f5604b01667ac03fed52ce89ee7fb752ebbb2b58f24694d65d9cf07725"
+    },
+    {
+      "source": "components/confidential-storage-guest/tests/receipts.rs",
+      "destination": "src/libs/confidential-storage-guest/tests/receipts.rs",
+      "sourceSha256": "69eb9e650daec40d746fc7153618256d21e191accca90a8bf37440acc86c7afa",
+      "outputSha256": "69eb9e650daec40d746fc7153618256d21e191accca90a8bf37440acc86c7afa"
+    },
+    {
+      "source": "components/confidential-storage-kata/runtime-adapter/Cargo.toml",
+      "destination": "src/libs/confidential-storage-kata-adapter/Cargo.toml",
+      "sourceSha256": "9ec1ef33caa82340ca82a645d68538434b55f689b6a6bbd092a24629c39b9c14",
+      "outputSha256": "85011aee0a136caf36a770d45134ab94170365f3182ed1350482df84a5e7bb18"
+    },
+    {
+      "source": "components/confidential-storage-kata/runtime-adapter/examples/callback_lab/storage.rs",
+      "destination": "src/libs/confidential-storage-kata-adapter/examples/callback_lab/storage.rs",
+      "sourceSha256": "53844ee39f586d570750279bd5290a6089982afcbdec9b5501fff0fe50aec900",
+      "outputSha256": "53844ee39f586d570750279bd5290a6089982afcbdec9b5501fff0fe50aec900"
+    },
+    {
+      "source": "components/confidential-storage-kata/runtime-adapter/examples/callback_lab.rs",
+      "destination": "src/libs/confidential-storage-kata-adapter/examples/callback_lab.rs",
+      "sourceSha256": "d54dfab87c32dbd05016fff4ff54e55af5e78bb49390c5aca6d850fc51567dc1",
+      "outputSha256": "d54dfab87c32dbd05016fff4ff54e55af5e78bb49390c5aca6d850fc51567dc1"
+    },
+    {
+      "source": "components/confidential-storage-kata/runtime-adapter/examples/process_lab.rs",
+      "destination": "src/libs/confidential-storage-kata-adapter/examples/process_lab.rs",
+      "sourceSha256": "264bc7b3af566c8df5ce3699c3e678c36691a45b2832a5e601ac57fe96c42387",
+      "outputSha256": "264bc7b3af566c8df5ce3699c3e678c36691a45b2832a5e601ac57fe96c42387"
+    },
+    {
+      "source": "components/confidential-storage-kata/runtime-adapter/src/lib.rs",
+      "destination": "src/libs/confidential-storage-kata-adapter/src/lib.rs",
+      "sourceSha256": "f88d095d1c96190ce21eb0d5307ea2f83698ffd8df1623dfecbf588700732126",
+      "outputSha256": "f88d095d1c96190ce21eb0d5307ea2f83698ffd8df1623dfecbf588700732126"
+    },
+    {
+      "source": "components/confidential-storage-kata/runtime-adapter/src/process.rs",
+      "destination": "src/libs/confidential-storage-kata-adapter/src/process.rs",
+      "sourceSha256": "bf66aadcc449cc7f43040cde31376d73c2b4896f0399bdd15a9d20b6bbc1b9aa",
+      "outputSha256": "bf66aadcc449cc7f43040cde31376d73c2b4896f0399bdd15a9d20b6bbc1b9aa"
+    },
+    {
+      "source": "components/confidential-storage-kata/runtime-adapter/src/process_guard.rs",
+      "destination": "src/libs/confidential-storage-kata-adapter/src/process_guard.rs",
+      "sourceSha256": "f298b464c56c93a48cecf5361dfbbab85580d3352897b9ab23aa1de9a7f3a850",
+      "outputSha256": "f298b464c56c93a48cecf5361dfbbab85580d3352897b9ab23aa1de9a7f3a850"
+    },
+    {
+      "source": "components/confidential-storage-kata/runtime-adapter/src/runtime.rs",
+      "destination": "src/libs/confidential-storage-kata-adapter/src/runtime.rs",
+      "sourceSha256": "34dbf89d6c728acd9373edad9c65afa1a9e4f593f1d56fff783b6fdbad2a851a",
+      "outputSha256": "34dbf89d6c728acd9373edad9c65afa1a9e4f593f1d56fff783b6fdbad2a851a"
+    },
+    {
+      "source": "components/confidential-storage-kata/runtime-adapter/src/start_fifo.rs",
+      "destination": "src/libs/confidential-storage-kata-adapter/src/start_fifo.rs",
+      "sourceSha256": "19c568c2f263ffcf0b7dac46bf66df6fc0fe3aa6e1640986f808250e16d98503",
+      "outputSha256": "19c568c2f263ffcf0b7dac46bf66df6fc0fe3aa6e1640986f808250e16d98503"
+    }
+  ],
+  "build": {
+    "platform": "linux/amd64",
+    "rust": "1.94.1",
+    "features": [
+      "init-data",
+      "agent-policy"
+    ],
+    "workspaceCargoLockSha256": "37645bf27014cf97791c3f798f8650619d83378666db2fb4c40cf99611f30a1e",
+    "deploymentArtifact": false
+  }
+}

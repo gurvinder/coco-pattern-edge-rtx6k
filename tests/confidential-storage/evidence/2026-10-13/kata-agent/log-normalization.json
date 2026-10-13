@@ -1,0 +1,50 @@
+{
+  "agent-routing-tests.log": {
+    "raw_sha256": "a7d6d6cc52b65d603d92162757b48086fcc54094ff7742f7e5d8c992c3dce247",
+    "stored_sha256": "4f5e0cf5c922ee409a5eb0d09d4194a5aaaa5915cfc165240ae69bac9c41b9e1"
+  },
+  "agent-preflight-tests.log": {
+    "raw_sha256": "42e16b12ebbf76b7cef9adcff1d9c2ec5b3b791c6270bbf5cdf02b216c2c47d5",
+    "stored_sha256": "0d55d2489de376f1eb3c3979203adb7a8877e8155befcb11002a208e2410b048"
+  },
+  "agent-signal-tests.log": {
+    "raw_sha256": "f5477f009b8103a6ce2cada4443604ad7e0f4fea9266bdb72a343b0fff02d4ef",
+    "stored_sha256": "5ed9e573187d4c61bc73fae9923931309bd99d1177bc793b2ac1e9769d7f61a0"
+  },
+  "agent-library-tests.log": {
+    "raw_sha256": "0ec74d4589d4a54ec5f7042ac26a381f59b1c8fb5d24428016573b96f1008233",
+    "stored_sha256": "d597a9ad627feb3d5b2738477fadb31c7cc752c9022cc9f27718b2f14cb431b0"
+  },
+  "agent-clippy.log": {
+    "raw_sha256": "5573b0b24b3c9994616ddca598e05273d87fcb3378a35046b29203ba2c0bcaf1",
+    "stored_sha256": "5573b0b24b3c9994616ddca598e05273d87fcb3378a35046b29203ba2c0bcaf1"
+  },
+  "agent-clippy-final.log": {
+    "raw_sha256": "551ea03b727b10021c70f9cb0806f221106a9a71390aac5237291742253482df",
+    "stored_sha256": "551ea03b727b10021c70f9cb0806f221106a9a71390aac5237291742253482df"
+  },
+  "agent-fmt.log": {
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stored_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "agent-rustjail-tree.log": {
+    "raw_sha256": "d63689d51ac064fb34df2d3bd0bc31849d842ba9119a00087fdae70aa85494c0",
+    "stored_sha256": "d63689d51ac064fb34df2d3bd0bc31849d842ba9119a00087fdae70aa85494c0"
+  },
+  "agent-no-features.log": {
+    "raw_sha256": "64276f53f639d9fab41b2107d260184846c5c24b8d098545b7f41f6360f0b577",
+    "stored_sha256": "64276f53f639d9fab41b2107d260184846c5c24b8d098545b7f41f6360f0b577"
+  },
+  "agent-source-sha256.txt": {
+    "raw_sha256": "d05d852978bbca8d922d8bd0a2cb2b14020a16018c5b5bf42c0c6650bf747fa7",
+    "stored_sha256": "d05d852978bbca8d922d8bd0a2cb2b14020a16018c5b5bf42c0c6650bf747fa7"
+  },
+  "agent-binaries.json": {
+    "raw_sha256": "d8825b767d75f74ae45f2a2adf2506869b2335b68ba5b52e1642c64cab9e144f",
+    "stored_sha256": "d8825b767d75f74ae45f2a2adf2506869b2335b68ba5b52e1642c64cab9e144f"
+  },
+  "agent-version-final.log": {
+    "raw_sha256": "5e71edb027d8a2008b9dd042d57d6baf95c09135f6add92557da7f6be68688ae",
+    "stored_sha256": "5e71edb027d8a2008b9dd042d57d6baf95c09135f6add92557da7f6be68688ae"
+  }
+}

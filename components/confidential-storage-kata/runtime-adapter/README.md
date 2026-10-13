@@ -4,7 +4,9 @@ This crate implements the guest library's `Runtime` callbacks using the real
 `rustjail::LinuxContainer` from experimental Kata commit
 `e53adb460e6040e6aa9719a735e17301462c4fa9`. Cargo pins that Git revision and the
 complete resolved dependency graph. It is not installed or registered with the
-Kata RPC server. The existing confidential-mount preflight still rejects activation.
+live Kata RPC server. A separate [agent source patch](../../../docs/confidential-storage/kata-agent-integration.md)
+now routes Sandbox/RPC/SIGCHLD ownership to this interface. The existing
+confidential-mount preflight still rejects activation.
 
 The adapter owns one runtime container and one initial process for one sandbox
 lifetime. It is intended to be owned by `agent_lifecycle::Agent` together with
@@ -132,8 +134,9 @@ ownership, while wrong keys and invalid manifests prevent startup. See the
 [combined lab guide](../../../docs/confidential-storage/kata-encrypted-lab.md).
 The [process lifecycle facade](../../../docs/confidential-storage/kata-process-lifecycle.md)
 now supplies real exit dispatch, repeatable waiters and bounded pipe draining in
-the lab. Agent RPCs, production SIGCHLD routing, streaming IO and attested providers
-remain absent.
+the lab. The separate agent patch adds RPC-helper and SIGCHLD routing with test
+owners. Full serialized RPC execution with real storage, production streaming IO
+and attested providers remain unimplemented or unverified.
 
 Before enabling the mount request:
 

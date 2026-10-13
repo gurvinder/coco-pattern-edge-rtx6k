@@ -1,0 +1,7 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /build/kata/src/agent/Cargo.toml
+workspace: /build/kata/Cargo.toml
+rustjail v0.1.0 (/build/kata/src/agent/rustjail)
+├── confidential-storage-kata-adapter v0.1.0 (/build/kata/src/libs/confidential-storage-kata-adapter)
+│   └── kata-agent v0.1.0 (/build/kata/src/agent)
+└── kata-agent v0.1.0 (/build/kata/src/agent)

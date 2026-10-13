@@ -1,0 +1,10 @@
+{
+  "changed_overlay_rejected_without_checkout_changes": true,
+  "changed_patch_rejected_without_checkout_changes": true,
+  "dirty_checkout_rejected": true,
+  "fresh_pinned_checkout_prepared": true,
+  "repeat_apply_refuses_overwrite": true,
+  "all_tested_sources_reproduced_exactly": true,
+  "script_sha256": "9047379d3cc8aa918a81d3a9c18a28195ab4d39bda2ed0fe5c8053d57b24dadf",
+  "patch_sha256": "e70d6c444e36f879d7415e263163827c6fc348dfbf5c2feaa01c9a4af572ae21"
+}

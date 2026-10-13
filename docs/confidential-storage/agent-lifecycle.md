@@ -2,9 +2,10 @@
 
 Development checkpoint: 13 October 2026. This implements the runtime/storage
 ordering barrier in `components/confidential-storage-guest/src/agent_lifecycle.rs`
-and connects it to `LinuxBackend`. It is **not wired into Kata RPCs**, does not
-supply an attestation verifier or a CDH client, and does not open the experimental
-Kata activation gate.
+and connects it to `LinuxBackend`. A separate
+[agent patch](kata-agent-integration.md) now adds actual Sandbox/RPC/reaper routing.
+It supplies neither an attestation verifier nor a CDH client and does not open
+the experimental Kata activation gate.
 
 ## Why another lifecycle boundary is needed
 
@@ -156,5 +157,6 @@ backpressure. Final destruction requires a recorded exit and completed drain,
 then closes streams and removes the process. Preparation and reaping both follow
 reaper-before-runtime lock ordering. See the
 [process lifecycle guide](kata-process-lifecycle.md) for the API contract,
-disposable-VM checks and limits. Actual Sandbox/RPC/SIGCHLD registration and
-production streaming IO remain required; the activation gate is unchanged.
+disposable-VM checks and limits. The [agent patch](kata-agent-integration.md) now adds source-level
+Sandbox/RPC/SIGCHLD routing; production streaming IO and activated guest execution
+remain required. The activation gate is unchanged.

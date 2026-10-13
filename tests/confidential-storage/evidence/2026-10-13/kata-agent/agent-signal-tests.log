@@ -1,0 +1,12 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /build/kata/src/agent/Cargo.toml
+workspace: /build/kata/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+     Running unittests src/main.rs (target/debug/deps/kata_agent-e59ba897389f3435)
+
+running 2 tests
+test signal::tests::test_exit_code_from_wait_status ... ok
+test signal::tests::test_setup_signal_handler ... INFO: task completed
+ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 381 filtered out; finished in 0.00s

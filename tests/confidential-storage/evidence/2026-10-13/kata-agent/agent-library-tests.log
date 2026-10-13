@@ -1,0 +1,163 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /build/kata/src/agent/Cargo.toml
+workspace: /build/kata/Cargo.toml
+   Compiling syn v2.0.117
+   Compiling serde_core v1.0.228
+   Compiling hashbrown v0.17.0
+   Compiling equivalent v1.0.2
+   Compiling bitflags v2.11.1
+   Compiling serde v1.0.228
+   Compiling rustix v0.38.44
+   Compiling indexmap v2.14.0
+   Compiling home v0.5.9
+   Compiling rustix v1.1.4
+   Compiling linux-raw-sys v0.12.1
+   Compiling which v4.4.2
+   Compiling regex-automata v0.4.14
+   Compiling fnv v1.0.7
+   Compiling strsim v0.11.1
+   Compiling serde_json v1.0.149
+   Compiling darling_core v0.20.11
+   Compiling tempfile v3.27.0
+   Compiling futures-channel v0.3.32
+   Compiling mio v1.2.0
+   Compiling regex v1.12.3
+   Compiling serde_derive v1.0.228
+   Compiling thiserror-impl v1.0.69
+   Compiling darling_macro v0.20.11
+   Compiling tokio-macros v2.7.0
+   Compiling thiserror v1.0.69
+   Compiling protobuf-support v3.7.2
+   Compiling futures-macro v0.3.32
+   Compiling protobuf v3.7.2
+   Compiling byteorder v1.5.0
+   Compiling futures-util v0.3.32
+   Compiling tokio v1.52.2
+   Compiling darling v0.20.11
+   Compiling thiserror-impl v2.0.18
+   Compiling prost-build v0.8.0
+   Compiling protobuf-parse v3.7.2
+   Compiling protobuf-codegen v3.7.2
+   Compiling toml_edit v0.19.15
+   Compiling thiserror v2.0.18
+   Compiling derive_builder_core v0.20.2
+   Compiling darling_core v0.23.0
+   Compiling num-traits v0.2.19
+   Compiling proc-macro-error2 v2.0.1
+   Compiling derive_builder_macro v0.20.2
+   Compiling proc-macro-crate v1.3.1
+   Compiling slog v2.8.2
+   Compiling futures-executor v0.3.32
+   Compiling async-trait v0.1.89
+   Compiling strum_macros v0.27.2
+   Compiling futures v0.3.32
+   Compiling ttrpc-compiler v0.8.0
+   Compiling derive_builder v0.20.2
+   Compiling getset v0.1.6
+   Compiling darling_macro v0.23.0
+   Compiling erased-serde v0.3.31
+   Compiling enumflags2_derive v0.7.12
+   Compiling rust_decimal v1.42.0
+   Compiling enumflags2 v0.7.12
+   Compiling oci-spec v0.8.4
+   Compiling serde-attributes v0.3.0
+   Compiling darling v0.23.0
+   Compiling ttrpc-codegen v0.6.0
+   Compiling zvariant_derive v3.15.2
+   Compiling ttrpc v0.8.6
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling serde_spanned v1.1.1
+   Compiling crossbeam-channel v0.5.15
+   Compiling gpt v4.1.0
+   Compiling slog-scope v4.4.1
+   Compiling crossbeam v0.8.4
+   Compiling zvariant v3.15.2
+   Compiling toml v1.1.2+spec-1.1.0
+   Compiling byte-unit v5.2.3
+   Compiling protocols v0.1.0 (/build/kata/src/libs/protocols)
+   Compiling nix v0.31.3
+   Compiling serde-enum-str v0.5.0
+   Compiling tokio-vsock v0.4.0
+   Compiling bitmask-enum v2.2.5
+   Compiling tracing-attributes v0.1.31
+   Compiling tracing-core v0.1.36
+   Compiling bytes v0.4.12
+   Compiling tracing v0.1.44
+   Compiling zbus_names v2.6.1
+   Compiling zbus_macros v3.15.2
+   Compiling kata-types v0.1.0 (/build/kata/src/libs/kata-types)
+   Compiling runtime-spec v0.1.0 (/build/kata/src/libs/runtime-spec)
+   Compiling async-recursion v1.1.1
+   Compiling serde_repr v0.1.20
+   Compiling inotify v0.9.6
+   Compiling cgroups-rs v0.3.5 (https://github.com/kata-containers/cgroups-rs?rev=v0.3.5#de9625ff)
+   Compiling zbus v3.15.2
+   Compiling kata-sys-util v0.1.0 (/build/kata/src/libs/kata-sys-util)
+   Compiling tokio-vsock v0.3.4
+   Compiling scan_fmt v0.2.6
+   Compiling confidential-storage-guest v0.1.0 (/build/kata/src/libs/confidential-storage-guest)
+   Compiling rustjail v0.1.0 (/build/kata/src/agent/rustjail)
+   Compiling confidential-storage-kata-adapter v0.1.0 (/build/kata/src/libs/confidential-storage-kata-adapter)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.89s
+     Running unittests src/lib.rs (target/debug/deps/confidential_storage_guest-2e35661a874d8710)
+
+running 45 tests
+test agent_lifecycle::tests::ambiguous_start_failure_is_quiesced_never_retried ... ok
+test agent_lifecycle::tests::cancelled_prepare_waiter_does_not_abandon_paused_container ... ok
+test agent_lifecycle::tests::bounded_tombstones_do_not_reuse_runtime_identity ... ok
+test agent_lifecycle::tests::close_wins_against_start_and_cancelled_waiter ... ok
+test agent_lifecycle::tests::exact_retry_start_barrier_and_ordered_teardown ... ok
+test agent_lifecycle::tests::admission_and_conflicts_have_no_runtime_effects ... ok
+test agent_lifecycle::tests::in_flight_start_finishes_before_quiescence ... ok
+test consumer::tests::inherited_runtime_descriptors_are_rejected ... ok
+test guest_mount::tests::mount_info_rejects_ambiguous_and_propagated_mounts ... ok
+test guest_mount::tests::target_names_cannot_escape_root ... ok
+test agent_lifecycle::tests::cleanup_failures_retain_precise_phase_and_block_start ... ok
+test lifecycle::tests::backend_panic_leaves_cleanup_record ... ok
+test agent_lifecycle::tests::panic_retains_record_for_explicit_cleanup ... ok
+test agent_lifecycle::tests::prepare_and_attach_errors_never_start_application ... ok
+test lifecycle::tests::cancelled_activation_waiter_keeps_service_owned_worker ... ok
+test lifecycle::tests::bounded_registry_fails_closed_instead_of_dropping_tombstones ... ok
+test lifecycle::tests::busy_mount_retains_owner_and_retries_unmount ... ok
+test lifecycle::tests::cancelled_close_waiter_finishes_without_releasing_early ... ok
+test lifecycle::tests::close_failure_retains_state_without_repeating_unmount ... ok
+test lifecycle::tests::denied_before_backend_on_bad_session_expiry_or_locator ... ok
+test lifecycle::tests::failed_open_and_failed_cleanup_never_reopens_implicitly ... ok
+test lifecycle::tests::closed_tombstone_cannot_release_new_owner_and_is_not_evicted ... ok
+test lifecycle::tests::idempotent_activation_and_ordered_cleanup ... ok
+test lifecycle::tests::open_failure_closes_partial_mapping_before_release ... ok
+test lifecycle::tests::queued_worker_rechecks_deadline_before_disk_effects ... ok
+test lifecycle::tests::partial_mount_failure_unmounts_before_mapping_close ... ok
+test opener::tests::accepts_only_fixed_journaled_integrity_stack ... ok
+test lifecycle::tests::reservation_has_no_disk_effects_and_closes_without_open ... ok
+test lifecycle::tests::rejects_another_owner_or_alias_of_device ... ok
+test lifecycle::tests::release_failure_retries_only_release ... ok
+test opener::tests::rejects_crypto_downgrades_duplicates_and_unknown_status_fields ... ok
+test opener::tests::rejects_non_block_descriptor_before_any_tool_runs ... ok
+test opener::tests::child_can_read_sealed_descriptor_without_changing_parent_cloexec ... ok
+test opener::tests::timeout_terminates_owned_child ... ok
+test profile::tests::cryptsetup_parses_sealed_synthetic_header_and_real_plain_luks_is_rejected ... ignored, requires explicitly supplied cryptsetup executable; real userspace header parsing only
+test profile::tests::kernel_generated_integrity_header_matches_profile ... ignored, requires the disposable kernel lab's locally generated scratch image
+test opener::tests::inherited_header_descriptor_remains_unwritable_in_child ... ok
+test profile::tests::accepts_only_the_complete_authenticated_rw_profile ... ok
+test opener::tests::binary_key_pipe_and_command_failure_are_bounded ... ok
+test profile::tests::rejects_duplicate_and_unknown_json_fields ... ok
+test profile::tests::prepared_copy_survives_source_replacement_and_rejects_short_source ... ok
+test sealed_header::tests::kernel_seals_reject_write_truncate_and_growth ... ok
+test profile::tests::rejects_reauthorized_manifest_binding_and_layout_changes ... ok
+test profile::tests::rejects_corrupt_or_divergent_binary_headers_even_with_new_authority_digest ... ok
+test profile::tests::rejects_crypto_downgrade_and_unbounded_kdf_even_if_header_is_authorized ... ok
+
+test result: ok. 43 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.67s
+
+     Running unittests src/lib.rs (target/debug/deps/confidential_storage_kata_adapter-32449e980a0e1629)
+
+running 6 tests
+test process::tests::statuses_and_bounded_output ... ok
+test process_guard::tests::reject_ambiguous_or_root_membership ... ok
+test process_guard::tests::require_unambiguous_population_evidence ... ok
+test process_guard::tests::reject_service_or_invalid_pid ... ok
+test runtime::tests::default_root_spec_is_not_an_authorized_consumer ... ok
+test runtime::tests::rejects_privilege_hooks_and_inherited_namespaces ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

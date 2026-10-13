@@ -1,0 +1,1 @@
+bd262f6265468553996f0f78e2bcd33398abac56a744ca36c86de808e1d4f0f9  components/confidential-storage-kata/runtime-adapter/src/runtime.rs

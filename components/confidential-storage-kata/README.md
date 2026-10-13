@@ -179,3 +179,9 @@ Kata source. A tested coordinator exists in the guest library, including the Lin
 backend adapter. No RPC is connected to it yet. The ordinary storage-before-create
 and destroy-before-storage-cleanup ordering must be changed for this path; the
 activation gate remains unchanged until those callbacks and attested providers exist.
+
+A [concrete rustjail runtime adapter](runtime-adapter/README.md) now implements the
+coordinator callbacks against the pinned experimental Kata Git dependency. Its
+process/cgroup guard is kernel-tested, but a complete Kata container has not yet
+run through those callbacks. RPC/reaper/IO wiring, partial-create recovery and
+attested providers remain gates; no activation path was enabled.

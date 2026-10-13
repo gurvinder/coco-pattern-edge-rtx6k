@@ -16,6 +16,7 @@ def main():
     parser.add_argument("--tools", type=Path, required=True)
     parser.add_argument("--work", type=Path, required=True)
     parser.add_argument("--opener", type=Path)
+    parser.add_argument("--runtime-probe", type=Path)
     args = parser.parse_args()
     tools = args.tools.resolve(strict=True)
     work = args.work.absolute()
@@ -28,7 +29,11 @@ def main():
             "--work",
             str(work),
         ]
-        + (["--opener", str(args.opener.resolve(strict=True))] if args.opener else []),
+        + (["--opener", str(args.opener.resolve(strict=True))] if args.opener else [])
+        + (
+            ["--runtime-probe", str(args.runtime_probe.resolve(strict=True))]
+            if args.runtime_probe else []
+        ),
         check=True,
     )
     env = os.environ | {
@@ -100,6 +105,10 @@ def main():
             result.returncode
             or "COCO_TEST_FAIL:" in text
             or f"COCO_TEST_PASS:{phase}" not in text
+            or (
+                args.runtime_probe and phase == "initialize"
+                and "COCO_TEST_PASS:pinned-process-cgroup-subtree-quiescence" not in text
+            )
         ):
             raise RuntimeError(f"{phase} failed; inspect {log}")
         print(

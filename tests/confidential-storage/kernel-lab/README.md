@@ -163,3 +163,10 @@ with the actual Linux backend. A lab runtime creates its namespace before storag
 starts a synchronous unprivileged application only after attachment, and destroys
 the holder only after storage cleanup/release. It does not exercise Kata's FIFO or
 cgroup implementation, and no production runtime is installed.
+
+The optional `--runtime-probe` executable adds the
+[Kata adapter process/cgroup probe](../../../components/confidential-storage-kata/runtime-adapter/README.md)
+to the initialize boot. It mounts cgroup v2 only inside the disposable VM and tests
+subtree termination, path replacement rejection and retained namespace/root
+handles. Its required pass marker is separate from the normal initialize marker.
+It does not run the full Kata adapter or allocate a host cgroup.

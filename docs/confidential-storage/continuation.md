@@ -258,6 +258,24 @@ Forty-five Rust tests, strict Clippy, formatting and the four real Linux regress
 boots passed. The builder was removed and production state is unchanged. See
 `tests/confidential-storage/evidence/2026-10-13/agent-lifecycle/` for checks.
 
+## Concrete Kata callback checkpoint
+
+The [runtime adapter](../../components/confidential-storage-kata/runtime-adapter/README.md)
+now owns a real pinned `rustjail::LinuxContainer` and implements prepare/start/
+quiesce/destroy callbacks. It retains pidfd, namespace/root and cgroup v2 handles,
+excludes reaping during capture, kills the cgroup subtree and waits for population
+zero before teardown. It refuses replaced cgroup paths and checks actual cgroup
+removal after rustjail destruction.
+
+This adapter is compiled against Kata but not wired into agent RPCs, Sandbox
+process lookup or reaper/IO handling. The kernel probe tests the real process and
+cgroup primitive with an `unshare` child, not the complete rustjail callback flow.
+Partial-create recovery and the blocking FIFO-start boundary need further work.
+The hard activation gate stays closed and no deployed runtime changed.
+Five distinct adapter tests, 45 guest regressions, strict Clippy and all four Linux
+VM boots passed. The compiler was removed and production state is unchanged.
+Evidence is under `tests/confidential-storage/evidence/2026-10-13/kata-adapter/`.
+
 ## Next engineering step
 
 Build the guest-managed mount integration in an isolated artifact before installing

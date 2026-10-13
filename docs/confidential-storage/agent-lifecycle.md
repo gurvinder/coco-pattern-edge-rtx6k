@@ -131,3 +131,8 @@ running application's shutdown. Existing initialize/reopen/wrong-key/corruption
 boots remain regression checks, not confidential-storage E2E acceptance.
 
 Evidence: [agent lifecycle checkpoint](../../tests/confidential-storage/evidence/2026-10-13/agent-lifecycle/README.md).
+
+A [concrete Kata callback adapter](../../components/confidential-storage-kata/runtime-adapter/README.md)
+now compiles against the pinned rustjail source and supplies process/cgroup handle
+management. Its kernel-tested helper is a further checkpoint; full callback-flow,
+RPC/reaper/IO integration and attested provider gates remain open.

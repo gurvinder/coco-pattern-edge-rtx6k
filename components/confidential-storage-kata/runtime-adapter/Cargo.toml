@@ -1,0 +1,18 @@
+[package]
+name = "confidential-storage-kata-adapter"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+[dependencies]
+async-trait = "0.1.89"
+confidential-storage-guest = { path = "../../confidential-storage-guest" }
+libc = "=0.2.186"
+rustjail = { git = "https://github.com/manuelh-dev/kata-containers.git", rev = "e53adb460e6040e6aa9719a735e17301462c4fa9" }
+runtime-spec = { git = "https://github.com/manuelh-dev/kata-containers.git", rev = "e53adb460e6040e6aa9719a735e17301462c4fa9" }
+oci-spec = "0.8.1"
+tokio = { version = "1.52", features = ["rt-multi-thread", "macros", "sync", "time"] }
+
+[dev-dependencies]
+serde_json = "1.0"

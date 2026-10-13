@@ -20,6 +20,7 @@ def main():
     p.add_argument("--tools", type=Path, required=True)
     p.add_argument("--work", type=Path, required=True)
     p.add_argument("--opener", type=Path)
+    p.add_argument("--runtime-probe", type=Path)
     a = p.parse_args()
     tools = a.tools.resolve(strict=True)
     work = a.work.absolute()
@@ -91,6 +92,8 @@ def main():
         ("usr/bin/setpriv", "/usr/bin/setpriv"),
     ]:
         copy_binary(tools / src, dest)
+    if a.runtime_probe:
+        copy_binary(a.runtime_probe.resolve(strict=True), "/usr/sbin/runtime-process-lab")
     if a.opener:
         copy_binary(a.opener.resolve(strict=True), "/usr/sbin/rust-opener-lab")
     shutil.copy2(tools / "etc/mke2fs.conf", root / "etc/mke2fs.conf")

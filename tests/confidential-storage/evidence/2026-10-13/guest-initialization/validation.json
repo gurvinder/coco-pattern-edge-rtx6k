@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-13",
+  "environment": "isolated unprivileged compiler pod storage-client-compiler; Python authority unit tests local",
+  "rust": "1.94.1",
+  "attestation": "synthetic test AS only",
+  "disk_operations": false,
+  "key_retrieval": false,
+  "hardware_e2e_complete": false,
+  "authority_tests": 106,
+  "initialization_api_tests_in_authority_suite": 9,
+  "rust_client_unit_tests": 1,
+  "tls_client_tests": 16,
+  "rust_clippy": "passed with -D warnings",
+  "production_unchanged": true,
+  "sha256": {
+    "components/confidential-storage-authority/initialization_api.py": "7e9cc884182469dfd14f6831c6296390508de18ae0f8557cc597c27c447b1a3d",
+    "components/confidential-storage-authority/gateway.py": "589976e91aa49e68358b174cf3dd0ad5f1f262cef702c12aa00ac06e082ea8c1",
+    "components/confidential-storage-client/Cargo.lock": "31da0506dee183e5606cdf8bc0f409d7f424d7d551d9b7d260cd411cb4ed0641",
+    "components/confidential-storage-client/Cargo.toml": "800047000ea19512282ea3ddc3ac13fe2bf55d2c9f72879947b9ce4394fd4207",
+    "components/confidential-storage-client/src/lib.rs": "03c2d3e5ddd372f9253bfe5c63899d0f124e525a2adb010f0fa241dce2655fcf",
+    "components/confidential-storage-client/src/initialization.rs": "2d0ef67cf0e5a437230baef4465f4cbac644b7aae9bc5cedf8154672291c5b43",
+    "components/confidential-storage-client/examples/transport_fixture.rs": "b50223171d35dcde6841d37bedac2ef2ae94502acfeb1036d37d7d1d00893504",
+    "components/confidential-storage-client/test_transport.py": "f174d3f1bd7b18014209c0242133808ee7515888aa8225242374e892f532549a"
+  }
+}

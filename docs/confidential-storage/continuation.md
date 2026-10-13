@@ -4,14 +4,35 @@ Checkpoint: 13 October 2026, branch `dev/confidential-storage-integration`, base
 on proposal/handoff commit `e4a3616`. Read the [report](compatibility-report.md)
 before making changes. The original six-phase handoff still defines completion.
 
+## Latest checkpoint: signed guest initialization API
+
+The Rust guest client and Python TLS gateway now implement the administrator-approved
+first-use journal, with signed responses bound to each fresh challenge and the
+same initialization session/operation/nonce. All four steps, Ready metadata,
+close and ordinary reopen pass cross-language tests. See
+[protocol, recovery limits and evidence](guest-initialization-protocol.md).
+These tests use synthetic attestation and do not perform disk operations.
+
+The old `storage-compiler` was evicted for exceeding its 16 GiB build EmptyDir.
+The replacement `storage-client-compiler` is an unprivileged disposable build pod,
+with no host/PVC/GPU access. It is not an authority or a confidential workload.
+The internal-registry encrypted model and populated PVC remain the RO checkpoint.
+No new storage runtime or key policy is deployed. The separate runtime probe
+installation/reload is still awaiting explicit approval after automatic review
+rejected the shared-runtime change. Private CDH key retrieval, real initialization
+execution, downstream agent integration and both hardware E2Es remain open.
+
+Older sections below are historical checkpoints; their test counts and resource
+inventories are not the latest status.
+
 ## Resources left on the lab
 
 **Latest active work (13 October, model population):** the new test-only populator
 controller is running and `qwen-luks-model-v1` is a Bound 2 GiB raw-block RWOP
 claim populated from the internal registry's encrypted Qwen LUKS/verity image.
 The corresponding source CR and isolated publisher/importer RBAC exist. A
-temporary unprivileged `storage-compiler` pod is running for the next integration
-stage. See the newest checkpoint below; older resource lists describe their
+temporary unprivileged `storage-client-compiler` pod replaces the evicted
+`storage-compiler`. See the newest checkpoint below; older resource lists describe their
 historical checkpoint, not the current lab.
 
 - Namespace `confidential-storage-test`.

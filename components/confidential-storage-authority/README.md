@@ -47,8 +47,8 @@ Before deployment, implement and test:
 
 - Real hardware interoperability for the AS-result verifier and authenticated
   session transport, including the required GPU runtime binding.
-- Signed/channel-bound responses covering every returned field, audience and
-  activation; the current dictionary is an internal result, not a bearer token.
+- Hardware validation of the signed, challenge-bound initialization/reopen
+  responses; raw library dictionaries remain trusted internal results.
 - Guest receipts that bind durable initialization phases/header/profile to the
   same activation; this library cannot verify that a guest actually flushed disk.
 - Measured guest policy binding target container, destination and device contract.
@@ -145,3 +145,18 @@ AS and private ttRPC client build successfully; installed guest diagnostics foun
 the public attestation API disabled. Neither storage E2E has passed yet.
 
 The [published-model approval guide](../../docs/confidential-storage/published-model-approval.md) describes the separate immutable RO path and its replay limits.
+
+## Signed guest initialization API
+
+`initialization_api.py` now exposes the approved first-use journal through the
+existing attested TLS gateway. Each response is Ed25519-signed and bound to the
+fresh challenge, exact request, session and workload policy. The Rust guest
+client checks all bindings and reconstructs the immutable plan/manifest before
+accepting metadata. Started retries return reconciliation, never a second execute
+decision. See [protocol and evidence](../../docs/confidential-storage/guest-initialization-protocol.md).
+
+The guest API has no administrator, reset, key or disk endpoints. Physical disk
+completion remains a trusted guest-executor responsibility; the current network
+tests use synthetic evidence and no disks. The full authority suite has 106
+passing tests at this checkpoint, and the cross-language TLS suite has 16. Real
+hardware attestation, private CDH key delivery and Kata activation are unfinished.

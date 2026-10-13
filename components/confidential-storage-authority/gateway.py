@@ -19,6 +19,7 @@ from attestation import (
 )
 from authority import Denied, digest, identifier
 from receipts import validate_binding
+import initialization_api
 
 MAX_REQUEST = 8192
 
@@ -26,7 +27,9 @@ MAX_REQUEST = 8192
 def request_body(raw):
     body = read_object(raw, MAX_REQUEST)
     action = body.get("action")
-    if action == "reopen":
+    if isinstance(action, str) and action in initialization_api.ACTIONS:
+        initialization_api.validate_request(body)
+    elif action == "reopen":
         if set(body) != {
             "action",
             "volume_id",
@@ -172,5 +175,9 @@ class Gateway:
         if body["action"] == "reopen":
             args = {k: v for k, v in body.items() if k != "action"}
             return {"receipt": self.issuer.reopen(peer=peer, **args)}
+        if body["action"] in initialization_api.ACTIONS:
+            return initialization_api.dispatch(
+                self.issuer, peer, body, nonce, sha256(raw)
+            )
         self.issuer.authority.close(body["volume_id"], peer, body["activation_id"])
         return {"closed": True, "activation_id": body["activation_id"]}

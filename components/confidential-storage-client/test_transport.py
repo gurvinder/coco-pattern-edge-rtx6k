@@ -24,8 +24,10 @@ from cryptography.x509.oid import NameOID
 sys.path.insert(
     0, str(Path(__file__).resolve().parents[1] / "confidential-storage-authority")
 )
-from attestation import ANNOTATED, unb64  # noqa: E402
-from authority import Denied  # noqa: E402
+from attestation import ANNOTATED, unb64, b64  # noqa: E402
+from authority import Authority, Denied  # noqa: E402
+import initialization_api  # noqa: E402
+from test_receipts import PLAN  # noqa: E402
 from receipts import compact  # noqa: E402
 import test_gateway as fixtures  # noqa: E402
 from transport import Server, tls_context  # noqa: E402
@@ -155,6 +157,92 @@ class RustClientTests(unittest.TestCase):
     def test_real_tls_ecdsa_proof_receipt_retry_close(self):
         self.run_client()
         self.assertIsNone(self.f.owner())
+
+    def prepare_initialization(self):
+        self.f.authority = Authority(self.path / "first-use.db")
+        self.f.issuer.authority = self.f.authority
+        profile = hashlib.sha256(initialization_api.PROFILE.read_bytes()).hexdigest()
+        self.f.authority.register(
+            "scratch",
+            "a" * 64,
+            profile,
+            "kbs:///storage-test/keys/scratch-v1",
+            mount_binding=fixtures.BINDING,
+        )
+        approval = self.f.authority.approve_initialization("scratch", PLAN)
+        self.config.update(mode="initialize", plan_sha256=approval["plan_sha256"])
+        self.config["expected"]["profile_sha256"] = profile
+
+    def test_signed_initialization_ready_close_and_reopen(self):
+        self.prepare_initialization()
+        self.run_client()
+        record = self.f.authority.inspect("scratch")
+        self.assertEqual(record["state"], "Ready")
+        self.assertIsNone(record["owner"])
+        self.assertEqual(len(record["initialization_steps"]), 4)
+
+    def test_lost_execute_response_never_reissues_format(self):
+        self.prepare_initialization()
+        self.config["stop_started"] = True
+        self.run_client()
+        record = self.f.authority.inspect("scratch")
+        self.assertEqual(record["state"], "Initializing")
+        self.assertEqual(record["initialization_steps"][0]["status"], "Started")
+
+    def test_initialization_wrong_plan_cannot_acquire(self):
+        self.prepare_initialization()
+        self.config["plan_sha256"] = "1" * 64
+        self.run_client(deny=True)
+        self.assertIsNone(self.f.owner())
+
+    def test_initialization_wrong_signer_rejected(self):
+        self.prepare_initialization()
+        self.config["receipt_public_key"] = [1] * 32
+        self.run_client(deny=True)
+        self.assertIsNone(self.f.owner())
+
+    def test_signed_initialization_decision_requires_exact_fresh_binding(self):
+        self.prepare_initialization()
+        original = self.f.gateway.execute
+
+        def changed(field):
+            def execute(*args):
+                wire = original(*args)
+                h, p, _ = wire["decision"].split(".")
+                claims = json.loads(unb64(p))
+                if field == "expired":
+                    claims.update(iat=int(time.time()) - 120, exp=int(time.time()) - 60)
+                elif field == "plan":
+                    claims["result"]["record"]["initialization_approval"]["plan"][
+                        "device_bytes"
+                    ] *= 2
+                elif field == "unknown":
+                    claims["result"]["record"]["unexpected"] = True
+                else:
+                    claims[field] = "0" * 64
+                data = h.encode() + b"." + b64(compact(claims)).encode()
+                return {
+                    "decision": data.decode()
+                    + "."
+                    + b64(self.f.issuer.signing_key.sign(data))
+                }
+
+            return execute
+
+        for field in (
+            "expired",
+            "plan",
+            "unknown",
+            "challenge",
+            "request_sha256",
+            "session_sha256",
+            "policy_sha256",
+        ):
+            with self.subTest(field=field), patch.object(
+                self.f.gateway, "execute", side_effect=changed(field)
+            ):
+                self.run_client(deny=True)
+            self.assertIsNone(self.f.owner())
 
     def test_changed_challenge_does_not_collect_or_execute(self):
         original = self.f.gateway.challenge

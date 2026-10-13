@@ -11,7 +11,7 @@ The client now implements the real authority TLS protocol:
    Ed25519 receipt verifier from measured guest configuration.
 2. Generate a dedicated in-memory P-256 session signing key. Derive the same
    session hash as the authority; never reuse a CDH/KBC decryption key.
-3. Obtain a challenge for the exact reopen or close request. Check its audience,
+3. Obtain a challenge for the exact initialization, reopen or close request. Check its audience,
    nonce, request hash and lifetime before collecting evidence.
 4. Canonically serialize the challenge and public key binding; ask the private
    attestation agent for evidence over its SHA-256. The authority relays and
@@ -74,6 +74,15 @@ The `transport_fixture` example is a test-only binary and must never be installe
 in a measured production guest. A missing fixture binary skips Python tests;
 that is not a passing interoperability run.
 
-Remaining integration: authenticated initialization operations, profile-bound
+Remaining integration: trusted disk execution of initialization decisions, profile-bound
 private CDH key retrieval, real device resolution and production agent lifecycle
 callbacks. Neither requested confidential-storage E2E is complete yet.
+
+## Initialization journal
+
+`initialization` adds signed Plan/Begin/Step/Complete/Ready operations over the
+same authenticated channel. A verified opaque record pins the approved plan;
+one-shot execute permits expire and cannot be cloned/deserialized. A Started
+retry requires reconciliation and Ready never grants another format decision.
+See [the full timeline and manifest recovery contract](../../docs/confidential-storage/guest-initialization-protocol.md).
+The fixture tests these messages with synthetic completion data, not real disks.

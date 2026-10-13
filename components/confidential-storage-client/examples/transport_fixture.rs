@@ -34,6 +34,10 @@ fn main() {
     let client = AuthorityClient::new(c, FixtureEvidence).unwrap();
     let mut expected: Expected = serde_json::from_value(v["expected"].clone()).unwrap();
     expected.session_sha256 = client.session_sha256().into();
+    if v["mode"] == "initialize" {
+        initialize(&client, expected, &v);
+        return;
+    }
     match client.reopen(&expected) {
         Err(_) if v["deny"] == true => {
             println!("PASS denied fixture request");
@@ -50,4 +54,120 @@ fn main() {
         }
         _ => panic!("unexpected fixture authorization result"),
     }
+}
+
+// No disk I/O: this exercises the signed protocol and journal only.
+fn initialize(client: &AuthorityClient<FixtureEvidence>, expected: Expected, v: &Value) {
+    use confidential_storage_client::initialization::{
+        Completion, Decision, Operation, Request, State, Step, StepDecision,
+    };
+    use ring::digest::{digest, SHA256};
+    let request = Request {
+        expected,
+        plan_sha256: v["plan_sha256"].as_str().unwrap().into(),
+    };
+    let plan = client.initialization(&request, Operation::Plan);
+    if v["deny"] == true {
+        assert!(plan.is_err());
+        println!("PASS denied initialization fixture request");
+        return;
+    }
+    assert!(matches!(plan.unwrap(), Decision::Plan(r) if *r.state() == State::Uninitialized));
+    let record = match client.initialization(&request, Operation::Begin).unwrap() {
+        Decision::Begin {
+            fresh: true,
+            record,
+        } => record,
+        _ => panic!("expected fresh initialization"),
+    };
+    let activation = record.activation_id().unwrap().to_owned();
+    for step in [
+        Step::LuksFormat,
+        Step::IntegrityInitialize,
+        Step::FilesystemCreate,
+        Step::DurabilityBarrier,
+    ] {
+        let start = || Operation::Step {
+            activation_id: activation.clone(),
+            step,
+        };
+        let permit = match client.initialization(&request, start()).unwrap() {
+            Decision::Step(StepDecision::Execute(p)) => p,
+            _ => panic!("expected single execution permit"),
+        };
+        assert!(matches!(
+            client.initialization(&request, start()).unwrap(),
+            Decision::Step(StepDecision::Reconcile)
+        ));
+        if v["stop_started"] == true {
+            drop(permit); // Simulate loss before any disk operation.
+            assert!(matches!(
+                client.initialization(&request, start()).unwrap(),
+                Decision::Step(StepDecision::Reconcile)
+            ));
+            println!("PASS lost execute decision never reissued");
+            return;
+        }
+        let execution = permit.consume().unwrap();
+        let raw_manifest = record.manifest(&"d".repeat(64)).unwrap();
+        let manifest_hash: String = digest(&SHA256, &raw_manifest)
+            .as_ref()
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        let result = Completion {
+            header_sha256: "d".repeat(64),
+            stack_sha256: (step == Step::IntegrityInitialize).then(|| "9".repeat(64)),
+            filesystem_uuid: (step == Step::FilesystemCreate)
+                .then(|| "01234567-89ab-4cde-8123-456789abcdef".into()),
+            manifest_sha256: (step == Step::DurabilityBarrier).then_some(manifest_hash),
+        };
+        assert!(matches!(
+            client
+                .initialization(
+                    &request,
+                    Operation::Complete {
+                        activation_id: execution.activation_id().into(),
+                        step,
+                        step_id: execution.step_id().into(),
+                        result,
+                        evidence_sha256: "8".repeat(64),
+                    }
+                )
+                .unwrap(),
+            Decision::Completed
+        ));
+        assert!(matches!(
+            client.initialization(&request, start()).unwrap(),
+            Decision::Step(StepDecision::Complete)
+        ));
+    }
+    let ready = match client
+        .initialization(
+            &request,
+            Operation::Ready {
+                activation_id: activation.clone(),
+                header_sha256: "d".repeat(64),
+            },
+        )
+        .unwrap()
+    {
+        Decision::Ready(r) => r,
+        _ => panic!("expected Ready"),
+    };
+    assert!(client
+        .initialization(
+            &request,
+            Operation::Step {
+                activation_id: activation,
+                step: Step::LuksFormat
+            }
+        )
+        .is_err());
+    client.close_initialization(&ready).unwrap();
+    let mut reopen = request.expected.clone();
+    reopen.operation_id = "rust-after-init".into();
+    let grant = client.reopen(&reopen).unwrap();
+    client.close(&grant).unwrap();
+    println!("PASS signed initialization, one-shot steps, Ready, close and reopen");
 }

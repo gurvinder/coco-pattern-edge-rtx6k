@@ -16,8 +16,9 @@ do not format model PVCs.
 
 The local authority library has an explicit approval and step journal. A trusted
 in-process coordinator now connects it to the disposable Linux test backend; see
-[the executor contract and failure tests](initialization-executor.md). Production
-guest integration, the network listener and attestation verifier remain unfinished.
+[the executor contract and failure tests](initialization-executor.md). The [signed guest initialization API](guest-initialization-protocol.md) now connects
+the Rust client to the TLS gateway and AS-result verifier. Production disk
+execution, private CDH key retrieval and hardware attestation validation remain unfinished.
 
 1. The administrator registers the volume, workload policy, crypto profile,
    versioned key URI and fixed `/data` mount binding.
@@ -75,7 +76,9 @@ uncertain owner, and `close` cannot clear incomplete initialization. The conserv
 result may be a stranded disposable PVC requiring a separately reviewed recovery
 or disposal decision.
 
-The dictionary containing `execute` is an internal, trusted call result. It must
+The library dictionary containing `execute` is an internal, trusted call result.
+The network adapter signs a fresh request/challenge-bound decision, and the Rust
+client accepts it as a non-cloneable, expiring execute permit. It must
 **not** become a replayable stateless format token. The coordinator serializes local
 execution, binds the decision to its context and refuses uncertain retries. The
 production guest still needs authenticated session/channel binding and explicit

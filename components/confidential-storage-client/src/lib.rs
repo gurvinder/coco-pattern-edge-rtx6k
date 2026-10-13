@@ -16,6 +16,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
+pub mod initialization;
 #[cfg(target_os = "linux")]
 pub mod private_aa;
 const PROTOCOL: &str = "confidential-storage-request/v1";
@@ -191,6 +192,9 @@ impl<E: Evidence> AuthorityClient<E> {
         Ok(())
     }
     fn execute<T: DeserializeOwned>(&self, request: &[u8]) -> Result<T> {
+        Ok(self.exchange(request)?.0)
+    }
+    fn exchange<T: DeserializeOwned>(&self, request: &[u8]) -> Result<(T, Challenge)> {
         if request.is_empty() || request.len() > MAX_REQUEST {
             return Err(Error::Binding);
         }
@@ -231,7 +235,8 @@ impl<E: Evidence> AuthorityClient<E> {
             .key
             .sign(&SystemRandom::new(), &message)
             .map_err(|_| Error::Attestation)?;
-        self.post("execute", &canonical(&json!({"nonce":challenge.nonce,"request":B64.encode(request),"token":response.token,"proof":B64.encode(proof.as_ref())}))?)
+        let result = self.post("execute", &canonical(&json!({"nonce":challenge.nonce,"request":B64.encode(request),"token":response.token,"proof":B64.encode(proof.as_ref())}))?)?;
+        Ok((result, challenge))
     }
     fn post<T: DeserializeOwned>(&self, route: &str, body: &[u8]) -> Result<T> {
         let response = self

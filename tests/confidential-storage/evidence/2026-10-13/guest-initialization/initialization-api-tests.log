@@ -1,0 +1,14 @@
+test_parallel_step_requests_have_only_one_execute_decision (test_initialization_api.InitializationApiTests.test_parallel_step_requests_have_only_one_execute_decision) ... ok
+test_readonly_or_administrative_operations_are_not_exposed (test_initialization_api.InitializationApiTests.test_readonly_or_administrative_operations_are_not_exposed) ... ok
+test_ready_can_be_recovered_as_metadata_but_never_reformatted (test_initialization_api.InitializationApiTests.test_ready_can_be_recovered_as_metadata_but_never_reformatted) ... ok
+test_revoked_or_other_session_cannot_operate (test_initialization_api.InitializationApiTests.test_revoked_or_other_session_cannot_operate) ... ok
+test_signed_guest_claims_cannot_commit_an_arbitrary_manifest_layout (test_initialization_api.InitializationApiTests.test_signed_guest_claims_cannot_commit_an_arbitrary_manifest_layout) ... ok
+test_signed_plan_initialize_steps_ready_close_and_reopen (test_initialization_api.InitializationApiTests.test_signed_plan_initialize_steps_ready_close_and_reopen) ... ok
+test_started_step_is_never_reissued_after_retry_or_response_loss (test_initialization_api.InitializationApiTests.test_started_step_is_never_reissued_after_retry_or_response_loss) ... ok
+test_unapproved_plan_profile_binding_or_nonce_cannot_acquire (test_initialization_api.InitializationApiTests.test_unapproved_plan_profile_binding_or_nonce_cannot_acquire) ... ok
+test_wrong_completion_step_or_header_does_not_advance (test_initialization_api.InitializationApiTests.test_wrong_completion_step_or_header_does_not_advance) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 1.343s
+
+OK

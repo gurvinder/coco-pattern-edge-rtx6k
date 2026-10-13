@@ -86,6 +86,31 @@ fn manifest(header: &[u8]) -> Vec<u8> {
     serde_json::to_vec(&json!({"schemaVersion":1,"volumeId":claims.volume_id,"generation":claims.generation,"profileSha256":profile_sha256(),"credentialUri":claims.credential_uri,"luksUuid":UUID,"deviceBytes":67108864,"headerSha256":sha256(header),"headerBytes":HEADER_BYTES,"dataOffsetBytes":HEADER_BYTES,"filesystem":"ext4"})).unwrap()
 }
 #[test]
+#[cfg(target_os = "linux")]
+#[ignore = "requires the disposable kernel lab's locally generated scratch image"]
+fn kernel_generated_integrity_header_matches_profile() {
+    use std::io::Read;
+    let path = std::env::var("COCO_TEST_KERNEL_LAB_DISK").expect("explicit lab image required");
+    let mut source = std::fs::File::open(path).unwrap();
+    assert!(source.metadata().unwrap().is_file());
+    assert_eq!(source.metadata().unwrap().len(), 128 * 1024 * 1024);
+    let mut bytes = vec![0; HEADER_BYTES];
+    source.read_exact(&mut bytes).unwrap();
+    // Synthetic local signing identity exercises validation, not attestation.
+    let mut m: Value = serde_json::from_slice(&manifest(&bytes)).unwrap();
+    m["deviceBytes"] = json!(128 * 1024 * 1024);
+    let m = serde_json::to_vec(&m).unwrap();
+    let g = grant(&m, &bytes);
+    let prepared =
+        crate::sealed_header::PreparedHeader::prepare(&g, &m, &source, 128 * 1024 * 1024).unwrap();
+    assert_eq!(prepared.manifest().device_bytes(), 128 * 1024 * 1024);
+    bytes[500000] ^= 1;
+    assert!(matches!(
+        prepared.manifest().validate_header(&g, &bytes),
+        Err(Error::Authentication)
+    ));
+}
+#[test]
 fn accepts_only_the_complete_authenticated_rw_profile() {
     let h = header(&serde_json::to_vec(&metadata()).unwrap());
     let m = manifest(&h);

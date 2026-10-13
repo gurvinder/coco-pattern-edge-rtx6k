@@ -1,0 +1,23 @@
+QEMU emulator version 7.2.22 (Debian 1:7.2+dfsg-7+deb12u18+b3)
+Copyright (c) 2003-2022 Fabrice Bellard and the QEMU Project developers
+cryptsetup 2.6.1 flags: UDEV BLKID KEYRING KERNEL_CAPI
+rustc 1.94.1 (e408947bf 2026-03-25)
+cargo 1.94.1 (29ea6fb6a 2026-03-24)
+d66b8bc4b8330f4e98257602449feeeed696b860bf147a40477e7f4cfc48e704  /build/kernel-final/vmlinuz
+29dff16aa21306b4d0fec5975d2ff032a0cd5354fec678f8dba2a9beb0813b88  /build/kernel-final/root/lib/x86_64-linux-gnu/libcryptsetup.so.12
+94176513740e4b8d24a68e6c37a43986b488f2910c9eaa34f69bd7ba8c49307d  /build/kernel-final/root/lib/x86_64-linux-gnu/libuuid.so.1
+cc3d6ca965cab25eacb8d7d98f0b13be7c94a19583983fb864ba10163e5536b0  /build/kernel-final/root/lib/x86_64-linux-gnu/libblkid.so.1
+bff8750fe719e6000791b88b11747dce8772c37118d0b2348044b70819d13835  /build/kernel-final/root/lib/x86_64-linux-gnu/libc.so.6
+6d41985d056cabf61efcc4f9db491a7f69b56666e5eb8959d6078611b94167a0  /build/kernel-final/root/lib/x86_64-linux-gnu/libdevmapper.so.1.02.1
+7978b587159688ca171bdeef6eb9b26d04cb60204b0e102fa8aa34f955745753  /build/kernel-final/root/lib/x86_64-linux-gnu/libcrypto.so.3
+0207e4908ea384e186c75925b0e56996a3eccecd48c99252aeb757d0d3451c93  /build/kernel-final/root/lib/x86_64-linux-gnu/libselinux.so.1
+66f0b3dc089f17f0d46c68a17a305cfe7905c03e30c4a1167dc41623f0679782  /build/kernel-final/root/lib/x86_64-linux-gnu/libudev.so.1
+7f2ca87f652f56b094462474b076749e90e689d0ecb9cb63c7679820b271b4e7  /build/kernel-final/root/lib/x86_64-linux-gnu/libm.so.6
+19c626251526131ac9340826c8f7bcb693c6ceb9d5da55919c3aa45d972b704f  /build/kernel-final/root/lib/x86_64-linux-gnu/libpcre2-8.so.0
+dc840deeb5e4348fc46b8390527359309b230b53329cae237d2cc95f77699380  /build/kernel-final/root/lib/x86_64-linux-gnu/libext2fs.so.2
+857baae57e13a2e8aab83e0c29f660e28a9e1c209bf0ac277edccdedb29fab38  /build/kernel-final/root/lib/x86_64-linux-gnu/libcom_err.so.2
+25b38000a5f4b9b7bec9b354697a5c8d7581822228fc894d2142fe4dcfd90a9f  /build/kernel-final/root/lib/x86_64-linux-gnu/libe2p.so.2
+4949e728b2cd55408af7cdbf4702e53d3cab89a27b72f5514d1d05feb8d23882  /build/kernel-final/root/lib/x86_64-linux-gnu/libcap-ng.so.0
+532959dab80154db4a0d1184a44b73f2a4304966c3559057527b848363f53649  /build/kernel-final/root/usr/lib/x86_64-linux-gnu/libpopt.so.0
+090f9d048e21e57434dd81e38e725142c5d5f51853a504381d09f32e635dfae7  /build/kernel-final/root/usr/lib/x86_64-linux-gnu/libargon2.so.1
+c149286f60f117d20b27502902d3d386658ae90ef764f59261cf88354f1f4205  /build/kernel-final/root/usr/lib/x86_64-linux-gnu/libjson-c.so.5

@@ -1,0 +1,98 @@
+#!/bin/sh
+# Synthetic, non-TEE test guest ONLY. Never install this as a production init.
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+mount -t devtmpfs devtmpfs /dev
+exec </dev/console >/dev/console 2>&1
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mkdir -p /run /tmp /data /dev/mapper
+mount -t tmpfs -o mode=0700 tmpfs /run
+mount -t tmpfs tmpfs /tmp
+finish() {
+    sync
+    reboot -f
+    sleep 5
+}
+fail() { echo "COCO_TEST_FAIL:$*"; finish; exit 1; }
+trap 'fail unexpected-exit' EXIT
+set -eu
+case " $(cat /proc/cmdline) " in *' coco.storage.lab=1 '*) ;; *) fail missing-lab-guard;; esac
+phase=unset
+for arg in $(cat /proc/cmdline); do case "$arg" in coco.phase=*) phase=${arg#coco.phase=};; esac; done
+for module in virtio_mmio virtio_blk dm_mod dm_crypt dm_integrity ext4 authenc hmac sha256_generic xts aes_generic; do
+    modprobe "$module" || fail "module-$module"
+done
+for i in $(seq 1 20); do [ -b /dev/vda ] && break; sleep 1; done
+[ -b /dev/vda ] || fail no-test-disk
+[ "$(cat /sys/block/vda/serial)" = coco-scratch-only ] || fail wrong-disk-serial
+[ "$(cat /sys/block/vda/size)" = 262144 ] || fail wrong-disk-size
+mknod /dev/mapper/control c 10 236 2>/dev/null || true
+cryptsetup --version
+uname -r
+case "$phase" in
+    initialize)
+        cryptsetup luksFormat --batch-mode --type luks2 --cipher aes-xts-plain64 \
+            --key-size 512 --integrity hmac-sha256 --sector-size 4096 \
+            --uuid 01234567-89ab-4cde-8123-456789abcdef \
+            --pbkdf argon2id --pbkdf-memory 65536 --pbkdf-parallel 1 \
+            --pbkdf-force-iterations 4 --luks2-metadata-size 16k \
+            --luks2-keyslots-size 16744448 --offset 32768 \
+            --key-file /test-key /dev/vda || fail format
+        echo COCO_TEST_PASS:format
+        ;;
+    reopen|wrong-key|corruption) ;;
+    *) fail invalid-phase ;;
+esac
+# The test key is an ephemeral fixture in this disposable initramfs, NOT Trustee.
+# Explicit detached copy: never let cryptsetup reread a mutable source header.
+dd if=/dev/vda of=/run/header bs=1048576 count=16 2>/dev/null
+sha256sum /run/header
+cryptsetup luksDump --dump-json-metadata /run/header
+if [ "$phase" = wrong-key ]; then
+    dd if=/dev/urandom of=/run/wrong-key bs=32 count=1 2>/dev/null
+    if cryptsetup open --type luks2 --disable-external-tokens --disable-keyring \
+        --header /run/header --key-file /run/wrong-key /dev/vda coco-test; then fail wrong-key-accepted; fi
+    if dmsetup info coco-test >/dev/null 2>&1 || dmsetup info coco-test_dif >/dev/null 2>&1; then fail remaining-mapping; fi
+    echo COCO_TEST_PASS:wrong-key
+    trap - EXIT
+    finish
+    exit 0
+fi
+cryptsetup open --type luks2 --disable-external-tokens --disable-keyring \
+    --header /run/header --key-file /test-key /dev/vda coco-test || fail open
+cryptsetup status coco-test
+integrity_table=$(dmsetup table coco-test_dif)
+echo "$integrity_table"
+echo "$integrity_table" | grep -Eq '^0 [0-9]+ integrity [0-9]+:[0-9]+ [0-9]+ 32 J ' || fail integrity-mode
+echo "$integrity_table" | grep -Eq '(^| )block_size:4096( |$)' || fail integrity-block-size
+case "$integrity_table" in *allow_discards*|*recalculate*|*internal_hash*) fail unsafe-integrity-options;; esac
+echo COCO_TEST_PASS:journaled-hmac-stack
+if [ "$phase" = corruption ]; then
+    # Read without mounting the intentionally damaged disposable filesystem.
+    if dd if=/dev/mapper/coco-test of=/dev/null bs=4096 iflag=direct; then fail corrupted-data-accepted; fi
+    dmesg | grep -q 'INTEGRITY AEAD ERROR' || fail missing-authentication-error
+    cryptsetup close coco-test || fail close
+    if dmsetup info coco-test >/dev/null 2>&1 || dmsetup info coco-test_dif >/dev/null 2>&1; then fail remaining-mapping; fi
+    echo COCO_TEST_PASS:corruption
+    trap - EXIT
+    finish
+    exit 0
+fi
+if [ "$phase" = reopen ]; then
+    dd if=/dev/mapper/coco-test of=/dev/null bs=4096 iflag=direct || fail clean-volume-read
+    echo COCO_TEST_PASS:clean-volume-read
+fi
+if [ "$phase" = initialize ]; then
+    mkfs.ext4 -q -F -E lazy_itable_init=0,lazy_journal_init=0 /dev/mapper/coco-test || fail mkfs
+fi
+mount -t ext4 -o nodev,nosuid,noexec /dev/mapper/coco-test /data || fail mount
+if [ "$phase" = initialize ]; then chown 1000:1000 /data; fi
+/usr/bin/setpriv --reuid=1000 --regid=1000 --clear-groups --bounding-set=-all --no-new-privs \
+    /bin/sh /app-test "$phase" || fail unprivileged-application
+umount /data || fail unmount
+cryptsetup close coco-test || fail close
+# No force/lazy/deferred cleanup. Both target names must actually be absent.
+if dmsetup info coco-test >/dev/null 2>&1 || dmsetup info coco-test_dif >/dev/null 2>&1; then fail remaining-mapping; fi
+echo "COCO_TEST_PASS:$phase"
+trap - EXIT
+finish

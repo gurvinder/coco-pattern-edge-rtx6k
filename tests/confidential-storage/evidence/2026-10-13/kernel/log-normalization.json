@@ -1,0 +1,33 @@
+{
+  "transformation": "CRLF to LF; strip trailing whitespace and trailing blank lines only",
+  "logs": {
+    "initialize.log": {
+      "rawSha256": "07edd63779640c1efff562ae027cf55df21f6f7e7cbdbc990b2882f97539e23e",
+      "storedSha256": "6283e26fde5f87c74f15aaf01b427acd40d836aa37ea605db88b6fff17aa9ec2"
+    },
+    "reopen.log": {
+      "rawSha256": "82d8c96b9376bd1ccb52851d2e0e1a9aa31bb62c61dc335faf8f2597fd2307b3",
+      "storedSha256": "8c990db12b441a0b5a82acb0f2e5c32e9213affaee556f940274dc0310ad7da2"
+    },
+    "wrong-key.log": {
+      "rawSha256": "29e3ae8f57d7e333570c041d28b358923f7f420b53899baf9cdcd08edf3c75ba",
+      "storedSha256": "b38b7484fca48948badb81a555a8dc415659c72f6b264172ad1c037586c4007e"
+    },
+    "corruption.log": {
+      "rawSha256": "2ea366592233b1e2e26e1a35d75c61252074c52b02d292839b8a5ed31222f7a1",
+      "storedSha256": "e459434be5e5c9c6ec0fe466ca67eb1fb701d077e0977cd631dd2c125fabacaf"
+    },
+    "kernel-header-test.log": {
+      "rawSha256": "566037f25e8bd00d5d1b2258349aeee240053afae26e326feacb2c5836ef3b56",
+      "storedSha256": "e6f18f62db581d56551293524a96f545286c11de1ae69ff4be6215ce1bb28ec5"
+    },
+    "kernel-rust-tests.log": {
+      "rawSha256": "5e2cde7f754ba7828a508c5cb007856e11563f49d4015d872ddfc28939d0cf56",
+      "storedSha256": "f12dbe195bfbcd16d14dbf5ac66c6651cafaab3017f685b298eec34da73cca30"
+    },
+    "tools.txt": {
+      "rawSha256": "118318b97025f6049bb29146bbddeb46a9ad6c76b41cf00d7ed69693523f0a60",
+      "storedSha256": "db31305a146942431aff337bf15b72da3e2409fe73e3bd67e0db2a2d3c681325"
+    }
+  }
+}

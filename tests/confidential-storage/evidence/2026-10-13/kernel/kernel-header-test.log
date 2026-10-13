@@ -1,0 +1,7 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running unittests src/lib.rs (target/debug/deps/confidential_storage_guest-9750860b544fbda1)
+
+running 1 test
+test profile::tests::kernel_generated_integrity_header_matches_profile ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.04s

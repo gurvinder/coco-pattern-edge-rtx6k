@@ -137,6 +137,23 @@ no cluster resource or live PVC was changed in this checkpoint. The Kata activat
 gate remains closed. Actual format/open/mount and crash/corruption tests are still
 required before the storage is usable.
 
+## Real kernel storage checkpoint
+
+The [disposable kernel lab](../../tests/confidential-storage/kernel-lab/README.md)
+now passes real LUKS2 + dm-crypt + journaled dm-integrity operations in a software
+emulated Linux guest: fresh initialization, ext4 application writes without
+capabilities, reopen after reboot, wrong-key denial and ciphertext modification
+detection. A separate Rust test accepts the actual generated header through the
+authenticated profile and sealed-memfd preparation path. Package pins, console
+logs and cluster comparison are under
+`tests/confidential-storage/evidence/2026-10-13/kernel/`.
+
+This replaces neither the guest executor nor its authorization integration. The
+lab uses a random fixture key and its own new scratch file, with no TEE, Trustee,
+Kata container, PVC, GPU or host device. The kernel is Debian 6.1, not the installed
+RHEL guest kernel. Crash/recovery and replay tests remain outstanding. No encrypted
+storage E2E gate has passed; the Kata activation gate remains closed.
+
 ## Next engineering step
 
 Build the guest-managed mount integration in an isolated artifact before installing

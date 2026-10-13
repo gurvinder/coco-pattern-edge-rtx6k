@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+[ "$(id -u)" = 1000 ]
+for field in CapInh CapPrm CapEff CapBnd CapAmb; do
+    grep -Eq "^$field:[[:space:]]+0000000000000000$" /proc/self/status
+done
+grep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status
+# Both the backing disk and the plaintext mapper must be inaccessible to the app.
+if dd if=/dev/vda of=/dev/null bs=1 count=1 2>/dev/null; then exit 1; fi
+if dd if=/dev/mapper/coco-test of=/dev/null bs=1 count=1 2>/dev/null; then exit 1; fi
+if [ "$1" = initialize ]; then
+    echo confidential-storage-synthetic-payload-v1 > /data/probe
+    sync -f /data/probe
+fi
+[ "$(cat /data/probe)" = confidential-storage-synthetic-payload-v1 ]
+sha256sum /data/probe
+echo COCO_TEST_PASS:unprivileged-application

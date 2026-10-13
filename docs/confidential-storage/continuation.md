@@ -4,6 +4,45 @@ Checkpoint: 13 October 2026, branch `dev/confidential-storage-integration`, base
 on proposal/handoff commit `e4a3616`. Read the [report](compatibility-report.md)
 before making changes. The original six-phase handoff still defines completion.
 
+## Latest live checkpoint: real private-AA SNP verification
+
+The approved separate probe is installed. CRI-O's SIGHUP runtime-map bug required
+one separately approved restart (PID 11809 -> 694089). Production pod identities,
+readiness/restart counts, resource specifications and GitOps sources remained
+unchanged. Subsequent corrections affected only the separate test config/image.
+
+Real SNP signature/chain, runtime binding and explicit InitData now validate
+against the isolated AS. All three tampering checks pass; a missing-InitData quote
+also failed as expected. The application is UID 1000, CapEff=0, NoNewPrivs=1 and
+cannot access AA/device-mapper; guest policy rejects exec. See the
+[reproducer and limitations](../../tests/confidential-storage/private-aa-probe/README.md).
+The AS appraisal remains **contraindicated** because the diagnostic verifier has
+no approved launch/TCB references. No key was released or encrypted PVC opened.
+Do not treat cryptographic verification as an affirmative storage authorization.
+
+Current diagnostic image: v4, SHA-256
+`d949fefa0716061ea88e1afc7ee66cca1b92302022af60a2e2f5faea6287290e`.
+Live test config remains under `private-aa-probe-94354456b0c3` and uses `initrd-v4`.
+The current clean installer uses the new hash-named directory; do not rerun it on
+the already installed handler. No further CRI-O restart is approved or required.
+The existing webhook excludes this custom RuntimeClass, so the chart explicitly
+requires diagnostic InitData. The corrected installer applies a boot-artifact
+SELinux label and disables the test console watcher for direct read-only capture.
+
+The compiler `storage-client-compiler` has the rebuilt verifier under
+`/build/trustee-private-as/target/release/restful-as` and isolated state at
+`/build/private-as-state` (listener 127.0.0.1:8089). Explicitly approved AMD KDS
+certificate caching eliminates transient network fetch failures. Private state
+was backed up outside Git under the local `work/confidential-storage-private`
+directory; the verifier binary and boot artifacts are in
+`/private/tmp/storage-guest-boot-base`. The compiler expires around 23:03 UTC.
+
+Next: approve references from trusted build/TCB inputs, wire private authority/KBS
+providers and the real formatter/opener into measured guest/agent lifecycle, then
+run both live workload examples. Existing new key provider is CPU-only and must
+reject GPU-required policies. Earlier approval-pending statements below are
+historical and superseded by the completed approved installation/restart.
+
 ## Latest checkpoint: private KBS key provider
 
 The client now issues opaque, expiring key permits for RO model reopen and owned
@@ -14,7 +53,7 @@ plus the client's 3 unit and 16 TLS regression tests. See
 No real model/PVC key, confidential guest deployment or production policy changed.
 The remaining work is measured configuration and API isolation, actual guest
 execution/lifecycle wiring, real attestation/key release and both workload E2Es.
-The runtime installation/reload approval is still pending.
+The separate diagnostic runtime is now installed; see the live checkpoint above.
 
 ## Latest checkpoint: signed guest initialization API
 

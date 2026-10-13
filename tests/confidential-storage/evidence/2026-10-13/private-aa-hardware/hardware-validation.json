@@ -1,0 +1,29 @@
+{
+  "scope": "diagnostic SNP verifier interoperability; not storage authorization",
+  "tests": {
+    "real_snp_signature_and_bindings": true,
+    "pinned_ear_signature": true,
+    "changed_runtime_denied": true,
+    "changed_initdata_denied": true,
+    "changed_signature_denied": true
+  },
+  "appraisals": {
+    "cpu0": {
+      "status": "contraindicated",
+      "trust_vector": {
+        "instance-identity": 0,
+        "configuration": 3,
+        "executables": 33,
+        "file-system": 0,
+        "hardware": 97,
+        "runtime-opaque": 0,
+        "storage-opaque": 0,
+        "sourced-data": 0
+      }
+    }
+  },
+  "evidence_sha256": "6a62235acc141d111371113cfdc184f98e9731e2ed0bd91f2564729a6acf2f3a",
+  "storage_keys_released": false,
+  "gpu_attestation_tested": false,
+  "encrypted_storage_e2e_complete": false
+}

@@ -1,0 +1,21 @@
+{
+  "node": "9c-63-c0-dd-06-52",
+  "runtimeClass": "kata-snp-storage-probe",
+  "runtimeConfig": "/opt/kata-storage-test/private-aa-probe-94354456b0c3/configuration.toml",
+  "initrd": "/opt/kata-storage-test/private-aa-probe-94354456b0c3/initrd-v4",
+  "initrdSha256": "d949fefa0716061ea88e1afc7ee66cca1b92302022af60a2e2f5faea6287290e",
+  "asBinarySha256": "f60eaaed611d5a4bcc907ccbc1f18d6b734f2fb16b35529b940ed782470e9865",
+  "asSourceCommit": "71251310045d8be2e95041cf0028691623c73957",
+  "asRustToolchain": "1.95.0",
+  "asCertificateLookup": "OfflineStore after approved AMD KDS download",
+  "asEndpoint": "compiler-loopback-only",
+  "guestAgentVersion": "3.31.0",
+  "reportVersion": 5,
+  "reportVmpl": 0,
+  "initialMissingInitDataRejected": "Host Data Mismatch",
+  "execRejected": "ExecProcessRequest is blocked by policy",
+  "encryptedStorageE2eComplete": false,
+  "finalApplicationExitCode": 0,
+  "finalApplicationPhase": "Succeeded",
+  "finalApplicationHoldSeconds": 40
+}

@@ -1,15 +1,19 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "archivePrefixPreserved": true,
   "newArchiveEntries": 4,
   "repeatedBuildIdentical": true,
-  "privateClientLibrariesPresent": true,
-  "shellSyntaxPassed": true,
   "builderTestsPassed": 3,
-  "nodeInstallerExecuted": false,
-  "explicitNodeApprovalPending": true,
-  "productionUnchanged": true,
-  "hardwareAttestationPassed": false,
-  "sourceSha256": "f07cbaebaadb3d228f30a48cf5c4bd34fa8128a246f361f1568e41a3683f303f",
-  "preinstallAuditSha256": "4be71b6880231e75056b95a9954516d55bfd3749467d9583f53273a762901adf"
+  "nodeInstallerExecuted": true,
+  "explicitInstallationAndReloadApproved": true,
+  "oneCrioRestartApprovedAndExecuted": true,
+  "cryptographicSnpVerificationPassed": true,
+  "runtimeAndInitDataBindingsVerified": true,
+  "tamperingRejectionsPassed": 3,
+  "defaultAppraisal": "contraindicated",
+  "storageAuthorizationPassed": false,
+  "storageKeysReleased": false,
+  "productionWorkloadsUnchanged": true,
+  "sourceSha256": "3660060ee177fd95e612fa55889d4bcc14dcd6ba822ec393c81a876c405d77f5",
+  "currentImageSha256": "d949fefa0716061ea88e1afc7ee66cca1b92302022af60a2e2f5faea6287290e"
 }

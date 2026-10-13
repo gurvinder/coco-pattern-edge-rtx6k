@@ -1,0 +1,58 @@
+{{- if ne .Release.Namespace "confidential-storage-test" }}
+{{- fail "Use only the isolated confidential-storage-test namespace" }}
+{{- end }}
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: kata-snp-storage-probe
+  labels:
+    app.kubernetes.io/part-of: confidential-storage-test
+handler: kata-snp-storage-probe
+overhead:
+  podFixed:
+    cpu: 250m
+    memory: 350Mi
+    sev-snp.amd.com/esids: "1"
+scheduling:
+  nodeSelector:
+    kubernetes.io/hostname: {{ .Values.node | quote }}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: storage-private-aa-probe
+  labels:
+    app.kubernetes.io/part-of: confidential-storage-test
+  annotations:
+    coco.io/initdata-configmap: {{ .Values.initdataConfigMap | quote }}
+    io.katacontainers.config.hypervisor.cc_init_data: {{ required "Set reviewed diagnostic initdata explicitly; the custom runtime is not covered by the webhook" .Values.initdata | quote }}
+spec:
+  runtimeClassName: kata-snp-storage-probe
+  automountServiceAccountToken: false
+  restartPolicy: Never
+  activeDeadlineSeconds: 240
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: probe
+      image: {{ .Values.image | quote }}
+      command: [/bin/sh, -c]
+      args:
+        - "set -eu; id; grep -E '^(CapEff|NoNewPrivs):' /proc/self/status; grep -Eq '^CapEff:[[:space:]]+0+$' /proc/self/status; grep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status; test ! -e /dev/mapper/control; test ! -e /run/confidential-containers/attestation-agent/attestation-agent.sock; echo application_isolation=pass; sleep {{ .Values.holdSeconds | int }}"
+      securityContext:
+        privileged: false
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      resources:
+        requests:
+          cpu: "1"
+          memory: 2Gi
+        limits:
+          cpu: "2"
+          memory: 4Gi

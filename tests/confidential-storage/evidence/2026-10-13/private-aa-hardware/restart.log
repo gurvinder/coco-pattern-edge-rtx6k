@@ -1,0 +1,4 @@
+/etc/kata-containers/kata-snp/configuration.toml: OK
+/etc/crio/crio.conf.d/50-kata-snp: OK
+/opt/kata-storage-test/private-aa-probe-94354456b0c3/initrd: OK
+CRIO_RESTARTED old_pid=11809 new_pid=694089

@@ -1,0 +1,8 @@
+test_archive_parser_preserves_prefix_and_rejects_ambiguity (test_attestation_probe.ProbeBuilderTests.test_archive_parser_preserves_prefix_and_rejects_ambiguity) ... ok
+test_changed_base_and_client_are_rejected_before_unpack (test_attestation_probe.ProbeBuilderTests.test_changed_base_and_client_are_rejected_before_unpack) ... ok
+test_only_fixed_diagnostic_public_binding_is_accepted (test_attestation_probe.ProbeBuilderTests.test_only_fixed_diagnostic_public_binding_is_accepted) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+OK

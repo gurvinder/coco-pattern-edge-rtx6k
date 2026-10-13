@@ -121,6 +121,7 @@ while [ "$i" -lt 60 ]; do
     if [ -S "$socket" ] && /usr/bin/storage-attestation-probe-client \\
         --attestation_sock "unix://$socket" get-evidence \\
         --runtime-data '{report_data}' > "$output" 2>/dev/null; then
+        sleep 20
         printf '\\nSTORAGE_ATTESTATION_PROBE_BEGIN\\n'
         cat "$output"
         printf '\\nSTORAGE_ATTESTATION_PROBE_END\\n'
@@ -134,6 +135,7 @@ exit 1
 """.encode()
     unit = b"""[Unit]
 Description=No-secret private AA attestation probe
+DefaultDependencies=no
 After=kata-agent.service
 Requires=kata-agent.service
 
@@ -144,7 +146,7 @@ TimeoutStartSec=90
 UMask=0077
 StandardOutput=tty
 StandardError=tty
-TTYPath=/dev/console
+TTYPath=/dev/hvc0
 RemainAfterExit=yes
 """
     additions = [

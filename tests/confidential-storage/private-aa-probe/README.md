@@ -1,17 +1,35 @@
-# Private AA probe: prepared, not installed
+# Private AA hardware probe
 
-This no-secret diagnostic tests the real SNP evidence path through the trusted
-guest's private attestation-agent ttRPC socket. It is **not** either requested
-encrypted-storage E2E. Never approve its measurement for a storage/model key.
+This **no-secret diagnostic** boots a separate SNP guest, calls the guest's
+private attestation-agent ttRPC socket, and verifies its evidence with an isolated
+Trustee Attestation Service. It is not either encrypted-storage E2E. Never approve
+this diagnostic guest measurement for a storage/model key.
 
-The original CPU initrd/kernel/firmware were copied read-only and independently
-matched their documented release hashes. `build.json` records the separately
-built initrd digest. `runtime.json` contains only a diagnostic public key,
-nonce/request hash and deliberately unreachable audience; no private key exists
-in this artifact. It authorizes nothing.
+## Verified on 13 October 2026 (UTC)
 
-Build from the hash-pinned original image and client described in
-[the authority guide](../../../docs/confidential-storage/authority-https.md):
+- Real SNP report version 5, VMPL 0. The report binds the fixed diagnostic runtime
+  object and the explicitly supplied no-secret InitData.
+- The pinned-source AS verifies the AMD endorsement chain/report signature and
+  both bindings. Its ES256 EAR signature is verified with the pinned test signer.
+- Changed runtime data, changed InitData and a modified report signature are each
+  rejected for their specific verification error. A quote from an earlier boot
+  without InitData was rejected with `Host Data Mismatch`.
+- The application reports UID/GID 1000, `CapEff=0`, `NoNewPrivs=1`, no private AA
+  socket and no device-mapper control. Guest policy rejects `oc exec` with
+  `ExecProcessRequest is blocked by policy`.
+- The default appraisal is **contraindicated**, not approved: executables=33,
+  hardware=97, configuration=3. No approved launch/TCB reference set is registered
+  in this isolated verifier. No storage key was released; no GPU was assigned.
+
+Evidence is in [`../evidence/2026-10-13/private-aa-hardware/`](../evidence/2026-10-13/private-aa-hardware/).
+Raw quotes, chip IDs, certificates and test signer private material are retained
+outside Git. The compiler/AS is unprivileged, disposable and has no host/PVC/GPU
+access. AS listens on loopback only; its administrative routes are not published.
+
+## Build and deployment
+
+Build from the pinned original image/client in the
+[authority build lock](../../../components/confidential-storage-authority/attestation-build-lock.json):
 
 ```sh
 python3 scripts/confidential-storage/build-attestation-probe.py \
@@ -21,46 +39,99 @@ python3 scripts/confidential-storage/build-attestation-probe.py \
   --output /scratch/private-aa-probe.initrd
 ```
 
-The output preserves all original CPIO records byte-for-byte and adds four
-entries: a root-only client, root-only fixed probe script, systemd unit and target
-symlink. After AA starts, the service requests evidence for the embedded runtime
-hash and emits it between console markers. There is no application-accessible
-HTTP/signing/evidence endpoint. A missing private socket or failed request times
-out; the application gets no capabilities, device or key to work around failure.
-Treat captured evidence as platform metadata and retain it privately.
+`build.json` records the current v4 image. The builder preserves all original
+archive records and adds four entries: a root-only client, fixed script, systemd
+unit and target symlink. `DefaultDependencies=no` avoids ordering through
+`basic.target`; evidence goes to `/dev/hvc0` after a 20-second capture delay.
+The embedded audience is deliberately unreachable and the public diagnostic key
+has no associated signing service. No generic evidence interface is added.
 
-Verified locally: two independent builds are identical, the original archive
-prefix is unchanged, exactly four entries were added, the client dependencies
-exist in the original image, shell syntax passes and three input/archive rejection
-tests pass. **The image has not booted and no real SNP quote has been accepted.**
+The node installer consumes base64 of the exact image. It refuses changed
+original configuration hashes or an existing destination/drop-in. It creates a
+separate configuration and `kata-snp-storage-probe` handler, labels the test
+initrd like the original boot artifact, and reloads CRI-O. It changes neither the
+original handler nor original boot files. **Shared-runtime installation/reload
+requires approval.** On this node `/opt` resolves to `/var/opt`; blindly using
+`restorecon` gives the image `var_t`, which QEMU cannot read. The installer uses
+the original image's `usr_t` context for this file alone. SELinux stays Enforcing.
+A full filesystem relabel would require reapplying this diagnostic label;
+production packaging needs an appropriate persistent file-context mapping.
 
-## Proposed node change requiring approval
+CRI-O 1.35.8-11.rhaos4.22.giteaf45bc.el9 exhibited
+[upstream issue #10202](https://github.com/cri-o/cri-o/issues/10202): reload showed
+the handler in configuration but sandbox creation still used the old runtime map.
+The user separately approved **one restart**. `restart-host.sh` checks the pinned
+files and restarts once, without rebooting or deleting pods. Never infer restart
+approval from reload approval. The actual restart changed PID 11809 to 694089;
+production pod identities/readiness/restart counts, resource specifications and
+GitOps sources matched before and after. No second restart was needed.
 
-Automatic approval review rejected executing `install-host.sh` because it modifies
-the shared production runtime configuration and reloads CRI-O. Explicit approval
-has been requested. No installer command ran and none of the paths below were
-created by it. Do not retry that change through another deployment mechanism.
+The original installed directory is
+`/opt/kata-storage-test/private-aa-probe-94354456b0c3/`; its current test config
+references `initrd-v4`. Clean installations with the current installer use
+`private-aa-probe-d949fefa0716/initrd`. Both use the exact current `build.json`
+image. The existing live handler is already installed: do not rerun the clean
+installer over it. Updates to its test configuration are separate from production.
 
-The prepared script expects base64 of the exact image recorded in `build.json`.
-It refuses an existing destination and changed baseline configuration hashes.
-Its complete proposed effects are:
+## InitData and application
 
-1. Add `/opt/kata-storage-test/private-aa-probe-94354456b0c3/` with the verified
-   probe initrd and a local copy of the CPU configuration whose only change is
-   its initrd path. The original file is not edited or exported.
-2. Add `/etc/crio/crio.conf.d/99-kata-storage-probe` defining the distinct
-   `kata-snp-storage-probe` handler. It uses the installed, unchanged shim and
-   separate configuration path.
-3. Restore SELinux labels on these new files, then `systemctl reload crio`.
-   The installed unit reports `CanReload=yes`, using SIGHUP. The script checks
-   that the CRI-O PID and both original configuration hashes stay unchanged.
+The existing webhook did **not** inject InitData for this custom RuntimeClass.
+The chart therefore requires explicit reviewed `io.katacontainers.config.hypervisor.cc_init_data`.
+Missing InitData must be treated as failure, not a reason to loosen appraisal.
 
-A reload is not a planned restart, but it touches a shared runtime and therefore
-still carries disruption risk. No RuntimeClass or probe Pod is created by this
-script. After approval/install verification, create an isolated CPU probe class,
-use the existing **no-secret** diagnostic InitData, run a non-root pod with no
-PVC/GPU/token, inspect its private console evidence and compare production state.
-The earlier dry-run was rejected because the new RuntimeClass does not yet exist.
+```sh
+oc get cm storage-audit-no-secrets -n confidential-storage-test \
+  -o jsonpath='{.data.INITDATA}' > /scratch/diagnostic-initdata.value
+helm lint tests/confidential-storage/private-aa-probe/chart \
+  --namespace confidential-storage-test \
+  --set-file initdata=/scratch/diagnostic-initdata.value
+helm template storage-private-aa tests/confidential-storage/private-aa-probe/chart \
+  --namespace confidential-storage-test \
+  --set-file initdata=/scratch/diagnostic-initdata.value > /scratch/probe.yaml
+oc apply -n confidential-storage-test -f /scratch/probe.yaml
+```
 
-The live model PVC/populator, KServe/GPU workloads, existing RuntimeClasses,
-kernel/initrd files and production Trustee policies/keys remain unchanged.
+Admission can briefly report a newly created RuntimeClass missing; after cache
+propagation, reapply the same manifest. That differs from CRI-O's handler-map bug.
+The application has no PVC, GPU, service-account token or elevated capability.
+The current chart makes all isolation checks fail the container on error.
+
+## Console and verifier
+
+Kata's console watcher emits at Debug while this CRI-O starts the shim at Info.
+The diagnostic config disables only the hypervisor console watcher; the probe
+writes to its virtio console for direct, bounded read-only capture.
+`capture-host.sh` takes the exact QEMU-resolved test image path, waits for the
+corresponding QEMU process, and reads its console without sending input. Start
+capture before creating the pod. The bounded `socat` timeout can return nonzero
+after successful capture: require both evidence markers and parse the JSON
+between them. Never put the raw console or quote in Git.
+
+Build the isolated AS with the pinned command from the authority guide. The
+rebuilt binary SHA-256 is
+`f60eaaed611d5a4bcc907ccbc1f18d6b734f2fb16b35529b940ed782470e9865`.
+Its embedded build timestamp changes the output hash between builds.
+
+Construct an AS request with `tee: snp`, base64url JSON evidence, the structured
+`runtime.json`, `runtime_data_hash_algorithm: sha256`, the exact InitData TOML,
+and **`policy_ids: ["default"]`**. AS appends `_cpu` itself. Configure a separate
+P-256 signer with issuer `storage-probe-as`, 1-minute tokens and loopback port 8089.
+
+Repeated online KDS fetches failed intermittently. With explicit user approval,
+the AMD VCEK was downloaded once into private test scratch and the AS configured
+with `verifier_config.snp_verifier.vcek_sources: [{type: OfflineStore, path: ...}]`.
+Use the upstream `kds-store/vcek/<hwid>/vcek.der` layout. This changes certificate
+lookup only: AMD chain, report signature, chip/TCB association and bindings remain
+verified. The download sends chip ID and TCB versions to AMD; do not conceal that.
+
+```sh
+python3 tests/confidential-storage/private-aa-probe/verify-hardware.py \
+  --request /private/diagnostic-request.json \
+  --signer /private/as-signer.pub.pem \
+  --output /private/hardware-validation.json
+```
+
+This test distinguishes cryptographic verification from an affirmative appraisal.
+Next work is independently approved launch/TCB references, measured private guest
+configuration and key/lifecycle integration, followed by both actual storage E2Es.
+CPU-only evidence does not establish composite CPU/GPU attestation.

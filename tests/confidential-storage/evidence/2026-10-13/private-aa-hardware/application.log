@@ -1,0 +1,4 @@
+uid=1000(1000) gid=1000(1000) groups=1000(1000)
+CapEff:	0000000000000000
+NoNewPrivs:	1
+application_isolation=pass

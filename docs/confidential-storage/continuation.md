@@ -9,7 +9,8 @@ before making changes. The original six-phase handoff still defines completion.
 - Namespace `confidential-storage-test`.
 - Empty raw-block RWOP PVC `storage-audit-data`, 1 GiB, class `lvms-vg1`.
 - ConfigMaps `storage-audit-probe` and `storage-audit-no-secrets`.
-- No remaining test pod, Job, authority process or new runtime handler.
+- No remaining test pod, Job, authority process or new runtime handler. The
+  temporary AMD64 compiler pod used for the transport checkpoint was removed.
 - No production key, Trustee resource policy, reference value, runtime artifact,
   KServe resource, live GitOps branch, GPU allocation or route changed.
 
@@ -34,21 +35,49 @@ is missing when the shared override path is rendered. These are not passing chec
 The new isolated chart's targeted lint/render/tests pass. No unrelated values or
 the read-only `common/` subtree were changed.
 
+## Runtime/agent transport checkpoint
+
+The [Kata experiment](../../components/confidential-storage-kata/README.md) now
+contains a hash-pinned patch for `e53adb460e6040e6aa9719a735e17301462c4fa9` of
+Manuel's experimental Kata source. This is **not** a match for the installed
+Kata 3.31 downstream source and is not an approved runtime replacement.
+
+Implemented the Go adapter, versioned JSON contract, shared parser fixtures,
+Go-to-Rust protobuf interoperability check and guest preflight against measured
+InitData grants. The adapter removes the selected raw block device from the
+application configuration and substitutes a filesystem bind request. The guest
+checks container identity, profile/destination/access/operation, unprivileged
+process settings, fixed mount options and raw-device/alias rejection.
+
+Seven Go tests (including race instrumentation and 42 subcases), compilation of
+the actual runtime call site, and 12 Rust agent tests passed on isolated AMD64
+hardware. The patch was checked and applied to a clean checkout at the pinned
+SHA. See [test evidence](../../tests/confidential-storage/evidence/2026-10-13/transport).
+The compiler pod had no GPU, PVC, host access or service-account token. The final
+inventory confirms production pods, resource specifications, RuntimeClasses and
+GitOps sources were unchanged.
+
+**Activation remains deliberately unavailable**, even when validation succeeds.
+The current CDH prototype API cannot enforce the requested profile and authority
+session binding. No persistent filesystem mount handler, new key delivery,
+initialization, teardown integration or deployable guest artifact was completed.
+This checkpoint is transport/security-preflight code, not an encrypted-storage E2E.
+
 ## Next engineering step
 
 Build the guest-managed mount integration in an isolated artifact before installing
-anything on the node. The current Go runtime does not construct the experimental
-secure-volume metadata from the reviewed Rust runtime branch. Its agent handler
-also exposes a decrypted block device, which is insufficient for the chosen
-unprivileged application interface.
+anything on the node. The installed Go runtime still lacks the new adapter. The
+patched experimental agent rejects the new request before device handling and storage activation.
+Do not remove that hard gate to reuse the prototype raw-device handler.
 
-1. Define the exact versioned runtime/agent contract: authorized volume ID,
-   profile digest, operation/activation, source device, container identity and
+1. Extend the tested versioned contract with authenticated authority receipts:
+   authorized volume ID, profile digest, operation/activation, source device, container identity and
    destination. Host paths locate devices; measured policy and authenticated
    authority records must authorize them. Avoid inventing a Kubernetes annotation
    and treating it as trusted authorization.
-2. Port only the necessary transport/activation pieces to the approved Go runtime
-   baseline. Add a guest-agent filesystem mount path before container creation;
+2. Port the tested transport patch to the approved downstream Go runtime
+   baseline once its exact source is located. Add a guest-agent filesystem mount
+   path before container creation;
    remove raw-device exposure to the application. Implement serialized activation,
    mount ownership/refcounts, cancellation and teardown.
 3. Extend the CDH profile implementation with independently authorized first-use
@@ -56,9 +85,9 @@ unprivileged application interface.
    cryptographic integrity options. The prototype's profile name is insufficient.
 4. Build a separate AMD64 guest artifact including compatible cryptsetup utilities,
    libraries and dm-integrity support. Pin all inputs and record SBOM/build hashes.
-   The workstation's existing Podman VM is ARM64 with 2 GiB RAM; it has not built
-   or validated the AMD64 guest components. Select a suitable isolated build
-   environment; do not install build tools into the running inference guest.
+   The isolated AMD64 compiler has now built and tested the patched agent source,
+   but no guest initrd or CDH integration artifact exists. Recreate the disposable
+   builder for the next build; do not install tools into the inference guest.
 5. Add the attested transport/verifier around the authority core and test receipts
    before enabling key delivery. Keep the authority outside the workload storage
    rollback domain. Existing initialization failures require conservative recovery,

@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: storage-compiler
+  namespace: confidential-storage-test
+  labels:
+    app: storage-compiler
+    coco.io/skip-initdata: "true"
+spec:
+  automountServiceAccountToken: false
+  restartPolicy: Never
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: compiler
+      image: docker.io/library/rust@sha256:4ec71e955e6c08aeb238885083222ddff79d82eb87654a96c76e38e94da1a53b
+      command: ["sleep", "14400"]
+      env:
+        - name: HOME
+          value: /build
+        - name: CARGO_HOME
+          value: /build/cargo
+        - name: GOCACHE
+          value: /build/go-cache
+        - name: GOPATH
+          value: /build/go-path
+      resources:
+        requests:
+          cpu: "2"
+          memory: 4Gi
+        limits:
+          cpu: "4"
+          memory: 8Gi
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]
+      volumeMounts:
+        - name: build
+          mountPath: /build
+        - name: tmp
+          mountPath: /tmp
+  volumes:
+    - name: build
+      emptyDir:
+        sizeLimit: 16Gi
+    - name: tmp
+      emptyDir:
+        sizeLimit: 1Gi

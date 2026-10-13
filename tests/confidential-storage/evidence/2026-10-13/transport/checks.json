@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-13",
+  "scope": "compiled transport and fail-closed guest preflight; no confidential storage activation",
+  "checks": {
+    "go_adapter_tests": {
+      "passed": 7,
+      "subcases": 42,
+      "race_detector": true
+    },
+    "go_runtime_call_site_compile": "passed; no runtime tests selected",
+    "rust_agent_tests": {
+      "passed": 12,
+      "failed": 0,
+      "features": [
+        "init-data",
+        "agent-policy"
+      ]
+    },
+    "shared_json_cases": 17,
+    "go_to_rust_protobuf": "passed",
+    "clean_pinned_patch_application": "passed",
+    "authority_regression_tests": 16,
+    "chart_regression_tests": 5,
+    "markdown_lint": "passed",
+    "python_black_flake8": "passed"
+  },
+  "production_comparison": {
+    "production_pods": true,
+    "production_resources": true,
+    "runtimes": true,
+    "gitops_sources": true
+  },
+  "remaining_test_pods": 0,
+  "encrypted_storage_e2e_passed": false,
+  "deployed_new_runtime": false,
+  "limitations": [
+    "Activation always fails until profile/session-bound CDH and authority integration exists.",
+    "No guest filesystem mounting, initialization, teardown or key retrieval was exercised.",
+    "Pinned experimental source does not match the installed downstream runtime.",
+    "This checkpoint built an agent unit-test executable, not a deployable guest initrd.",
+    "Repository-wide preview/schema failures remain as recorded in the prior checkpoint."
+  ]
+}

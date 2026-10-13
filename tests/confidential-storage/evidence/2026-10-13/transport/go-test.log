@@ -1,0 +1,100 @@
+=== RUN   TestConversionRemovesRawDevice
+=== RUN   TestConversionRemovesRawDevice/rw
+=== RUN   TestConversionRemovesRawDevice/ro
+--- PASS: TestConversionRemovesRawDevice (0.00s)
+    --- PASS: TestConversionRemovesRawDevice/rw (0.00s)
+    --- PASS: TestConversionRemovesRawDevice/ro (0.00s)
+=== RUN   TestInvalidRequests
+=== RUN   TestInvalidRequests/trailing
+=== RUN   TestInvalidRequests/nested-device
+=== RUN   TestInvalidRequests/null
+=== RUN   TestInvalidRequests/case-alias
+=== RUN   TestInvalidRequests/oversize
+=== RUN   TestInvalidRequests/uri-http
+=== RUN   TestInvalidRequests/identity
+=== RUN   TestInvalidRequests/traversal
+=== RUN   TestInvalidRequests/target
+=== RUN   TestInvalidRequests/version
+=== RUN   TestInvalidRequests/model-rw
+=== RUN   TestInvalidRequests/format
+=== RUN   TestInvalidRequests/duplicate
+=== RUN   TestInvalidRequests/unknown
+=== RUN   TestInvalidRequests/profile
+=== RUN   TestInvalidRequests/uri-query
+--- PASS: TestInvalidRequests (0.00s)
+    --- PASS: TestInvalidRequests/trailing (0.00s)
+    --- PASS: TestInvalidRequests/nested-device (0.00s)
+    --- PASS: TestInvalidRequests/null (0.00s)
+    --- PASS: TestInvalidRequests/case-alias (0.00s)
+    --- PASS: TestInvalidRequests/oversize (0.00s)
+    --- PASS: TestInvalidRequests/uri-http (0.00s)
+    --- PASS: TestInvalidRequests/identity (0.00s)
+    --- PASS: TestInvalidRequests/traversal (0.00s)
+    --- PASS: TestInvalidRequests/target (0.00s)
+    --- PASS: TestInvalidRequests/version (0.00s)
+    --- PASS: TestInvalidRequests/model-rw (0.00s)
+    --- PASS: TestInvalidRequests/format (0.00s)
+    --- PASS: TestInvalidRequests/duplicate (0.00s)
+    --- PASS: TestInvalidRequests/unknown (0.00s)
+    --- PASS: TestInvalidRequests/profile (0.00s)
+    --- PASS: TestInvalidRequests/uri-query (0.00s)
+=== RUN   TestFailureDoesNotMutateSpec
+=== RUN   TestFailureDoesNotMutateSpec/other-block
+=== RUN   TestFailureDoesNotMutateSpec/wrong-driver
+=== RUN   TestFailureDoesNotMutateSpec/missing-source
+=== RUN   TestFailureDoesNotMutateSpec/bad-locator
+=== RUN   TestFailureDoesNotMutateSpec/missing-oci
+=== RUN   TestFailureDoesNotMutateSpec/target-overlap
+=== RUN   TestFailureDoesNotMutateSpec/source-overlap
+--- PASS: TestFailureDoesNotMutateSpec (0.01s)
+    --- PASS: TestFailureDoesNotMutateSpec/other-block (0.00s)
+    --- PASS: TestFailureDoesNotMutateSpec/wrong-driver (0.00s)
+    --- PASS: TestFailureDoesNotMutateSpec/missing-source (0.00s)
+    --- PASS: TestFailureDoesNotMutateSpec/bad-locator (0.00s)
+    --- PASS: TestFailureDoesNotMutateSpec/missing-oci (0.00s)
+    --- PASS: TestFailureDoesNotMutateSpec/target-overlap (0.00s)
+    --- PASS: TestFailureDoesNotMutateSpec/source-overlap (0.00s)
+=== RUN   TestNotSelected
+--- PASS: TestNotSelected (0.00s)
+=== RUN   TestDuplicateDeviceAndInvalidContainerID
+--- PASS: TestDuplicateDeviceAndInvalidContainerID (0.00s)
+=== RUN   TestSharedContractFixtures
+=== RUN   TestSharedContractFixtures/rw
+=== RUN   TestSharedContractFixtures/ro
+=== RUN   TestSharedContractFixtures/initialize
+=== RUN   TestSharedContractFixtures/path-traversal
+=== RUN   TestSharedContractFixtures/mount-path
+=== RUN   TestSharedContractFixtures/model-write
+=== RUN   TestSharedContractFixtures/missing-digest
+=== RUN   TestSharedContractFixtures/uri-query
+=== RUN   TestSharedContractFixtures/unknown-field
+=== RUN   TestSharedContractFixtures/null-operation
+=== RUN   TestSharedContractFixtures/float-version
+=== RUN   TestSharedContractFixtures/unknown-version
+=== RUN   TestSharedContractFixtures/duplicate-field
+=== RUN   TestSharedContractFixtures/case-alias
+=== RUN   TestSharedContractFixtures/trailing
+=== RUN   TestSharedContractFixtures/null
+=== RUN   TestSharedContractFixtures/oversize
+--- PASS: TestSharedContractFixtures (0.00s)
+    --- PASS: TestSharedContractFixtures/rw (0.00s)
+    --- PASS: TestSharedContractFixtures/ro (0.00s)
+    --- PASS: TestSharedContractFixtures/initialize (0.00s)
+    --- PASS: TestSharedContractFixtures/path-traversal (0.00s)
+    --- PASS: TestSharedContractFixtures/mount-path (0.00s)
+    --- PASS: TestSharedContractFixtures/model-write (0.00s)
+    --- PASS: TestSharedContractFixtures/missing-digest (0.00s)
+    --- PASS: TestSharedContractFixtures/uri-query (0.00s)
+    --- PASS: TestSharedContractFixtures/unknown-field (0.00s)
+    --- PASS: TestSharedContractFixtures/null-operation (0.00s)
+    --- PASS: TestSharedContractFixtures/float-version (0.00s)
+    --- PASS: TestSharedContractFixtures/unknown-version (0.00s)
+    --- PASS: TestSharedContractFixtures/duplicate-field (0.00s)
+    --- PASS: TestSharedContractFixtures/case-alias (0.00s)
+    --- PASS: TestSharedContractFixtures/trailing (0.00s)
+    --- PASS: TestSharedContractFixtures/null (0.00s)
+    --- PASS: TestSharedContractFixtures/oversize (0.00s)
+=== RUN   TestWireFixture
+--- PASS: TestWireFixture (0.00s)
+PASS
+ok  	github.com/kata-containers/kata-containers/src/runtime/pkg/confidentialmount	1.028s

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "status": "development-only-activation-disabled",
+  "source": {
+    "repository": "https://github.com/manuelh-dev/kata-containers.git",
+    "branchHint": "mahuber/confidential-ro-volume",
+    "commit": "e53adb460e6040e6aa9719a735e17301462c4fa9",
+    "license": "Apache-2.0",
+    "matchesInstalledDownstreamRuntime": false
+  },
+  "patch": {
+    "file": "confidential-mount-v1.patch",
+    "sha256": "1b3a373119718530a8840b6f7815c732e574e170bf1de50e069cbbab3c2275e4"
+  },
+  "build": {
+    "platform": "linux/amd64",
+    "compilerImage": "docker.io/library/rust@sha256:4ec71e955e6c08aeb238885083222ddff79d82eb87654a96c76e38e94da1a53b",
+    "rust": "1.94.1",
+    "go": "1.25.11",
+    "goArchiveURL": "https://go.dev/dl/go1.25.11.linux-amd64.tar.gz",
+    "goArchiveSHA256": "34f14304e856893f4ba30c2cacfe93906e9de7915c5f6aaaf3a81cdccd7ba30b",
+    "agentFeatures": [
+      "init-data",
+      "agent-policy"
+    ],
+    "testBinarySHA256": "785d6f58adb235cc7ba727cdf108a93c98e6ff40727e43ec666ead93b917c956",
+    "testBinaryIsDeployableRuntime": false
+  }
+}

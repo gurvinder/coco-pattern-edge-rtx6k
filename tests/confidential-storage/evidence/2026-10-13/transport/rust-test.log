@@ -1,0 +1,22 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /build/kata/src/agent/Cargo.toml
+workspace: /build/kata/Cargo.toml
+   Compiling kata-agent v0.1.0 (/build/kata/src/agent)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.74s
+     Running unittests src/main.rs (target/debug/deps/kata_agent-f8937d51011c4179)
+
+running 12 tests
+test confidential_mount::contract::tests::rejects_duplicate_grants_and_fields ... ok
+test confidential_mount::contract::tests::denies_substitution_of_every_authorization_field ... ok
+test confidential_mount::contract::fixtures::shared_go_rust_contract ... ok
+test confidential_mount::contract::tests::no_initialize_or_unsafe_paths ... ok
+test confidential_mount::contract::tests::valid_request_and_locator_not_authorization ... ok
+test confidential_mount::tests::denies_raw_device_exposure ... ok
+test confidential_mount::tests::denies_duplicate_and_redirected_storage ... ok
+test confidential_mount::tests::denies_privileged_application_and_storage_alias ... ok
+test confidential_mount::tests::ordinary_requests_pass_but_reserved_mount_never_does ... ok
+test confidential_mount::tests::unavailable_activation_never_falls_back ... ok
+test confidential_mount::tests::transport_checks_bind_and_denies_unsafe_options ... ok
+test confidential_mount::wire_test::consumes_actual_go_protobuf_request ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 363 filtered out; finished in 0.00s

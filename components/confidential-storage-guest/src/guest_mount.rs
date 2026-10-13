@@ -74,6 +74,20 @@ pub struct GuestMount {
     state: State,
 }
 impl GuestMount {
+    pub(crate) fn verified_source(&self) -> Result<File> {
+        let State::Mounted(id) = self.state else {
+            return Err(Error);
+        };
+        let file = self.current()?;
+        if mount_id(&file)? != id {
+            return Err(Error);
+        }
+        let info = mount_info(id)?;
+        if info.fs != "ext4" || !info.private || !secure_options(&info.options) {
+            return Err(Error);
+        }
+        Ok(file)
+    }
     fn target(&self) -> CString {
         CString::new(format!(
             "/proc/self/fd/{}/{}",
@@ -188,7 +202,7 @@ fn identifier(s: &str) -> bool {
         && s.bytes()
             .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
 }
-fn directory_at(parent: &File, name: &str) -> Result<File> {
+pub(crate) fn directory_at(parent: &File, name: &str) -> Result<File> {
     let name = CString::new(name).map_err(|_| Error)?;
     // SAFETY: owned fd, valid string. Symlinks are refused at every component.
     let fd = unsafe {
@@ -204,9 +218,9 @@ fn directory_at(parent: &File, name: &str) -> Result<File> {
     // SAFETY: fresh owned descriptor from openat.
     Ok(unsafe { File::from_raw_fd(fd) })
 }
-fn mount_id(file: &File) -> Result<u64> {
-    let text =
-        fs::read_to_string(format!("/proc/self/fdinfo/{}", file.as_raw_fd())).map_err(|_| Error)?;
+pub(crate) fn mount_id(file: &File) -> Result<u64> {
+    let text = fs::read_to_string(format!("/proc/thread-self/fdinfo/{}", file.as_raw_fd()))
+        .map_err(|_| Error)?;
     let ids: Vec<_> = text
         .lines()
         .filter_map(|s| s.strip_prefix("mnt_id:"))
@@ -216,10 +230,10 @@ fn mount_id(file: &File) -> Result<u64> {
     }
     ids[0].trim().parse().map_err(|_| Error)
 }
-struct MountInfo {
-    fs: String,
-    options: String,
-    private: bool,
+pub(crate) struct MountInfo {
+    pub(crate) fs: String,
+    pub(crate) options: String,
+    pub(crate) private: bool,
 }
 fn parse_mount_info(text: &str, id: u64) -> Result<MountInfo> {
     let mut found = None;
@@ -243,13 +257,13 @@ fn parse_mount_info(text: &str, id: u64) -> Result<MountInfo> {
     }
     found.ok_or(Error)
 }
-fn mount_info(id: u64) -> Result<MountInfo> {
+pub(crate) fn mount_info(id: u64) -> Result<MountInfo> {
     parse_mount_info(
-        &fs::read_to_string("/proc/self/mountinfo").map_err(|_| Error)?,
+        &fs::read_to_string("/proc/thread-self/mountinfo").map_err(|_| Error)?,
         id,
     )
 }
-fn secure_options(s: &str) -> bool {
+pub(crate) fn secure_options(s: &str) -> bool {
     let options: std::collections::BTreeSet<_> = s.split(',').collect();
     ["rw", "nodev", "nosuid", "noexec"]
         .iter()

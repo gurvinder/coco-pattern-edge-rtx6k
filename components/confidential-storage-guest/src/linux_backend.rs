@@ -2,6 +2,7 @@
 //! Lifecycle adapter for guest-private staging only. Trusted providers are
 //! injected; there is no production resolver, attested CDH client or RPC here.
 use crate::{
+    consumer::Consumer,
     guest_mount::{GuestMount, MountRoot},
     lifecycle::{Backend, BackendError, BackendResult},
     opener::{BlockDevice, Opener, Phase},
@@ -27,10 +28,10 @@ pub trait Providers: Send + Sync + 'static {
     /// Called only after exact manifest/header/profile authentication. A real
     /// implementation must bind CDH delivery to this attested session and grant.
     fn key(&self, grant: &VerifiedGrant, credential_uri: &str) -> Result<Secret, BackendError>;
-    /// Idempotently remove every application bind for this activation, across
-    /// retained namespaces. No lazy/forced unmount; failure must retain ownership.
-    /// A production implementation belongs to the guest agent's bind manager.
-    fn detach_consumers(&self, grant: &VerifiedGrant) -> BackendResult;
+    /// Idempotently stop/quiesce the application before bind removal. Failure
+    /// retains all mounts and ownership. The agent must prevent concurrent
+    /// startup/namespace mutation; the backend detaches its registered bind.
+    fn quiesce_consumers(&self, grant: &VerifiedGrant) -> BackendResult;
     /// Must be an idempotent acknowledgement on the attested authority channel.
     fn release(&self, grant: &VerifiedGrant) -> BackendResult;
 }
@@ -56,6 +57,9 @@ struct Record {
     opener: Option<Opener>,
     mount: Option<GuestMount>,
     mount_attempted: bool,
+    consumer: Option<Consumer>,
+    consumer_attempted: bool,
+    closing: bool,
     released: bool,
 }
 struct Inner<P: Providers> {
@@ -78,6 +82,44 @@ impl<P: Providers> LinuxBackend<P> {
                 records: HashMap::new(),
             })),
         })
+    }
+    /// Trusted agent only, before app startup. The agent must pin a paused
+    /// container's namespace and root fds and bind its identity to measured policy.
+    /// Call controller.close after any failure; never start the app on failure.
+    pub async fn attach_consumer(
+        &self,
+        g: &VerifiedGrant,
+        namespace: File,
+        root: File,
+        container: &str,
+    ) -> BackendResult {
+        let g = g.clone();
+        let container = container.to_owned();
+        self.work(move |i| {
+            let r = bound(&mut i.records, &g)?;
+            if r.consumer_attempted || r.closing {
+                return Err(BackendError(
+                    "consumer cannot be replayed or attached during cleanup",
+                ));
+            }
+            let source = r
+                .mount
+                .as_ref()
+                .ok_or(BackendError("guest mount absent"))?
+                .verified_source()
+                .map_err(|_| BackendError("guest mount not verified"))?;
+            // Construction validates caller binding/descriptors, with no effects.
+            let consumer = Consumer::new(&g, namespace, root, &container)
+                .map_err(|_| BackendError("invalid consumer identity or namespace"))?;
+            r.consumer_attempted = true;
+            r.consumer = Some(consumer);
+            r.consumer
+                .as_mut()
+                .unwrap()
+                .attach(source)
+                .map_err(|_| BackendError("consumer attach failed; cleanup required"))
+        })
+        .await
     }
     async fn work(
         &self,
@@ -129,6 +171,9 @@ impl<P: Providers> Backend for LinuxBackend<P> {
                     opener: None,
                     mount: None,
                     mount_attempted: false,
+                    consumer: None,
+                    consumer_attempted: false,
+                    closing: false,
                     released: false,
                 },
             );
@@ -183,12 +228,19 @@ impl<P: Providers> Backend for LinuxBackend<P> {
         let g = g.clone();
         self.work(move |i| {
             let r = bound(&mut i.records, &g)?;
+            r.closing = true;
             if r.mount_attempted && r.mount.is_none() {
                 return Err(BackendError(
                     "uncertain target reservation; recovery required",
                 ));
             }
-            i.providers.detach_consumers(&g)?;
+            i.providers.quiesce_consumers(&g)?;
+            if let Some(consumer) = &mut r.consumer {
+                consumer
+                    .detach()
+                    .map_err(|_| BackendError("consumer busy or replaced; ownership retained"))?;
+            }
+            r.consumer = None; // Release namespace/root fds before mapper cleanup.
             if let Some(mount) = &mut r.mount {
                 mount
                     .unmount()
@@ -204,6 +256,7 @@ impl<P: Providers> Backend for LinuxBackend<P> {
             let r = bound(&mut i.records, &g)?;
             if (r.mount_attempted && r.mount.is_none())
                 || r.mount.as_ref().is_some_and(|m| !m.removed())
+                || r.consumer.is_some()
             {
                 return Err(BackendError("mount cleanup pending"));
             }
@@ -231,6 +284,9 @@ impl<P: Providers> Backend for LinuxBackend<P> {
                     opener: None,
                     mount: None,
                     mount_attempted: false,
+                    consumer: None,
+                    consumer_attempted: false,
+                    closing: true,
                     released: false,
                 });
             if !r.grant.same_activation(&g) {
@@ -241,6 +297,7 @@ impl<P: Providers> Backend for LinuxBackend<P> {
             }
             if (r.mount_attempted && r.mount.is_none())
                 || r.mount.as_ref().is_some_and(|m| !m.removed())
+                || r.consumer.is_some()
                 || r.opener
                     .as_ref()
                     .is_some_and(|o| o.phase() != Phase::Closed)

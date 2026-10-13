@@ -157,6 +157,14 @@ application isolation on a real VM, or any encrypted-storage E2E acceptance gate
 
 ## Next integration gate
 
+The companion guest library now has a tested
+[namespace bind manager](../../docs/confidential-storage/consumer-namespace.md).
+It uses paused-container namespace/root descriptors and detaches its recorded bind
+before staging cleanup. The Kata integration must provide those handles from its
+trusted lifecycle, enforce namespace creation order and implement quiescence.
+Those callbacks and attested providers are not connected to this patch; its hard
+activation error is unchanged.
+
 Implement the CDH/authority binding and serialized guest mount lifecycle before
 removing the hard activation error. The interface must bind profile, volume,
 operation, activation and authenticated guest session; validate the exact copied

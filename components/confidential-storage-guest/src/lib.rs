@@ -3,6 +3,8 @@
 //! host-facing RPC, attestation verifier or production namespace adapter is supplied.
 //! Applications must never receive access to this service.
 #[cfg(target_os = "linux")]
+mod consumer;
+#[cfg(target_os = "linux")]
 pub mod guest_mount;
 pub mod lifecycle;
 #[cfg(target_os = "linux")]

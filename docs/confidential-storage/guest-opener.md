@@ -139,7 +139,8 @@ random key. Never ship this example in a production guest. Evidence lives under
 ## Next integration work
 
 The Linux lifecycle backend now retains device/mapping/mount ownership and manages
-private guest staging mounts. Add production application namespace binds, the real
+private guest staging mounts. The [namespace manager](consumer-namespace.md) now
+owns the application bind; connect it to production Kata callbacks. Add the real
 device resolver, attested authority/CDH transport and key provider. Test partial
 opens/cleanup, service crashes and recovery against the approved guest kernel.
 The production initialization backend also remains separate from the Python

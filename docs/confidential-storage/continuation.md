@@ -218,6 +218,28 @@ Evidence is under `tests/confidential-storage/evidence/2026-10-13/mount-backend/
 The compiler was removed and production state is unchanged. These remain non-TEE
 tests and do not enable any storage E2E gate.
 
+## Consumer namespace checkpoint
+
+The [consumer namespace manager](consumer-namespace.md) now installs and detaches
+the real application bind using retained namespace/root descriptors and Linux
+descriptor-based mount APIs. It checks identity, fixed flags, target ownership,
+namespace separation and inherited plaintext aliases. Cleanup records retain busy
+or replaced mounts. The provider hook is now `quiesce_consumers`: the trusted
+agent stops application activity, then the backend detaches its own recorded bind.
+
+Thirty-four Rust tests and Clippy pass. The real Linux example covers successful
+unprivileged access through the Rust-managed bind, wrong identities/namespaces,
+replay, foreign overmounts, busy consumer references and inherited staging
+rejection. An open inherited file keeps release blocked until that reference is
+closed. Four regression boots pass. Evidence is under
+`tests/confidential-storage/evidence/2026-10-13/consumer/`.
+
+This is still a library integration, not a production Kata adapter. The inspected
+CDH protobuf at the pinned source revision lacks our required session/profile/
+operation binding. Production paused-container descriptor acquisition, quiescence,
+attested device/key/authority providers and crash recovery remain unfinished.
+The builder was removed and production state is unchanged; activation stays gated.
+
 ## Next engineering step
 
 Build the guest-managed mount integration in an isolated artifact before installing

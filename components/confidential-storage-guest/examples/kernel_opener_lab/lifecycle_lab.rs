@@ -69,9 +69,9 @@ impl Providers for LabProviders {
         key.fill(0);
         Ok(result)
     }
-    fn detach_consumers(&self, _: &VerifiedGrant) -> BackendResult {
-        // The only lab consumer's namespace process has already exited and was
-        // waited for. A real provider must retain and tear down every app bind.
+    fn quiesce_consumers(&self, _: &VerifiedGrant) -> BackendResult {
+        // Lab quiescence/failure hook. The registered bind itself is detached
+        // by the real Consumer manager after this callback succeeds.
         if self.detach_failures.swap(0, Ordering::SeqCst) != 0 {
             return Err(BackendError("synthetic application detach failure"));
         }
@@ -107,6 +107,28 @@ fn block_fds() -> usize {
         .filter(|p| p == std::path::Path::new("/dev/vda"))
         .count()
 }
+fn namespace_holder(marker: &str) -> std::process::Child {
+    let mut child = Command::new("/bin/unshare")
+        .args([
+            "-m",
+            "/bin/sh",
+            "-c",
+            "set -eu; mount --make-rprivate /; echo ready > \"$1\"; exec sleep 600",
+            "lab",
+            marker,
+        ])
+        .spawn()
+        .unwrap();
+    for _ in 0..100 {
+        if std::path::Path::new(marker).exists() {
+            return child;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+    let _ = child.kill();
+    let _ = child.wait();
+    panic!("namespace holder did not become ready");
+}
 pub fn run(header: &[u8]) {
     fs::create_dir_all("/run/coco/storage").unwrap();
     fs::set_permissions("/run/coco/storage", fs::Permissions::from_mode(0o777)).unwrap();
@@ -138,10 +160,16 @@ pub fn run(header: &[u8]) {
         let providers = LabProviders::new(manifest);
         let backend = Arc::new(LinuxBackend::new(providers.clone()).unwrap());
         let controller = Controller::new(backend, g.claims().session_sha256.clone(), 8);
-        assert!(controller.activate(g.clone(), device.clone()).await.is_err());
+        assert!(controller
+            .activate(g.clone(), device.clone())
+            .await
+            .is_err());
         assert_eq!(providers.keys.load(Ordering::SeqCst), 0);
         assert_eq!(providers.releases.load(Ordering::SeqCst), 1);
-        assert_eq!(controller.phase(&g.claims().activation_id).await.unwrap(), LifecyclePhase::Closed);
+        assert_eq!(
+            controller.phase(&g.claims().activation_id).await.unwrap(),
+            LifecyclePhase::Closed
+        );
         println!("COCO_TEST_PASS:backend-authenticates-before-key");
 
         let (g, manifest) = grant_named(header, "mount-wrong-key");
@@ -149,59 +177,231 @@ pub fn run(header: &[u8]) {
         providers.wrong_key = true;
         let backend = Arc::new(LinuxBackend::new(providers.clone()).unwrap());
         let controller = Controller::new(backend, g.claims().session_sha256.clone(), 8);
-        assert!(controller.activate(g.clone(), device.clone()).await.is_err());
-        assert_eq!(controller.phase(&g.claims().activation_id).await.unwrap(), LifecyclePhase::Closed);
+        assert!(controller
+            .activate(g.clone(), device.clone())
+            .await
+            .is_err());
+        assert_eq!(
+            controller.phase(&g.claims().activation_id).await.unwrap(),
+            LifecyclePhase::Closed
+        );
         assert_eq!(providers.releases.load(Ordering::SeqCst), 1);
         assert!(controller.activate(g, device.clone()).await.is_err());
         println!("COCO_TEST_PASS:backend-failed-open-cleanup-tombstone");
 
+        let (g, manifest) = grant_named(header, "inherited-staging");
+        let providers = LabProviders::new(manifest);
+        let backend = Arc::new(LinuxBackend::new(providers.clone()).unwrap());
+        let controller = Controller::new(backend.clone(), g.claims().session_sha256.clone(), 8);
+        let mounted = controller
+            .activate(g.clone(), device.clone())
+            .await
+            .unwrap();
+        let mut inherited = namespace_holder("/run/inherited-ready");
+        let inherited_file = File::open(format!(
+            "/proc/{}/root{}/probe",
+            inherited.id(),
+            mounted.mount_path
+        ))
+        .unwrap();
+        assert!(backend
+            .attach_consumer(
+                &g,
+                File::open(format!("/proc/{}/ns/mnt", inherited.id())).unwrap(),
+                File::open(format!("/proc/{}/root", inherited.id())).unwrap(),
+                &g.claims().container_name
+            )
+            .await
+            .is_err());
+        assert!(controller.close(&mounted.activation_id).await.is_err());
+        assert_eq!(
+            controller.phase(&mounted.activation_id).await.unwrap(),
+            LifecyclePhase::NeedsClose
+        );
+        assert_eq!(providers.releases.load(Ordering::SeqCst), 0);
+        inherited.kill().unwrap();
+        inherited.wait().unwrap();
+        drop(inherited_file);
+        controller.close(&mounted.activation_id).await.unwrap();
+        assert_eq!(providers.releases.load(Ordering::SeqCst), 1);
+        println!("COCO_TEST_PASS:consumer-rejects-inherited-staging-retains-release");
+
+        // Create the namespace BEFORE opening storage; no inherited plaintext.
+        let mut holder = namespace_holder("/run/consumer-ready");
+        let ns_path = format!("/proc/{}/ns/mnt", holder.id());
+        let root_path = format!("/proc/{}/root", holder.id());
+        let ns_option = format!("--mount={ns_path}");
+        let own_ns = fs::metadata("/proc/thread-self/ns/mnt").unwrap().ino();
         let (g, manifest) = grant_named(header, "mount-success");
         let mut providers = LabProviders::new(manifest);
         providers.fail_release_once = true;
         let backend = Arc::new(LinuxBackend::new(providers.clone()).unwrap());
         let controller = Controller::new(backend.clone(), g.claims().session_sha256.clone(), 8);
-        let mounted = controller.activate(g.clone(), device.clone()).await.unwrap();
-        assert_eq!(controller.activate(g.clone(), device.clone()).await.unwrap(), mounted);
+        let mounted = controller
+            .activate(g.clone(), device.clone())
+            .await
+            .unwrap();
+        assert_eq!(
+            controller
+                .activate(g.clone(), device.clone())
+                .await
+                .unwrap(),
+            mounted
+        );
         assert_eq!(providers.keys.load(Ordering::SeqCst), 1);
         assert!(backend.release(&g).await.is_err());
         assert!(backend.close_mapping(&g).await.is_err());
         assert!(backend.unmount(&g, "/data").await.is_err());
         assert_eq!(providers.releases.load(Ordering::SeqCst), 0);
-        let names = Command::new("/usr/sbin/dmsetup").args(["info", "-c", "--noheadings", "-o", "name"]).output().unwrap();
+        let names = Command::new("/usr/sbin/dmsetup")
+            .args(["info", "-c", "--noheadings", "-o", "name"])
+            .output()
+            .unwrap();
         let names = String::from_utf8(names.stdout).unwrap();
-        let name = names.lines().map(str::trim).find(|s| s.starts_with("coco-") && !s.ends_with("_dif")).unwrap();
-        // Lab-only namespace setup runs as guest root, then execs a cap-free UID.
-        // The production Kata namespace/bind adapter is not implemented by this.
-        let script = "set -eu; mount --make-rprivate /; mount --bind \"$1\" /data; mount -o remount,bind,nodev,nosuid,noexec /data; /usr/bin/setpriv --reuid=1000 --regid=1000 --clear-groups --bounding-set=-all --no-new-privs /bin/sh /app-test initialize; umount /data";
-        assert!(Command::new("/bin/unshare").args(["-m", "/bin/sh", "-c", script, "lab", &mounted.mount_path])
+        let name = names
+            .lines()
+            .map(str::trim)
+            .find(|s| s.starts_with("coco-") && !s.ends_with("_dif"))
+            .unwrap();
+        let container = g.claims().container_name.clone();
+        assert!(backend
+            .attach_consumer(
+                &g,
+                File::open(&ns_path).unwrap(),
+                File::open(&root_path).unwrap(),
+                "wrong-container"
+            )
+            .await
+            .is_err());
+        assert!(backend
+            .attach_consumer(
+                &g,
+                File::open("/proc/thread-self/ns/mnt").unwrap(),
+                File::open("/").unwrap(),
+                &container
+            )
+            .await
+            .is_err());
+        assert!(backend
+            .attach_consumer(
+                &g,
+                File::open("/dev/null").unwrap(),
+                File::open(&root_path).unwrap(),
+                &container
+            )
+            .await
+            .is_err());
+        backend
+            .attach_consumer(
+                &g,
+                File::open(&ns_path).unwrap(),
+                File::open(&root_path).unwrap(),
+                &container,
+            )
+            .await
+            .unwrap();
+        assert!(backend
+            .attach_consumer(
+                &g,
+                File::open(&ns_path).unwrap(),
+                File::open(&root_path).unwrap(),
+                &container
+            )
+            .await
+            .is_err());
+        assert_eq!(
+            fs::metadata("/proc/thread-self/ns/mnt").unwrap().ino(),
+            own_ns
+        );
+        assert!(!std::path::Path::new("/data/probe").exists());
+        println!("COCO_TEST_PASS:consumer-identity-namespace-replay-guards");
+        // This command runs only the application. The Rust manager owns the bind.
+        assert!(Command::new("/bin/nsenter")
+            .args([
+                ns_option.as_str(),
+                "/usr/bin/setpriv",
+                "--reuid=1000",
+                "--regid=1000",
+                "--clear-groups",
+                "--bounding-set=-all",
+                "--no-new-privs",
+                "/bin/sh",
+                "/app-test",
+                "initialize"
+            ])
             .env("COCO_TEST_MAPPER", format!("/dev/mapper/{name}"))
             .env("COCO_TEST_PRIVATE_ROOT", &mounted.mount_path)
-            .status().unwrap().success());
+            .status()
+            .unwrap()
+            .success());
         println!("COCO_TEST_PASS:backend-unprivileged-namespace-consumer");
         providers.detach_failures.store(1, Ordering::SeqCst);
         assert!(controller.close(&mounted.activation_id).await.is_err());
-        assert_eq!(controller.phase(&mounted.activation_id).await.unwrap(), LifecyclePhase::NeedsUnmount);
+        assert_eq!(
+            controller.phase(&mounted.activation_id).await.unwrap(),
+            LifecyclePhase::NeedsUnmount
+        );
         assert!(std::path::Path::new(&format!("{}/probe", mounted.mount_path)).exists());
         assert_eq!(providers.releases.load(Ordering::SeqCst), 0);
         println!("COCO_TEST_PASS:backend-detach-failure-retains-staging");
-        let busy = File::open(format!("{}/probe", mounted.mount_path)).unwrap();
+        // An unrelated overmount must not be mistaken for our bind or removed.
+        super::run(
+            "/bin/nsenter",
+            &[
+                ns_option.as_str(),
+                "/bin/mount",
+                "-t",
+                "tmpfs",
+                "tmpfs",
+                "/data",
+            ],
+        );
         assert!(controller.close(&mounted.activation_id).await.is_err());
-        assert_eq!(controller.phase(&mounted.activation_id).await.unwrap(), LifecyclePhase::NeedsUnmount);
         assert_eq!(providers.releases.load(Ordering::SeqCst), 0);
-        assert!(controller.activate(g.clone(), device.clone()).await.is_err());
+        assert!(!std::path::Path::new(&format!("{root_path}/data/probe")).exists());
+        super::run(
+            "/bin/nsenter",
+            &[ns_option.as_str(), "/bin/umount", "/data"],
+        );
+        println!("COCO_TEST_PASS:consumer-refuses-replaced-mount");
+        let busy = File::open(format!("{root_path}/data/probe")).unwrap();
+        assert!(controller.close(&mounted.activation_id).await.is_err());
+        assert_eq!(
+            controller.phase(&mounted.activation_id).await.unwrap(),
+            LifecyclePhase::NeedsUnmount
+        );
+        assert_eq!(providers.releases.load(Ordering::SeqCst), 0);
+        assert!(controller
+            .activate(g.clone(), device.clone())
+            .await
+            .is_err());
         assert!(busy.metadata().is_ok());
         drop(busy);
         println!("COCO_TEST_PASS:backend-busy-unmount-retains-ownership");
         // First release loses its acknowledgement, after real unmount and close.
         assert!(controller.close(&mounted.activation_id).await.is_err());
-        assert_eq!(controller.phase(&mounted.activation_id).await.unwrap(), LifecyclePhase::NeedsRelease);
+        assert_eq!(
+            controller.phase(&mounted.activation_id).await.unwrap(),
+            LifecyclePhase::NeedsRelease
+        );
         assert_eq!(providers.releases.load(Ordering::SeqCst), 1);
         controller.close(&mounted.activation_id).await.unwrap();
         controller.close(&mounted.activation_id).await.unwrap();
-        assert_eq!(controller.phase(&mounted.activation_id).await.unwrap(), LifecyclePhase::Closed);
+        assert_eq!(
+            controller.phase(&mounted.activation_id).await.unwrap(),
+            LifecyclePhase::Closed
+        );
         assert_eq!(providers.releases.load(Ordering::SeqCst), 2);
         assert!(controller.activate(g, device.clone()).await.is_err());
+        assert!(!std::path::Path::new(&format!("{root_path}/data/probe")).exists());
+        assert_eq!(
+            fs::metadata("/proc/thread-self/ns/mnt").unwrap().ino(),
+            own_ns
+        );
+        holder.kill().unwrap();
+        holder.wait().unwrap();
         println!("COCO_TEST_PASS:backend-release-after-teardown-retry-tombstone");
+        println!("COCO_TEST_PASS:consumer-detached-before-staging-release");
     });
     assert_eq!(fs::read_dir("/run/coco/storage").unwrap().count(), 0);
 }

@@ -7,7 +7,10 @@ adapter or production Kata namespace integration. It now includes
 and a [Linux reopen/close primitive](../../docs/confidential-storage/guest-opener.md)
 that passes those sealed bytes to cryptsetup, plus a
 [Linux lifecycle backend](../../docs/confidential-storage/guest-mount-backend.md)
-for private guest staging mounts with injected trusted providers. The Kata experiment's
+for private guest staging mounts with injected trusted providers.
+The [consumer manager](../../docs/confidential-storage/consumer-namespace.md) now owns
+the application bind using retained namespace/root descriptors; production Kata
+callbacks and attested providers remain unfinished. The Kata experiment's
 activation gate remains closed. **This is not working encrypted persistent storage.**
 
 The paired [Python authority](../confidential-storage-authority/README.md) now issues
@@ -156,8 +159,8 @@ First-use initialization still needs its separate durable `Initializing` protoco
 The current receipt issuer only grants reopening already initialized volumes.
 The standalone `Opener` now handles descriptor-based reopening, effective-stack
 checks and explicit mapping cleanup. `LinuxBackend` now connects it to the
-lifecycle controller and private ext4 staging mounts. Production application
-namespace handling, the device resolver and attested CDH key provider remain
+lifecycle controller, private ext4 staging mounts and a retained application bind.
+Production Kata callbacks, the device resolver and attested CDH key provider remain
 unfinished. Its
 per-handle state is not a substitute for the controller's global activation/device
 reservation and tombstones. Never expose it directly through an application API.

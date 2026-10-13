@@ -98,6 +98,10 @@ separate from journal-controlled execution and cannot be combined with it.
 The same example now also exercises the
 [guest mount lifecycle backend](../../../docs/confidential-storage/guest-mount-backend.md)
 with synthetic providers, a namespace consumer, busy unmount and release retry.
+The [consumer manager](../../../docs/confidential-storage/consumer-namespace.md)
+now installs/removes that bind through namespace/root descriptors. Tests reject
+inherited plaintext staging aliases and retain ownership while a bind is busy or
+covered by an unrelated mount.
 
 ## Recorded result and limits
 

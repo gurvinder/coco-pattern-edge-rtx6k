@@ -24,14 +24,15 @@ Sources:
 | Authenticate | Exact signed manifest/header digests and the fixed RW profile must validate before calling the key provider. |
 | Key and open | The provider receives the verified grant and authenticated credential URI. The opener is retained before key fetch or kernel effects; the key goes to cryptsetup through a pipe. |
 | Mount | Reserve a new private directory, retain the mount handle, then mount ext4 with `nodev,nosuid,noexec`. Verify mount identity, device, filesystem, propagation and flags. |
-| Application bind | Still a production integration task. The lab demonstrates a bind in a separate mount namespace before dropping all capabilities and switching to UID 1000. |
-| Teardown | Require the trusted provider to detach every application bind, unmount staging, remove the reserved empty directory, close both mapper targets, then acknowledge release. No lazy unmount, force, recursive deletion or formatting. |
+| Application bind | The namespace manager attaches the verified filesystem using retained namespace/root descriptors. Production Kata acquisition and startup callbacks remain unfinished. |
+| Teardown | Require trusted application quiescence, detach the recorded namespace bind, unmount staging, remove the reserved empty directory, close both mapper targets, then acknowledge release. No lazy unmount, force, recursive deletion or formatting. |
 
 `Providers` is an in-process trusted interface, not a network API. The deployed
 implementation must resolve guest devices from authenticated policy, retrieve keys
 through a session/grant-bound attested CDH channel, and acknowledge release through
-the attested authority channel. Its `detach_consumers` method must retain namespace
-handles and remove every application bind before acknowledging success. Implementing
+the attested authority channel. Its `quiesce_consumers` method must stop the
+application and prevent concurrent startup/namespace mutation before bind removal.
+The backend now owns the registered bind through the [namespace manager](consumer-namespace.md). Implementing
 these methods with host-supplied keys
 or ordinary unauthenticated HTTP would not satisfy the contract. Only lab fixture
 providers exist today.
@@ -64,10 +65,9 @@ explicit recovery; the backend never adopts or deletes an unknown target.
 
 These checks assume a trusted guest mount namespace and a single mount manager.
 They are not protection against another privileged process inside the same TEE.
-The backend requires the production agent to own and remove application binds
-through `detach_consumers` before staging cleanup. The production implementation
-of that callback is still missing. In the lab the sole namespace consumer exits
-and is waited for before cleanup; that is not a general-purpose bind manager.
+The backend now retains and removes one application bind through the namespace
+manager before staging cleanup. The production agent must provide paused-container
+descriptors and quiescence callbacks; those Kata integrations remain missing.
 
 ## Failure behavior
 
@@ -102,7 +102,8 @@ The test uses fresh scratch storage, synthetic signatures, an ephemeral fixture
 key and a deliberately fallible local release provider. No production PVC, GPU,
 Trustee policy or runtime artifact is involved.
 
-The namespace consumer is created by lab-only guest-root code, then runs with UID
+The namespace holder is created by lab-only guest-root code; the library installs
+and removes its application bind. The application then runs with UID
 1000, zero capabilities and `NoNewPrivs=1`. It verifies filesystem read/write,
 `noexec`, inability to read the mapper/backing device and inability to traverse
 the private staging directory. This is a Linux namespace test, not a Kata E2E.
@@ -121,7 +122,8 @@ the disposable builder and be deleted with it.
 ## Next work
 
 Implement the measured guest device resolver and the attested authority/CDH
-providers, then the Kata namespace/bind lifecycle adapter. Test partial mount
+providers, then connect the namespace manager to Kata's paused-container/startup
+and quiescence callbacks. Test partial mount
 effects, namespace teardown, service/VM death, blocked I/O and recovery against
 the approved guest kernel. Keep the separate first-use initialization protocol;
 this backend only reopens initialized RW volumes. Model RO/verity and populator

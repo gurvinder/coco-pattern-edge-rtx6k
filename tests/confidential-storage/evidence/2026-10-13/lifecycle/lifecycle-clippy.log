@@ -1,0 +1,3 @@
+    Checking tokio v1.53.2
+    Checking confidential-storage-guest v0.1.0 (/build/confidential-storage-guest)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.16s

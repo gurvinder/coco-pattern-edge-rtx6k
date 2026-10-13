@@ -122,7 +122,15 @@ class Authority:
             (record["volume_id"], action, encoded),
         )
 
-    def register(self, volume_id, policy_sha256, profile_sha256, credential_uri):
+    def register(
+        self,
+        volume_id,
+        policy_sha256,
+        profile_sha256,
+        credential_uri,
+        *,
+        mount_binding=None
+    ):
         """Trusted administrator operation. Contains a credential reference only."""
         identifier(volume_id)
         digest(policy_sha256)
@@ -136,7 +144,13 @@ class Authority:
             or any(part in (".", "..") for part in credential_uri[7:].split("/"))
         ):
             raise Denied("expected a versioned KBS resource reference")
+        if mount_binding is not None:
+            from receipts import validate_binding
+
+            mount_binding = validate_binding(mount_binding)
         record = dict(
+            mount_binding=mount_binding,
+            manifest_sha256=None,
             volume_id=volume_id,
             policy_sha256=policy_sha256,
             profile_sha256=profile_sha256,
@@ -158,9 +172,20 @@ class Authority:
             self._save(db, record, "register")
         return record
 
-    def begin(self, volume_id, peer, operation_id, operation, expected_generation):
+    def begin(
+        self,
+        volume_id,
+        peer,
+        operation_id,
+        operation,
+        expected_generation,
+        *,
+        request_sha256=None
+    ):
         """Commit ownership and initialization intent BEFORE returning permission."""
         peer.validate()
+        if request_sha256 is not None:
+            digest(request_sha256)
         identifier(operation_id)
         if (
             operation not in ("initialize", "reopen")
@@ -179,7 +204,8 @@ class Authority:
                     owner["session_sha256"],
                     owner["operation_id"],
                     owner["operation"],
-                ) != (peer.session_sha256, operation_id, operation):
+                    owner.get("request_sha256"),
+                ) != (peer.session_sha256, operation_id, operation, request_sha256):
                     raise Denied(
                         "previous owner not confirmed closed; recovery required"
                     )
@@ -199,6 +225,7 @@ class Authority:
                 operation_id=operation_id,
                 operation=operation,
                 activation_id=str(uuid.uuid4()),
+                request_sha256=request_sha256,
             )
             if operation == "initialize":
                 record["state"] = "Initializing"
@@ -231,26 +258,35 @@ class Authority:
         ):
             raise Denied("activation owner mismatch")
 
-    def commit_ready(self, volume_id, peer, activation_id, header_sha256):
+    def commit_ready(
+        self, volume_id, peer, activation_id, header_sha256, *, manifest_sha256=None
+    ):
         """Trusted adapter calls after verifying a durable initialization receipt.
 
         This core cannot verify disk writes, journal state or receipt attestation.
         The adapter and guest recovery protocol are required before deployment.
         """
         digest(header_sha256)
+        if manifest_sha256 is not None:
+            digest(manifest_sha256)
         with self._transaction() as db:
             record = self._load(db, volume_id)
             self._check_owner(record, peer, activation_id)
             if record["revoked"] or record["owner"]["operation"] != "initialize":
                 raise Denied("initialization commit not authorized")
+            if record.get("mount_binding") is not None and manifest_sha256 is None:
+                raise Denied("bound mounts require an authenticated manifest digest")
             if record["state"] == "Ready":
-                if header_sha256 != record["header_sha256"]:
+                if header_sha256 != record[
+                    "header_sha256"
+                ] or manifest_sha256 != record.get("manifest_sha256"):
                     raise Denied("header identity cannot change on retry")
                 return dict(record)
             if record["state"] != "Initializing":
                 raise Denied("not initializing")
             record["state"] = "Ready"
             record["header_sha256"] = header_sha256
+            record["manifest_sha256"] = manifest_sha256
             self._save(db, record, "commit-ready")
             return dict(record)
 

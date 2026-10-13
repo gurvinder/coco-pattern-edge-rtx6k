@@ -1,0 +1,31 @@
+{
+  "evidence": "synthetic-authority-and-injected-backend-tests",
+  "date": "2026-10-13",
+  "python_authority_tests": 25,
+  "rust_tests": 17,
+  "signed_negative_vectors": 28,
+  "chart_regression_tests": 5,
+  "rust_version": "1.94.1",
+  "python_cryptography_version": "46.0.3",
+  "compiler_image": "docker.io/library/rust@sha256:4ec71e955e6c08aeb238885083222ddff79d82eb87654a96c76e38e94da1a53b",
+  "cargo_clippy": "passed --locked --all-targets -- -D warnings",
+  "cargo_fmt": "applied before final tests",
+  "production_unchanged": {
+    "production_pods": true,
+    "production_resources": true,
+    "runtimes": true,
+    "gitops_sources": true
+  },
+  "test_pods_remaining": 0,
+  "encrypted_storage_e2e": false,
+  "real_attestation_transport": false,
+  "real_cdh_disk_backend": false,
+  "kata_activation_gate": "closed",
+  "live_runtime_modified": false,
+  "limitations": [
+    "Synthetic peers are not attestation evidence.",
+    "Storage backend effects are test doubles.",
+    "Receipts only authorize reopen; first-use initialization is not implemented by the issuer.",
+    "No confidential persistent volume has been mounted by this implementation."
+  ]
+}

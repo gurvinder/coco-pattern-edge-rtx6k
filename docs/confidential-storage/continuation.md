@@ -63,6 +63,35 @@ session binding. No persistent filesystem mount handler, new key delivery,
 initialization, teardown integration or deployable guest artifact was completed.
 This checkpoint is transport/security-preflight code, not an encrypted-storage E2E.
 
+## Signed receipt and lifecycle checkpoint
+
+The [guest-service core](../../components/confidential-storage-guest/README.md)
+now verifies authority-signed, session/nonce-bound reopen receipts. Registration
+has immutable mount bindings, and bound initialization commits pin both header
+and manifest digests. Exact request retries preserve the activation; changed
+nonces or operation replay are denied. Legacy records cannot issue new receipts.
+
+The Rust controller serializes exclusive activation, records possible effects
+before invoking a backend, retains failed cleanup phases, and releases ownership
+only after unmount and mapping close succeed. Closed activation tombstones cannot
+release a new owner. Service-owned tasks survive a cancelled RPC waiter; ambiguous
+mounted results remain recorded for explicit retry/close. The backend interface
+has no format operation.
+
+Twenty-five Python authority/receipt tests and 17 Rust lifecycle/interoperability
+tests passed, including Python-generated Ed25519 signatures, 28 invalid signed
+receipt vectors, hash mismatches, failure injection, concurrency, cancellation,
+panic and a queued-worker expiry test. Rust formatting and Clippy with warnings as
+errors passed. The 5 diagnostic chart regression tests also passed. See
+[test evidence](../../tests/confidential-storage/evidence/2026-10-13/lifecycle).
+
+**This code is not connected to the Kata gate or real CDH disk operations.** There
+is still no attestation verifier/channel adapter, private storage RPC endpoint,
+cryptsetup/mount backend, first-use initialization or deployable guest image.
+Storage effects in tests are injected backends; test peers are synthetic.
+No real key was issued, no encrypted disk was mounted, and no new runtime was
+installed. The compiler was isolated from GPUs/PVCs and removed after validation.
+
 ## Next engineering step
 
 Build the guest-managed mount integration in an isolated artifact before installing
@@ -70,16 +99,17 @@ anything on the node. The installed Go runtime still lacks the new adapter. The
 patched experimental agent rejects the new request before device handling and storage activation.
 Do not remove that hard gate to reuse the prototype raw-device handler.
 
-1. Extend the tested versioned contract with authenticated authority receipts:
-   authorized volume ID, profile digest, operation/activation, source device, container identity and
-   destination. Host paths locate devices; measured policy and authenticated
+1. Connect the tested signed receipts to a real attested authority channel and
+   guest-owned request/nonce context. Bind the volume, profile, operation/activation,
+   source device, container identity and destination. Host paths locate devices; measured policy and authenticated
    authority records must authorize them. Avoid inventing a Kubernetes annotation
    and treating it as trusted authorization.
 2. Port the tested transport patch to the approved downstream Go runtime
    baseline once its exact source is located. Add a guest-agent filesystem mount
    path before container creation;
-   remove raw-device exposure to the application. Implement serialized activation,
-   mount ownership/refcounts, cancellation and teardown.
+   remove raw-device exposure to the application. Integrate the tested lifecycle
+   controller with actual mount ownership and teardown. The current controller is
+   exclusive; sharing/refcounts need a separate implementation.
 3. Extend the CDH profile implementation with independently authorized first-use
    initialization, exact authenticated-header handling and enforced journaled
    cryptographic integrity options. The prototype's profile name is insufficient.

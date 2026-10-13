@@ -1,0 +1,31 @@
+   Compiling tokio v1.53.2
+   Compiling confidential-storage-guest v0.1.0 (/build/confidential-storage-guest)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.97s
+     Running unittests src/lib.rs (target/debug/deps/confidential_storage_guest-77b7d3925e113a70)
+
+running 15 tests
+test lifecycle::tests::backend_panic_leaves_cleanup_record ... ok
+test lifecycle::tests::cancelled_activation_waiter_keeps_service_owned_worker ... ok
+test lifecycle::tests::bounded_registry_fails_closed_instead_of_dropping_tombstones ... ok
+test lifecycle::tests::busy_mount_retains_owner_and_retries_unmount ... ok
+test lifecycle::tests::cancelled_close_waiter_finishes_without_releasing_early ... ok
+test lifecycle::tests::close_failure_retains_state_without_repeating_unmount ... ok
+test lifecycle::tests::denied_before_backend_on_bad_session_expiry_or_locator ... ok
+test lifecycle::tests::idempotent_activation_and_ordered_cleanup ... ok
+test lifecycle::tests::failed_open_and_failed_cleanup_never_reopens_implicitly ... ok
+test lifecycle::tests::closed_tombstone_cannot_release_new_owner_and_is_not_evicted ... ok
+test lifecycle::tests::open_failure_closes_partial_mapping_before_release ... ok
+test lifecycle::tests::partial_mount_failure_unmounts_before_mapping_close ... ok
+test lifecycle::tests::queued_worker_rechecks_deadline_before_disk_effects ... ok
+test lifecycle::tests::release_failure_retries_only_release ... ok
+test lifecycle::tests::rejects_another_owner_or_alias_of_device ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/receipts.rs (target/debug/deps/receipts-cdea4345260cba86)
+
+running 2 tests
+test requires_pinned_key_and_exact_local_request ... ok
+test verifies_real_python_authority_signature ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s

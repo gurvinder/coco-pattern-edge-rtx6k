@@ -2,10 +2,11 @@
 
 This is the first implementation of the authority's durable transition rules.
 It is a local Python library, **not a deployed attestation service or a key broker**.
-Run its tests with Python 3.9+:
+Run its tests with Python 3.9+ and the pinned signing-library dependency:
 
 ```sh
 cd components/confidential-storage-authority
+python3 -m pip install -r requirements.txt
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v
 ```
 
@@ -55,3 +56,29 @@ Before deployment, implement and test:
 
 These unit tests cover transaction/state rules, not cryptography, disk integrity,
 attestation, application isolation, writable rollback resistance or hardware E2E.
+
+## Signed reopen receipts
+
+`receipts.py` adds an internal Ed25519 receipt issuer for the
+[guest lifecycle core](../confidential-storage-guest/README.md). Install the pinned
+`requirements.txt` dependency before running the complete test suite. The original
+state core still has no network endpoint or hardware verifier.
+
+New registration may include an immutable `mount_binding` with `manifest_uri`,
+`container_name`, `destination` and `access`. For these records, `commit_ready`
+requires `manifest_sha256` as well as the header digest. Both digests are immutable
+on retries. The issuer refuses legacy/unbound/uninitialized records. Existing
+records are not silently upgraded or reset.
+
+The issuer checks the requested binding and profile, commits a nonce-bound reopen
+operation, and signs a short-lived receipt containing the session, activation,
+resource identities and mount constraints. Changed request nonces cannot reuse
+an existing operation; exact retries retain its activation ID. A signing or delivery
+failure does not roll back committed ownership. Signing keys are supplied by the
+trusted administrator; tests generate them in memory and retain only public
+signature fixtures. No real authority key was created or deployed.
+
+This implements signed response construction, not the missing attested transport,
+receipt-backed first-use initialization, signing-key distribution/rotation,
+private CDH socket, disk backend or privileged guest mount integration. Keep the
+Kata activation gate closed until those pieces pass their respective tests.

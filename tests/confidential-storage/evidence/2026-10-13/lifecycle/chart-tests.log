@@ -1,0 +1,10 @@
+test_floating_image_rejected (test_chart.ChartTests.test_floating_image_rejected) ... ok
+test_initdata_has_no_production_key_client (test_chart.ChartTests.test_initdata_has_no_production_key_client) ... ok
+test_live_namespace_rejected (test_chart.ChartTests.test_live_namespace_rejected) ... ok
+test_rwo_fallback_rejected (test_chart.ChartTests.test_rwo_fallback_rejected) ... ok
+test_valid_diagnostic_renders (test_chart.ChartTests.test_valid_diagnostic_renders) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.447s
+
+OK

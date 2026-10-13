@@ -1,0 +1,30 @@
+test_ambiguous_initialization_cannot_be_reassigned (test_authority.AuthorityTests.test_ambiguous_initialization_cannot_be_reassigned) ... ok
+test_close_retry_is_idempotent (test_authority.AuthorityTests.test_close_retry_is_idempotent) ... ok
+test_close_wrong_owner_and_stale_handle (test_authority.AuthorityTests.test_close_wrong_owner_and_stale_handle) ... ok
+test_failed_transaction_never_returns_or_records_permission (test_authority.AuthorityTests.test_failed_transaction_never_returns_or_records_permission) ... ok
+test_header_substitution_rejected_on_commit_retry (test_authority.AuthorityTests.test_header_substitution_rejected_on_commit_retry) ... ok
+test_intent_is_durable_before_return (test_authority.AuthorityTests.test_intent_is_durable_before_return) ... ok
+test_mismatched_and_unbound_evidence_denied (test_authority.AuthorityTests.test_mismatched_and_unbound_evidence_denied) ... ok
+test_no_close_during_ambiguous_initialization (test_authority.AuthorityTests.test_no_close_during_ambiguous_initialization) ... ok
+test_no_initialization_after_close (test_authority.AuthorityTests.test_no_initialization_after_close) ... ok
+test_no_reset_of_registered_volume (test_authority.AuthorityTests.test_no_reset_of_registered_volume) ... ok
+test_operation_replay_after_close (test_authority.AuthorityTests.test_operation_replay_after_close) ... ok
+test_ready_retry_is_open_not_format (test_authority.AuthorityTests.test_ready_retry_is_open_not_format) ... ok
+test_reopen_preserves_identity_and_does_not_format (test_authority.AuthorityTests.test_reopen_preserves_identity_and_does_not_format) ... ok
+test_revocation_denies_active_retry_and_new_start (test_authority.AuthorityTests.test_revocation_denies_active_retry_and_new_start) ... ok
+test_two_concurrent_owners_only_one_wins (test_authority.AuthorityTests.test_two_concurrent_owners_only_one_wins) ... ok
+test_wrong_generation (test_authority.AuthorityTests.test_wrong_generation) ... ok
+test_binding_and_profile_substitution_before_ownership (test_receipts.ReceiptTests.test_binding_and_profile_substitution_before_ownership) ... ok
+test_consumed_operation_cannot_issue_new_receipt (test_receipts.ReceiptTests.test_consumed_operation_cannot_issue_new_receipt) ... ok
+test_exact_retry_same_owner_changed_nonce_denied (test_receipts.ReceiptTests.test_exact_retry_same_owner_changed_nonce_denied) ... ok
+test_legacy_record_cannot_issue_receipt (test_receipts.ReceiptTests.test_legacy_record_cannot_issue_receipt) ... ok
+test_ready_manifest_cannot_be_changed_on_retry (test_receipts.ReceiptTests.test_ready_manifest_cannot_be_changed_on_retry) ... ok
+test_receipt_retry_after_authority_restart (test_receipts.ReceiptTests.test_receipt_retry_after_authority_restart) ... ok
+test_signature_and_durable_owner (test_receipts.ReceiptTests.test_signature_and_durable_owner) ... ok
+test_signing_failure_keeps_committed_owner_for_exact_retry (test_receipts.ReceiptTests.test_signing_failure_keeps_committed_owner_for_exact_retry) ... ok
+test_unbound_peer_revocation_and_stale_generation (test_receipts.ReceiptTests.test_unbound_peer_revocation_and_stale_generation) ... ok
+
+----------------------------------------------------------------------
+Ran 25 tests in 0.120s
+
+OK

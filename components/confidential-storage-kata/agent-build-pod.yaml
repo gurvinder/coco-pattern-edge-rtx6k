@@ -1,0 +1,50 @@
+# Disposable non-confidential compiler; never use its InitData exclusion for workloads.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: storage-agent-compiler
+  namespace: confidential-storage-test
+  labels:
+    app: storage-agent-compiler
+    coco.io/skip-initdata: "true"
+spec:
+  automountServiceAccountToken: false
+  restartPolicy: Never
+  activeDeadlineSeconds: 15000
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: compiler
+      image: docker.io/library/rust@sha256:4ec71e955e6c08aeb238885083222ddff79d82eb87654a96c76e38e94da1a53b
+      command: ["sleep", "14400"]
+      env:
+        - name: CARGO_HOME
+          value: /build/cargo
+        - name: RUSTUP_HOME
+          value: /build/rustup
+      resources:
+        requests:
+          cpu: "2"
+          memory: 4Gi
+        limits:
+          cpu: "4"
+          memory: 8Gi
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]
+      volumeMounts:
+        - name: build
+          mountPath: /build
+        - name: tmp
+          mountPath: /tmp
+  volumes:
+    - name: build
+      emptyDir:
+        sizeLimit: 32Gi
+    - name: tmp
+      emptyDir:
+        sizeLimit: 1Gi

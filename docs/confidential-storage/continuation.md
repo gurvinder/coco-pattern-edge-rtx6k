@@ -4,7 +4,46 @@ Checkpoint: 13 October 2026, branch `dev/confidential-storage-integration`, base
 on proposal/handoff commit `e4a3616`. Read the [report](compatibility-report.md)
 before making changes. The original six-phase handoff still defines completion.
 
-## Latest live checkpoint: real private-AA SNP verification
+## Latest checkpoint: downstream kernel storage stack and agent source port
+
+**13 October, 23:25 UTC:** the [downstream guest diagnostic](downstream-guest.md)
+passed on the live SNP test runtime: matching dm-integrity modules, LUKS2/HMAC
+format, wrong-key rejection, journaled 4096-byte integrity, ext4 write/close/reopen
+and cleanup. It used only a fresh RAM-backed disk and random in-guest test key.
+No PVC or KBS request occurred. The original attempt found a missing `sync`
+utility; the corrected probe uses the bundled BusyBox. Both results are recorded.
+
+The separate handler now points to `initrd-kernel-v2` under
+`/opt/kata-storage-test/private-aa-probe-94354456b0c3/`, full SHA-256
+`d3f34830e55bd65fd7993311046ff87751cc9afdd8fa7d6619bd38c48f1611cf`.
+This is the original base plus a 5.8 MiB additions archive; full and overlay
+hashes are checked before switching. Rebuild is byte-identical. The agent in
+this live diagnostic is still the original packaged binary, not the new port.
+It remains ineligible for storage keys. CRI-O PID is still 694089 and production
+runtime hashes, pod identities, readiness/restarts and GitOps sources are unchanged.
+
+The source port now targets the matching 3.31.0 source RPM baseline. It preserves
+the activation gate and changes only guest/workspace files. Eight lifecycle,
+twelve transport, one signal, 48 guest and six adapter tests pass; three
+tool-dependent guest unit cases remain ignored. The reproducible source preparation
+script verifies 47 resulting files against the tested tree. Formatting and Clippy
+complete; two existing downstream `unused_unsafe` warnings remain. No new agent
+binary has been installed. See the guide for the signal-exit semantic difference.
+
+The replacement `storage-agent-compiler` runs from 22:59 UTC until approximately
+02:59 UTC on 14 October, with 32 GiB scratch. Its source is `/build/kata`, Rust
+1.94.1, CARGO_HOME `/build/cargo`, RUSTUP_HOME `/build/rustup`. The old compiler
+expired; private AS/authority state is preserved in the previously recorded local
+backup. No AS/authority service has been restored in the new compiler yet.
+
+**Next:** real private KBS/provider + measured configuration + actual agent mount
+integration. Live request inspection found a pause container before the app,
+missing incoming PID namespace and systemd-form cgroup paths; the adapter currently
+rejects those assumptions. Resolve these with explicit tested guest-owned lifecycle
+handling, keeping arbitrary extra apps and privilege bypasses denied. Then connect
+the blank-volume initializer and run both PVC E2Es. Neither full E2E is complete.
+
+## Previous live checkpoint: real private-AA SNP verification
 
 **Latest (22:41 UTC):** the [live authority probe](live-authority-probe.md) now
 passes five fresh SNP attestations, guest signature proofs, signed receipt/retry,

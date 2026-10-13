@@ -1,0 +1,63 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /build/kata/src/agent/Cargo.toml
+workspace: /build/kata/Cargo.toml
+warning: unnecessary `unsafe` block
+   --> src/libs/kata-sys-util/src/protection.rs:129:19
+    |
+129 |         let fn0 = unsafe { x86_64::__cpuid(0) };
+    |                   ^^^^^^ unnecessary `unsafe` block
+    |
+    = note: `#[warn(unused_unsafe)]` (part of `#[warn(unused)]`) on by default
+
+warning: unnecessary `unsafe` block
+   --> src/libs/kata-sys-util/src/protection.rs:142:27
+    |
+142 |         let fn8000_001f = unsafe { x86_64::__cpuid(0x8000_001f) };
+    |                           ^^^^^^ unnecessary `unsafe` block
+
+warning: `kata-sys-util` (lib) generated 2 warnings
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+     Running unittests src/main.rs (target/debug/deps/kata_agent-13015ac90673f226)
+
+running 12 tests
+test confidential_mount::contract::fixtures::shared_go_rust_contract ... ok
+test confidential_mount::contract::tests::denies_substitution_of_every_authorization_field ... ok
+test confidential_mount::contract::tests::no_initialize_or_unsafe_paths ... ok
+test confidential_mount::contract::tests::rejects_duplicate_grants_and_fields ... ok
+test confidential_mount::contract::tests::valid_request_and_locator_not_authorization ... ok
+test confidential_mount::tests::denies_duplicate_and_redirected_storage ... ok
+test confidential_mount::tests::denies_privileged_application_and_storage_alias ... ok
+test confidential_mount::tests::denies_raw_device_exposure ... ok
+test confidential_mount::tests::ordinary_requests_pass_but_reserved_mount_never_does ... ok
+test confidential_mount::tests::transport_checks_bind_and_denies_unsafe_options ... ok
+test confidential_mount::tests::unavailable_activation_never_falls_back ... ok
+test confidential_mount::wire_test::consumes_actual_go_protobuf_request ... ok
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /build/kata/src/agent/Cargo.toml
+workspace: /build/kata/Cargo.toml
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 262 filtered out; finished in 0.00s
+
+warning: unnecessary `unsafe` block
+   --> src/libs/kata-sys-util/src/protection.rs:129:19
+    |
+129 |         let fn0 = unsafe { x86_64::__cpuid(0) };
+    |                   ^^^^^^ unnecessary `unsafe` block
+    |
+    = note: `#[warn(unused_unsafe)]` (part of `#[warn(unused)]`) on by default
+
+warning: unnecessary `unsafe` block
+   --> src/libs/kata-sys-util/src/protection.rs:142:27
+    |
+142 |         let fn8000_001f = unsafe { x86_64::__cpuid(0x8000_001f) };
+    |                           ^^^^^^ unnecessary `unsafe` block
+
+warning: `kata-sys-util` (lib) generated 2 warnings
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+     Running unittests src/main.rs (target/debug/deps/kata_agent-13015ac90673f226)
+
+running 1 test
+test signal::tests::test_setup_signal_handler ... INFO: task completed
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 273 filtered out; finished in 0.00s

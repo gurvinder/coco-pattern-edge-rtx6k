@@ -1,5 +1,11 @@
 # Kata confidential filesystem transport experiment
 
+For the matching installed 3.31.0 source baseline, use the separate
+[downstream guest port and kernel diagnostic](../../docs/confidential-storage/downstream-guest.md).
+Its `downstream-lock.json` and preparation script retain the activation gate and
+do not modify the host runtime. The experimental baseline below remains a distinct
+development artifact; neither agent patch is installed on the cluster.
+
 **Development checkpoint, not an installable encrypted-storage runtime.** The
 patch adds a Go runtime adapter and an agent-side preflight. Activation deliberately
 returns an error until the profile-bound CDH/authority API and safe lifecycle are

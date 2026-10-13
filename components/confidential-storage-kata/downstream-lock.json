@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "status": "development-only-activation-disabled",
+  "sourceArchive": "kata-containers-3.31.0.tar.gz",
+  "sourceArchiveSha256": "ab8972dc026cfaad85705e93019506384c2af286f715bd364701062c88330891",
+  "sourceRpm": "kata-containers-3.31.0-5.rhaos4.22.el9.src.rpm",
+  "sourceRpmSha256": "0c49860badcce7bd25b68d813684e2b42abfaa2bdac08f0b51ec99efb211d870",
+  "patch": {
+    "file": "downstream-agent-v1.patch",
+    "sha256": "bc88a58e263d8fe01c7e552fceb1612621cfcb8db046c96dc29d11ec69e5a8ad"
+  },
+  "overlayLock": "agent-integration-lock.json",
+  "overlayLockSha256": "163d302c8915e2d1c78a68367098d37d66ad0d8647219b30838991f0af8e2693",
+  "hostRuntimeChanges": false,
+  "agentInstalled": false
+}

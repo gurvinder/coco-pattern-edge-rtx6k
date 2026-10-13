@@ -20,7 +20,7 @@ scheduling:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: storage-private-aa-probe
+  name: {{ .Values.podName | quote }}
   namespace: {{ .Release.Namespace | quote }}
   labels:
     app.kubernetes.io/part-of: confidential-storage-test

@@ -1,4 +1,5 @@
 node: 9c-63-c0-dd-06-52
+podName: storage-private-aa-probe
 initdataConfigMap: storage-audit-no-secrets
 image: registry.access.redhat.com/ubi9/ubi-minimal@sha256:b966f21589d418d1e02159cb8e03e261fc8c4ee9061258893f5e4e33986aac4c
 # Base64-gzip of reviewed no-secret InitData; required for this custom RuntimeClass.

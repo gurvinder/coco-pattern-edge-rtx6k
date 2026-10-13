@@ -1,0 +1,7 @@
+/opt/kata-storage-test/package-verification/kernel-modules-core.rpm:
+    Header V4 RSA/SHA256 Signature, key ID fd431d51: OK
+    Header SHA256 digest: OK
+    Header SHA1 digest: OK
+    Payload SHA256 digest: OK
+    MD5 digest: OK
+6b4db27a280ce40f8d9c2ecefc0c5eb4222a75c61d964ca55e35bf4700d4eed9  /opt/kata-storage-test/package-verification/kernel-modules-core.rpm

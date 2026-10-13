@@ -1,0 +1,7 @@
+initrd = "/opt/kata-storage-test/private-aa-probe-94354456b0c3/initrd-kernel-v1"
+/usr/share/kata-containers/osbuilder-images/kata-cc.initrd: OK
+/opt/kata-storage-test/private-aa-probe-94354456b0c3/kernel-v2-overlay.partial: OK
+/opt/kata-storage-test/private-aa-probe-94354456b0c3/initrd-kernel-v2.partial: OK
+/etc/kata-containers/kata-snp/configuration.toml: OK
+/etc/crio/crio.conf.d/50-kata-snp: OK
+Test image updated without reload or restart. CRIO_PID=694089

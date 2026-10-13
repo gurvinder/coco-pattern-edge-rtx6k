@@ -166,9 +166,10 @@ Before activating storage:
    CDH or a generic signing/attestation oracle that can authorize arbitrary requests.
 2. Export and verify the required GPU runtime binding and device association;
    test missing, stale, mismatched and non-confidential devices against real AS.
-3. Add authenticated TLS transport, authority signer/configuration provisioning,
-   independent durable deployment, rate limits and restart/recovery tests. Keep
-   administrator methods on a separately authenticated interface.
+3. Deploy the [bounded HTTPS adapter](authority-https.md), provision its pinned
+   signer/configuration and independent durable state, and add operational rate
+   limits and restart/recovery tests. Administrator methods remain absent from
+   the guest-facing network interface.
 4. Implement session/grant/profile-bound CDH key delivery and the measured device
    resolver, then connect authorized CreateContainer preparation to the existing
    agent installation seam. Do not substitute ordinary CDH GetResource for this

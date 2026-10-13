@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-13",
+  "runtimeClass": "kata-cc",
+  "namespace": "confidential-storage-test",
+  "initDataSha256": "e2a4bfe74cf95d85efe1d72e63dec8aec51a0d3c7e8f322070a123d0b95d6cf0",
+  "applicationUid": 1000,
+  "applicationCapabilities": [],
+  "requestedPvc": false,
+  "requestedGpu": false,
+  "requestedKeys": false,
+  "result": "HTTP 404: Attestation Feature Not Enabled",
+  "hardwareAttestationProven": false,
+  "nextInterface": "guest-private attestation-agent ttrpc socket",
+  "trusteeRevision": "71251310045d8be2e95041cf0028691623c73957",
+  "trusteeBuild": "cargo build --locked --release -p attestation-service --no-default-features --features restful-bin,snp-verifier --bin restful-as",
+  "rustToolchain": "1.95.0",
+  "testAsListenAddress": "127.0.0.1:8089",
+  "testAsProductionPolicyAccess": false
+}

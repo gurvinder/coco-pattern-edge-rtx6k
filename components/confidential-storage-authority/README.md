@@ -126,7 +126,7 @@ challenge and invokes only reopen/close. It constructs the internal `AttestedPee
 the request cannot supply one or invoke administrator/format/key-delivery methods.
 
 The tests use real signatures and the SQLite core with synthetic EAR claims. No
-hardware evidence, network listener or production key is involved. The custom
+hardware attestation or production key is involved. The custom
 `storage-binding` runtime extension still needs a measured guest/AS integration;
 the inspected NVIDIA result does not export the required binding. GPU-required
 requests remain denied instead of falling back to CPU-only authorization.
@@ -134,3 +134,11 @@ requests remain denied instead of falling back to CPU-only authorization.
 See [the gateway guide](../../docs/confidential-storage/attested-authority-gateway.md)
 for the protocol, retry behavior, pinned upstream source inspection, limitations
 and remaining deployment gates. Kata activation remains disabled.
+
+`serve.py` now provides a bounded TLS 1.3 listener and a fixed-policy loopback
+Trustee relay. It exposes challenge/attest/execute only; administrator operations,
+initialization and key delivery are absent. See [HTTPS setup and private guest
+integration](../../docs/confidential-storage/authority-https.md). Ninety tests pass,
+including real TLS transport and synthetic AS interoperability. The pinned real
+AS and private ttRPC client build successfully; installed guest diagnostics found
+the public attestation API disabled. Neither storage E2E has passed yet.

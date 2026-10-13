@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "tests": 90,
+  "testResult": "passed",
+  "hardwareAttestationPassed": false,
+  "guestActivationEnabled": false,
+  "sourceHashes": {
+    "as_client.py": "81704c1b0d64a7e0898990796e923bfec9cfabfbba6bac0a9793251e76a34b6e",
+    "serve.py": "9b023949053a2029920d1923ecc49ec6f05cf14c1c63c8ce647f4ce7d34cd8fd",
+    "transport.py": "c1d57916503707754c24c04cd91d11f420c843c47b63a0a85eb7edc7a5b2fb29",
+    "gateway.py": "cf2fa3c88b8c8e8b6ed20b78cda2f32a1a59980f20ce15db92d20df6ad9cdbf9",
+    "test_transport.py": "69e79d84f97239d265cfa437608338089871db6bc9d8c7a5c955f6a36477b3f1",
+    "test_as_client.py": "9eb2f46cb15e4d692aedfed8b0a764ed7ce145f7e3ec81fa606f3bb05d7eefb7"
+  }
+}

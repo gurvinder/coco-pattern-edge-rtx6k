@@ -437,6 +437,47 @@ integration remain required before deploying an isolated confidential runtime.
 
 ## Next engineering step
 
+### HTTPS/private attestation checkpoint (13 October)
+
+The [HTTPS authority adapter](authority-https.md) is runnable from explicit
+administrator configuration. It exposes challenge/attest/execute over TLS 1.3,
+caps connections and message sizes, enforces an overall connection deadline and
+never publishes administrator routes. The fixed loopback SNP AS relay chooses
+policy/InitData/runtime data itself and independently verifies the returned EAR
+and guest key. GPU-required configurations cannot use this CPU test adapter.
+Ninety tests pass, including real TLS/HTTP with synthetic attestation claims and
+connection expiry during durable mutation. This is not a hardware acceptance.
+
+Pinned real `restful-as` and `ttrpc-aa-client` binaries were built in the retained
+compiler. Source/toolchain/Cargo/output hashes are in
+`components/confidential-storage-authority/attestation-build-lock.json`. The AS
+currently listens on compiler loopback `127.0.0.1:8089` with its own temporary
+signer under `/build/as-private`; there is no Service/Route. Do not expose its
+unauthenticated policy endpoint. Guest components are under
+`/build/guest-components`, AS source under `/build/trustee-as`. The private client
+requires glibc symbols through 2.34; actual guest packaging is outstanding.
+Compiler `/build` currently uses approximately 12 GiB of its 16 GiB limit; preserve
+needed outputs and prune rebuildable caches before another large build.
+
+Two temporary UID/GID 1000 CPU confidential probes found
+`HTTP 404: Attestation Feature Not Enabled` on the existing guest's public AA
+routes. No quote was obtained or key requested. Both probe pods were removed;
+the model PVC/populator remain. The next collector must use the guest-private AA
+ttRPC socket, not turn on an application-accessible attestation/signing oracle.
+The final audit reports production unchanged. Evidence is under
+`tests/confidential-storage/evidence/2026-10-13/authority-https/`.
+
+**Immediate next work:** package the private collector into a separate measured
+guest artifact and verify actual SNP evidence against the isolated AS. Then wire
+the collector/TLS gateway and grant-bound CDH provider into the existing guest
+storage lifecycle. The network gateway still only executes reopen/close; RW
+initialization needs attested journal calls, and publisher-approved RO readiness
+needs its own immutable authority transition. The model's unsigned publisher
+descriptor must become a bound authenticated guest manifest before opening it.
+Do not interpret these missing interfaces as permission to enable the Kata gate.
+
+### Remaining integration
+
 Connect authorized CreateContainer preparation to the tested guest-only installation
 seam, with authenticated authority/CDH/device providers and ownership of rootfs,
 shared mounts and remaining generic resources. Add policy-controlled production
@@ -445,9 +486,9 @@ agent and real storage backend together in the disposable VM through serialized
 RPCs, including partial-create/destruction recovery. Keep the activation gate
 closed until those providers and the approved artifact exist.
 
-For the authority, first connect the tested request gateway to a measured private
+For the authority, first connect the tested HTTPS gateway to a measured private
 guest collector and isolated AS. Implement/test the GPU verified-runtime binding
-and device association, then add authenticated TLS and grant-bound CDH delivery.
+and device association for a GPU-required profile, then add grant-bound CDH delivery.
 The internal gateway does not itself complete any of those integration gates.
 
 Build the guest-managed mount integration in an isolated artifact before installing

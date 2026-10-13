@@ -40,6 +40,10 @@ GiB of temporary files. No inference workload changes are needed.
 
 Prepare an unpacked Debian tools tree, without installing packages into the host:
 
+`python3 tests/confidential-storage/kernel-lab/fetch.py --work /build/debian`
+automates the pinned download/hash verification/extraction below. Then pass
+`--tools /build/debian/tools` to the runners. It requires a fresh work directory.
+
 1. Create private package, tools and apt-state directories under `/build`.
 2. Run `apt-get update` with `Dir::State::lists` and `Dir::Cache` pointing to those
    writable directories. Keep normal Debian repository signature checks enabled.
@@ -117,10 +121,24 @@ following:
 - Compatibility with the installed RHEL guest kernel or a production guest initrd.
 - Any encrypted-storage end-to-end acceptance gate.
 
-Next, connect a guest executor to the existing initialization journal and sealed
-header/lifecycle code; test interruptions at each destructive boundary. A real
-attested authority/CDH channel and an isolated runtime artifact are still required
-before enabling the Kata activation path. Keep its fail-closed gate in place.
+Journal-controlled lab execution is covered below. Next, implement the production
+guest backend using the sealed-header/lifecycle code and test partial operations
+and recovery. A real attested authority/CDH channel and an isolated runtime
+artifact are still required before enabling the Kata activation path. Keep its
+fail-closed gate in place.
 
 References: [QEMU microvm](https://www.qemu.org/docs/master/system/i386/microvm.html)
 and [kernel dm-integrity documentation](https://docs.kernel.org/admin-guide/device-mapper/dm-integrity.html).
+
+## Journal-controlled operations
+
+`journal.py` connects the authority's initialization coordinator to the same guest
+operations through an explicitly unauthenticated lab-only console protocol. It
+tests success/reopen plus process death after each of the four real operations,
+before completion acknowledgement. A new coordinator must refuse initialization,
+with no additional disk change. The authority database survives outside the VM.
+
+See [the executor guide](../../../docs/confidential-storage/initialization-executor.md)
+for the exact boundaries, invocation and production limitations. `coco.journal=1`
+is exclusively a test-guest switch, never an attestation or production authorization
+mechanism. Both runners require new scratch files and never reuse user volumes.

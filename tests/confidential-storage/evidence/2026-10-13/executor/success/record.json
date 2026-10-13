@@ -1,0 +1,79 @@
+{
+  "credential_uri": "kbs:///storage-test/keys/scratch-v1",
+  "generation": 1,
+  "header_sha256": "6e34a10986e6005a84be120d392104af10fbed027169cba647acb2c174b6a4f3",
+  "initialization_approval": {
+    "plan": {
+      "data_offset_bytes": 16777216,
+      "device_bytes": 134217728,
+      "filesystem": "ext4",
+      "header_bytes": 16777216,
+      "luks_uuid": "01234567-89ab-4cde-8123-456789abcdef",
+      "new_volume": true,
+      "provisioning_id": "abcdef01-2345-4678-8123-456789abcdef",
+      "schema_version": 1
+    },
+    "plan_sha256": "884b1e45fe0ddc8fce285a60352d5483445c1f894378f1e2a929e66f32bacbe0"
+  },
+  "initialization_steps": [
+    {
+      "evidence_sha256": "9f251585df6eeb68cce1a0c5d1afc0c7fc0e457a702f376ae319d9153906652b",
+      "result": {
+        "header_sha256": "6e34a10986e6005a84be120d392104af10fbed027169cba647acb2c174b6a4f3"
+      },
+      "status": "Complete",
+      "step": "luks-format",
+      "step_id": "dac6a72c-ef4a-4b31-8a58-5d8e9cf725d4"
+    },
+    {
+      "evidence_sha256": "7eb5202d49df86e63ddc1ad6071f204ecd6d2d6febf5ee2fe56aa515135db917",
+      "result": {
+        "header_sha256": "6e34a10986e6005a84be120d392104af10fbed027169cba647acb2c174b6a4f3",
+        "stack_sha256": "2e2dc00117789cbbb0d2495326c4f96e48dac26095f4913ff3dd67aab080f9c8"
+      },
+      "status": "Complete",
+      "step": "integrity-initialize",
+      "step_id": "e1a757b4-1670-4e4a-8b3a-106997c1a5c1"
+    },
+    {
+      "evidence_sha256": "9cd55d8957589076017dfaa6c9eb81b9e25e87704f41de6b6d340cb565d13cdb",
+      "result": {
+        "filesystem_uuid": "96dc523a-8e6b-46ef-a500-44df6224a4ca",
+        "header_sha256": "6e34a10986e6005a84be120d392104af10fbed027169cba647acb2c174b6a4f3"
+      },
+      "status": "Complete",
+      "step": "filesystem-create",
+      "step_id": "9bb146bd-de30-497b-bfb3-836d24779b16"
+    },
+    {
+      "evidence_sha256": "09e903501e9ac9414576320c61171ea0740a3142ad52b9a5d4e29a29451596ae",
+      "result": {
+        "header_sha256": "6e34a10986e6005a84be120d392104af10fbed027169cba647acb2c174b6a4f3",
+        "manifest_sha256": "b111db2a6022567b7ae526bb971cc37b57da48217b6ccd43cd118c70de9e5aac"
+      },
+      "status": "Complete",
+      "step": "durability-barrier",
+      "step_id": "19399c26-546c-4403-a199-060bdc10d4c4"
+    }
+  ],
+  "last_closed": {
+    "activation_id": "81ac1f8a-46bf-4c27-9bc4-28a97d07165a",
+    "operation": "reopen",
+    "operation_id": "reopen-1",
+    "request_sha256": null,
+    "session_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "manifest_sha256": "b111db2a6022567b7ae526bb971cc37b57da48217b6ccd43cd118c70de9e5aac",
+  "mount_binding": {
+    "access": "rw",
+    "container_name": "app",
+    "destination": "/data",
+    "manifest_uri": "kbs:///storage-test/records/scratch-v1"
+  },
+  "owner": null,
+  "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "profile_sha256": "d8d4bd81023565806a8996efb6702b2eb785b792929cf8b8a2733286eb2e10cb",
+  "revoked": false,
+  "state": "Ready",
+  "volume_id": "scratch"
+}

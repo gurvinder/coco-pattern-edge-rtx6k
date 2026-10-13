@@ -12,8 +12,6 @@ import json
 import re
 import time
 
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-
 from authority import Denied, digest, identifier
 from initialization import require_ready_result
 
@@ -61,6 +59,8 @@ class ReceiptIssuer:
     """
 
     def __init__(self, authority, signing_key, issuer, key_id, *, clock=time.time):
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
         if not isinstance(signing_key, Ed25519PrivateKey):
             raise ValueError("expected administrator-supplied Ed25519 signing key")
         self.authority = authority

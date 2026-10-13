@@ -100,3 +100,18 @@ Old Ready records without completed initialization history cannot obtain signed
 reopen receipts. This is a deliberate development-protocol change, not an automatic
 migration of existing storage. The test fixtures are synthetic; no production
 authority database has been upgraded or deployed.
+
+## Trusted initialization coordinator
+
+`executor.py` serializes a bound backend through the four journal steps. It requires
+fresh administrative approval, checks the device/profile/key binding, commits each
+Started decision before invoking the backend and validates completion before the
+next operation. A failed/consumed executor cannot be retried; a restarted executor
+refuses existing ownership/history instead of repeating destructive operations.
+It does not automatically recover, clean up mappings or release ownership.
+
+The concrete backend is currently the non-TEE QEMU test driver. No production
+guest daemon or attested RPC adapter has been installed. The coordinator itself
+needs only the Python standard library; receipt signing and the full unit suite
+still require the pinned cryptography dependency. See
+[execution contract and tests](../../docs/confidential-storage/initialization-executor.md).

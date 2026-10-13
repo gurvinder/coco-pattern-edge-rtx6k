@@ -1,0 +1,74 @@
+{
+  "credential_uri": "kbs:///storage-test/keys/scratch-v1",
+  "generation": 1,
+  "header_sha256": null,
+  "initialization_approval": {
+    "plan": {
+      "data_offset_bytes": 16777216,
+      "device_bytes": 134217728,
+      "filesystem": "ext4",
+      "header_bytes": 16777216,
+      "luks_uuid": "01234567-89ab-4cde-8123-456789abcdef",
+      "new_volume": true,
+      "provisioning_id": "abcdef01-2345-4678-8123-456789abcdef",
+      "schema_version": 1
+    },
+    "plan_sha256": "884b1e45fe0ddc8fce285a60352d5483445c1f894378f1e2a929e66f32bacbe0"
+  },
+  "initialization_steps": [
+    {
+      "evidence_sha256": "c6ce4eddbceb2ae49454fcd041cdc146b39b7ec495529a8ea4c52cc31e990ef4",
+      "result": {
+        "header_sha256": "ee7f62969496d4ab5e898a8520f8444fd7e22c152ec69c8bc2d60033a5fe1cc1"
+      },
+      "status": "Complete",
+      "step": "luks-format",
+      "step_id": "9bb662d1-a0c0-4922-9cdd-28b46f114222"
+    },
+    {
+      "evidence_sha256": "7990452ead2ff5a4e41507c37bcbf7379207fd1050df53903e48d6240996655c",
+      "result": {
+        "header_sha256": "ee7f62969496d4ab5e898a8520f8444fd7e22c152ec69c8bc2d60033a5fe1cc1",
+        "stack_sha256": "2e2dc00117789cbbb0d2495326c4f96e48dac26095f4913ff3dd67aab080f9c8"
+      },
+      "status": "Complete",
+      "step": "integrity-initialize",
+      "step_id": "e89e5102-c9c8-446e-b66c-9e6ba9d9c0c4"
+    },
+    {
+      "evidence_sha256": "4090dc8ddb5d3c656e38f69ad1373e735831eb99ca6458f14b7c947c887a94eb",
+      "result": {
+        "filesystem_uuid": "82708211-87ad-4c8e-9d02-cc068802183d",
+        "header_sha256": "ee7f62969496d4ab5e898a8520f8444fd7e22c152ec69c8bc2d60033a5fe1cc1"
+      },
+      "status": "Complete",
+      "step": "filesystem-create",
+      "step_id": "75288628-a6c5-4f14-9d2d-cab2fc1cf13e"
+    },
+    {
+      "status": "Started",
+      "step": "durability-barrier",
+      "step_id": "94269d2c-e23c-48fb-9a1f-dee6bab05874"
+    }
+  ],
+  "last_closed": null,
+  "manifest_sha256": null,
+  "mount_binding": {
+    "access": "rw",
+    "container_name": "app",
+    "destination": "/data",
+    "manifest_uri": "kbs:///storage-test/records/scratch-v1"
+  },
+  "owner": {
+    "activation_id": "05b2bd29-1ccd-491e-89d2-fbfde1ac14d9",
+    "operation": "initialize",
+    "operation_id": "init-1",
+    "request_sha256": null,
+    "session_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "profile_sha256": "d8d4bd81023565806a8996efb6702b2eb785b792929cf8b8a2733286eb2e10cb",
+  "revoked": false,
+  "state": "Initializing",
+  "volume_id": "scratch"
+}

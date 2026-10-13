@@ -14,9 +14,10 @@ do not format model PVCs.
 
 ## Implemented authorization sequence
 
-The local authority library now has an explicit approval and step journal. No
-formatter, network listener, attestation verifier or guest execution adapter is
-included in this checkpoint.
+The local authority library has an explicit approval and step journal. A trusted
+in-process coordinator now connects it to the disposable Linux test backend; see
+[the executor contract and failure tests](initialization-executor.md). Production
+guest integration, the network listener and attestation verifier remain unfinished.
 
 1. The administrator registers the volume, workload policy, crypto profile,
    versioned key URI and fixed `/data` mount binding.
@@ -47,10 +48,11 @@ included in this checkpoint.
 | `filesystem-create` | Create the approved ext4 filesystem inside the verified mapping | Same header SHA-256 and filesystem UUID |
 | `durability-barrier` | Flush required device/filesystem state and durably publish the authenticated manifest/header identity | Same header SHA-256 and manifest SHA-256 |
 
-These are protocol phases, not four tested shell commands. If the selected
-cryptsetup formatter already performs integrity initialization, the second phase
-must verify its completed result rather than repeat destructive work. The precise
-command/kernel sequence still needs isolated integration and crash testing.
+These are protocol phases. In the tested Linux lab, cryptsetup performs integrity
+initialization during formatting; the second phase verifies its completed result
+and effective kernel stack rather than repeating destructive work. That sequence
+is now exercised under the coordinator. Power-loss, partially executed commands and
+production-kernel behavior still require separate tests.
 
 ## Failure timeline
 
@@ -74,15 +76,17 @@ result may be a stranded disposable PVC requiring a separately reviewed recovery
 or disposal decision.
 
 The dictionary containing `execute` is an internal, trusted call result. It must
-**not** become a replayable stateless format token. The future guest executor needs
-session/channel binding, serialized local execution, retained step identity and
+**not** become a replayable stateless format token. The coordinator serializes local
+execution, binds the decision to its context and refuses uncertain retries. The
+production guest still needs authenticated session/channel binding and explicit
 recovery rules for cancellation, process death and lost replies. The authority's
 single decision alone cannot guarantee exactly-once physical disk effects.
 
 Similarly, `evidence_sha256` stores the identity of evidence already verified by
 the adapter. A digest or a Python `AttestedPeer` object does not itself prove a
 TEE, completed writes, successful journal initialization or a durable flush.
-The test suite supplies synthetic assertions and performs no disk operations.
+The authority unit suite supplies synthetic assertions. The separate journal/kernel
+lab performs real disk operations with a synthetic peer and unauthenticated console.
 
 Old development records without explicit approval and completed step history fail
 closed for initialization and signed reopen. There is no automatic migration that

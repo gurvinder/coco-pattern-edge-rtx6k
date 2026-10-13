@@ -19,6 +19,21 @@ set -eu
 case " $(cat /proc/cmdline) " in *' coco.storage.lab=1 '*) ;; *) fail missing-lab-guard;; esac
 phase=unset
 for arg in $(cat /proc/cmdline); do case "$arg" in coco.phase=*) phase=${arg#coco.phase=};; esac; done
+journal=false
+case " $(cat /proc/cmdline) " in *' coco.journal=1 '*) journal=true; stty -echo;; esac
+journal_start() {
+    if [ "$journal" = true ]; then
+        [ "$phase" = initialize ] || fail journal-phase
+        echo "COCO_JOURNAL_REQUEST:$1"
+        IFS= read -r -t 120 command || fail missing-journal-decision
+        [ "$command" = "execute:$1" ] || fail invalid-journal-decision
+    fi
+}
+journal_complete() {
+    if [ "$journal" = true ]; then
+        echo "COCO_JOURNAL_RESULT:$1:$header_sha256:$2"
+    fi
+}
 for module in virtio_mmio virtio_blk dm_mod dm_crypt dm_integrity ext4 authenc hmac sha256_generic xts aes_generic; do
     modprobe "$module" || fail "module-$module"
 done
@@ -31,6 +46,7 @@ cryptsetup --version
 uname -r
 case "$phase" in
     initialize)
+        journal_start luks-format
         cryptsetup luksFormat --batch-mode --type luks2 --cipher aes-xts-plain64 \
             --key-size 512 --integrity hmac-sha256 --sector-size 4096 \
             --uuid 01234567-89ab-4cde-8123-456789abcdef \
@@ -46,8 +62,11 @@ esac
 # The test key is an ephemeral fixture in this disposable initramfs, NOT Trustee.
 # Explicit detached copy: never let cryptsetup reread a mutable source header.
 dd if=/dev/vda of=/run/header bs=1048576 count=16 2>/dev/null
+header_sha256=$(sha256sum /run/header | cut -d ' ' -f 1)
+if [ "$phase" = initialize ]; then journal_complete luks-format -; fi
 sha256sum /run/header
 cryptsetup luksDump --dump-json-metadata /run/header
+echo
 if [ "$phase" = wrong-key ]; then
     dd if=/dev/urandom of=/run/wrong-key bs=32 count=1 2>/dev/null
     if cryptsetup open --type luks2 --disable-external-tokens --disable-keyring \
@@ -58,6 +77,7 @@ if [ "$phase" = wrong-key ]; then
     finish
     exit 0
 fi
+if [ "$phase" = initialize ]; then journal_start integrity-initialize; fi
 cryptsetup open --type luks2 --disable-external-tokens --disable-keyring \
     --header /run/header --key-file /test-key /dev/vda coco-test || fail open
 cryptsetup status coco-test
@@ -67,6 +87,10 @@ echo "$integrity_table" | grep -Eq '^0 [0-9]+ integrity [0-9]+:[0-9]+ [0-9]+ 32 
 echo "$integrity_table" | grep -Eq '(^| )block_size:4096( |$)' || fail integrity-block-size
 case "$integrity_table" in *allow_discards*|*recalculate*|*internal_hash*) fail unsafe-integrity-options;; esac
 echo COCO_TEST_PASS:journaled-hmac-stack
+if [ "$phase" = initialize ]; then
+    stack_sha256=$(printf '%s\n' "$integrity_table" | sha256sum | cut -d ' ' -f 1)
+    journal_complete integrity-initialize "$stack_sha256"
+fi
 if [ "$phase" = corruption ]; then
     # Read without mounting the intentionally damaged disposable filesystem.
     if dd if=/dev/mapper/coco-test of=/dev/null bs=4096 iflag=direct; then fail corrupted-data-accepted; fi
@@ -83,7 +107,12 @@ if [ "$phase" = reopen ]; then
     echo COCO_TEST_PASS:clean-volume-read
 fi
 if [ "$phase" = initialize ]; then
+    journal_start filesystem-create
     mkfs.ext4 -q -F -E lazy_itable_init=0,lazy_journal_init=0 /dev/mapper/coco-test || fail mkfs
+    filesystem_uuid=$(blkid /dev/mapper/coco-test | sed -n 's/.* UUID="\([^"]*\)".*/\1/p')
+    [ -n "$filesystem_uuid" ] || fail filesystem-uuid
+    journal_complete filesystem-create "$filesystem_uuid"
+    journal_start durability-barrier
 fi
 mount -t ext4 -o nodev,nosuid,noexec /dev/mapper/coco-test /data || fail mount
 if [ "$phase" = initialize ]; then chown 1000:1000 /data; fi
@@ -93,6 +122,15 @@ umount /data || fail unmount
 cryptsetup close coco-test || fail close
 # No force/lazy/deferred cleanup. Both target names must actually be absent.
 if dmsetup info coco-test >/dev/null 2>&1 || dmsetup info coco-test_dif >/dev/null 2>&1; then fail remaining-mapping; fi
+if [ "$journal" = true ]; then
+    sync
+    final_header=$(dd if=/dev/vda bs=1048576 count=16 2>/dev/null | sha256sum | cut -d ' ' -f 1)
+    [ "$final_header" = "$header_sha256" ] || fail changed-header
+    profile_sha256=$(cat /profile-sha256)
+    printf '{"schemaVersion":1,"volumeId":"scratch","generation":1,"profileSha256":"%s","credentialUri":"kbs:///storage-test/keys/scratch-v1","luksUuid":"01234567-89ab-4cde-8123-456789abcdef","deviceBytes":134217728,"headerSha256":"%s","headerBytes":16777216,"dataOffsetBytes":16777216,"filesystem":"ext4"}' "$profile_sha256" "$header_sha256" > /run/manifest
+    manifest_sha256=$(sha256sum /run/manifest | cut -d ' ' -f 1)
+    journal_complete durability-barrier "$manifest_sha256"
+fi
 echo "COCO_TEST_PASS:$phase"
 trap - EXIT
 finish

@@ -1,0 +1,7 @@
+Built disposable non-TEE kernel lab with Linux 6.1.0-53-amd64
+PASS success: journal durable; retry caused no disk change
+PASS after-luks-format: journal durable; retry caused no disk change
+PASS after-integrity-initialize: journal durable; retry caused no disk change
+PASS after-filesystem-create: journal durable; retry caused no disk change
+PASS after-durability-barrier: journal durable; retry caused no disk change
+PASS journal/kernel integration; synthetic peer and unauthenticated lab transport only

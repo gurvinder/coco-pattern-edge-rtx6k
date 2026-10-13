@@ -7,6 +7,7 @@ never publish the initramfs or scratch disk. Use only the sanitized text logs.
 """
 import argparse
 import gzip
+import hashlib
 import os
 from pathlib import Path
 import shutil
@@ -49,6 +50,7 @@ def main():
         destination = root / dest.lstrip("/")
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, destination, follow_symlinks=True)
+        destination.chmod(0o755)
         result = subprocess.run(
             ["ldd", str(source)], env=library_env, text=True, capture_output=True
         )
@@ -68,10 +70,12 @@ def main():
                     target = root / relative
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(lib, target, follow_symlinks=True)
+                    target.chmod(0o755)
                     break
 
     busybox = tools / "bin/busybox"
     shutil.copy2(busybox, root / "bin/busybox")
+    (root / "bin/busybox").chmod(0o755)
     for applet in subprocess.check_output(
         [str(busybox), "--list"], text=True
     ).splitlines():
@@ -82,6 +86,7 @@ def main():
         ("sbin/cryptsetup", "/usr/sbin/cryptsetup"),
         ("sbin/dmsetup", "/usr/sbin/dmsetup"),
         ("sbin/mke2fs", "/usr/sbin/mkfs.ext4"),
+        ("sbin/blkid", "/usr/sbin/blkid"),
         ("usr/bin/setpriv", "/usr/bin/setpriv"),
     ]:
         copy_binary(tools / src, dest)
@@ -99,6 +104,13 @@ def main():
         check=True,
     )
     here = Path(__file__).resolve().parent
+    profile = (
+        here.parents[2]
+        / "components/confidential-storage-guest/profiles/rw-luks2-v1.json"
+    )
+    (root / "profile-sha256").write_text(
+        hashlib.sha256(profile.read_bytes()).hexdigest()
+    )
     for name in ["init", "app-test"]:
         shutil.copy2(here / name, root / name)
         (root / name).chmod(0o700)

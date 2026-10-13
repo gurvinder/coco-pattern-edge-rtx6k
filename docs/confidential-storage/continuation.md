@@ -154,6 +154,28 @@ Kata container, PVC, GPU or host device. The kernel is Debian 6.1, not the insta
 RHEL guest kernel. Crash/recovery and replay tests remain outstanding. No encrypted
 storage E2E gate has passed; the Kata activation gate remains closed.
 
+## Journal-to-kernel executor checkpoint
+
+The [trusted initialization coordinator](initialization-executor.md) now connects
+the authority journal to a bound backend, records Started before each operation,
+validates completion before advancing, and refuses reuse or uncertain initialization
+history. Fifty-one authority tests pass, including sixteen before/after
+effect/completion boundaries, concurrency, binding mismatches, revocation and lost
+Ready responses.
+
+The concrete non-TEE lab backend runs the real Linux operations under this
+coordinator. Success reaches Ready and reopens the same data. Four additional cases
+kill the worker after each actual step but before completion acknowledgement, then
+kill its disposable VM. A fresh authority/coordinator observes Initializing/Started
+and refuses initialization; the disk hash is unchanged by that retry. Evidence is
+under `tests/confidential-storage/evidence/2026-10-13/executor/`.
+
+This is an in-process reference coordinator plus an **unauthenticated lab console
+bridge**. It has not been installed in Kata and does not fetch Trustee keys. The
+production device resolver, attested transport, sealed-header backend integration,
+partial-write/power-loss recovery and guest service remain unfinished. No storage
+E2E acceptance gate has passed, and the live runtime gate remains closed.
+
 ## Next engineering step
 
 Build the guest-managed mount integration in an isolated artifact before installing

@@ -1,0 +1,18 @@
+{
+  "collected_at": "2026-10-13T16:10:05.368047+00:00",
+  "scope": "local-cryptographic-protocol-and-durable-state-tests",
+  "hardware_attestation_tested": false,
+  "cluster_contacted": false,
+  "deployment_enabled": false,
+  "python": "3.13.7",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "cryptography": "46.0.3",
+  "unittest_exit_code": 0,
+  "sources": {
+    "attestation.py": "f1bcb384875d458c26f6372eabaf5320bcf16dae08a96221fdaae1e93d043ef1",
+    "gateway.py": "1c53d6543e62005a64682b923ac4f0f2f1e10bc3337a29de688d3300a5f6ffe1",
+    "test_gateway.py": "996f247eef66fe1495d5b30c934c538ae2eec47b436d237a9007283d2a5f8b29",
+    "attestation-source-lock.json": "d502cbd521928b5825901dbb7a905ab3a6f0c090df3ec870921975631d2c5c1a"
+  },
+  "test_log_sha256": "538068e0a2ef631be5dcd3a934f86ca7d539c3819e8c0d6369ced46630deecd2"
+}

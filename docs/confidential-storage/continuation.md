@@ -372,6 +372,29 @@ storage provider or serialized ttrpc connection. No host RPC calls the trusted
 installation seam, and the hard activation error remains. The patch is not
 installed on the live cluster.
 
+## Attested authority request checkpoint (13 October)
+
+The internal Python gateway now verifies an administrator-pinned ES256 Trustee EAR
+result and a dedicated guest-key request proof before calling reopen/close. It
+binds the exact request, one-use authority nonce, audience, measured InitData and
+configured CPU/GPU appraisal set. Session identity remains stable across fresh
+tokens for the same guest key. Durable ownership survives response loss, challenge
+expiry and gateway restart; guest callers cannot invoke initialization/admin APIs.
+
+This is real signature verification with synthetic attestation-result fixtures,
+not a hardware attestation or key-delivery result. The new `storage-binding`
+extension needs a guest collector and authenticated transport. Inspection of
+Trustee `71251310045d8be2e95041cf0028691623c73957` found that NVIDIA appraisal
+results do not export the verified structured-runtime binding required by this
+protocol. GPU-required requests fail closed. Keep that requirement; do not copy
+unverified request data into signed claims or accept a CPU-only fallback.
+
+See [the gateway guide](attested-authority-gateway.md) for the exact contract and
+`components/confidential-storage-authority/attestation-source-lock.json` for the
+inspection pin. No cluster resource, runtime artifact, key or policy was changed.
+All 72 authority tests passed, including 21 new gateway tests; see
+`tests/confidential-storage/evidence/2026-10-13/authority-gateway/`.
+
 ## Next engineering step
 
 Connect authorized CreateContainer preparation to the tested guest-only installation
@@ -381,6 +404,11 @@ streaming IO and the required managed process RPC semantics. Then test the patch
 agent and real storage backend together in the disposable VM through serialized
 RPCs, including partial-create/destruction recovery. Keep the activation gate
 closed until those providers and the approved artifact exist.
+
+For the authority, first connect the tested request gateway to a measured private
+guest collector and isolated AS. Implement/test the GPU verified-runtime binding
+and device association, then add authenticated TLS and grant-bound CDH delivery.
+The internal gateway does not itself complete any of those integration gates.
 
 Build the guest-managed mount integration in an isolated artifact before installing
 anything on the node. The installed Go runtime still lacks the new adapter. The

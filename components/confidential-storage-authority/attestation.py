@@ -1,0 +1,259 @@
+"""Pinned Trustee EAR result verification; not a hardware evidence verifier.
+
+No network/key discovery, test bypass or default trust root. Configuration comes
+from the authority administrator. Hardware evidence is appraised by Trustee AS.
+The storage-binding runtime extension still needs a measured guest/AS adapter.
+"""
+
+import base64
+from dataclasses import dataclass
+import hashlib
+import json
+import re
+
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import ec, utils
+
+from authority import AttestedPeer, Denied, digest
+from receipts import compact
+
+PROFILE = "tag:github.com,2024:confidential-containers/Trustee"
+PROTOCOL = "confidential-storage-request/v1"
+ANNOTATED = "ear.veraison.annotated-evidence"
+MAX_TOKEN = 256 * 1024
+
+
+def sha256(value):
+    return hashlib.sha256(value).hexdigest()
+
+
+def b64(value):
+    return base64.urlsafe_b64encode(value).rstrip(b"=").decode("ascii")
+
+
+def unb64(value):
+    if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", value):
+        raise Denied("invalid base64url")
+    result = base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
+    if b64(result) != value:
+        raise Denied("noncanonical base64url")
+    return result
+
+
+def object_pairs(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise Denied("duplicate JSON member")
+        result[key] = value
+    return result
+
+
+def invalid_constant(_):
+    raise Denied("nonfinite JSON number")
+
+
+def read_object(value, limit):
+    if not isinstance(value, bytes) or not 0 < len(value) <= limit:
+        raise Denied("invalid message size")
+    try:
+        result = json.loads(
+            value.decode("utf-8"),
+            object_pairs_hook=object_pairs,
+            parse_constant=invalid_constant,
+        )
+    except (ValueError, UnicodeError, RecursionError) as exc:
+        raise Denied("invalid JSON") from exc
+    if not isinstance(result, dict):
+        raise Denied("expected JSON object")
+    return result
+
+
+def public_key(jwk):
+    """Dedicated storage signing key, never reuse a KBC decryption key."""
+    if (
+        not isinstance(jwk, dict)
+        or set(jwk) != {"kty", "crv", "x", "y"}
+        or jwk["kty"] != "EC"
+        or jwk["crv"] != "P-256"
+    ):
+        raise Denied("expected dedicated P-256 storage key")
+    try:
+        x, y = unb64(jwk["x"]), unb64(jwk["y"])
+        if len(x) != 32 or len(y) != 32:
+            raise Denied("invalid EC coordinates")
+        return ec.EllipticCurvePublicNumbers(
+            int.from_bytes(x, "big"), int.from_bytes(y, "big"), ec.SECP256R1()
+        ).public_key()
+    except (ValueError, TypeError) as exc:
+        raise Denied("invalid EC key") from exc
+
+
+def verify_signature(key, signature, message):
+    try:
+        raw = unb64(signature)
+        if len(raw) != 64:
+            raise Denied("invalid ES256 signature length")
+        der = utils.encode_dss_signature(
+            int.from_bytes(raw[:32], "big"), int.from_bytes(raw[32:], "big")
+        )
+        key.verify(der, message, ec.ECDSA(hashes.SHA256()))
+    except (InvalidSignature, ValueError, TypeError) as exc:
+        raise Denied("invalid ES256 signature") from exc
+
+
+@dataclass(frozen=True)
+class Appraisal:
+    submod: str
+    tee: str
+    policy_id: str
+
+
+class EarVerifier:
+    """Accept only configured appraisals, measured InitData and request binding.
+
+    The signer is an administrator-pinned AS key; a token's embedded JWK is never
+    a trust anchor. No signer/issuer/policy is selected from caller input.
+    """
+
+    def __init__(self, signer, issuer, audience, init_data, policy_sha256, appraisals):
+        if not isinstance(signer, ec.EllipticCurvePublicKey) or not isinstance(
+            signer.curve, ec.SECP256R1
+        ):
+            raise ValueError("pin a P-256 AS signer")
+        if not issuer or not audience:
+            raise ValueError("issuer and authority audience must be explicit")
+        if not isinstance(init_data, str) or not re.fullmatch(
+            r"(?:[0-9a-f]{64}|[0-9a-f]{96}|[0-9a-f]{128})", init_data
+        ):
+            raise ValueError("pin the exact verified InitData claim")
+        digest(policy_sha256)
+        appraisals = tuple(appraisals)
+        if (
+            not appraisals
+            or appraisals[0].submod != "cpu0"
+            or appraisals[0].tee not in ("snp", "tdx")
+            or len({a.submod for a in appraisals}) != len(appraisals)
+            or any(not a.policy_id for a in appraisals)
+            or any(a.tee != "nvidia" for a in appraisals[1:])
+        ):
+            raise ValueError("require one real CPU and explicit optional GPUs")
+        self.signer = signer
+        self.issuer = issuer
+        self.audience = audience
+        self.init_data = init_data
+        self.policy_sha256 = policy_sha256
+        self.appraisals = appraisals
+
+    def verify(self, token, nonce, request_sha256, now):
+        """Called with authority-owned challenge data, never client expectations."""
+        if not isinstance(token, str) or not 0 < len(token) <= MAX_TOKEN:
+            raise Denied("invalid token size")
+        try:
+            header64, payload64, signature = token.split(".")
+            header = read_object(unb64(header64), 16 * 1024)
+            if header.get("alg") != "ES256" or "crit" in header or "b64" in header:
+                raise Denied("unsupported JWS profile")
+            # AS may embed jwk/x5c. Verify exclusively with the pinned key.
+            verify_signature(
+                self.signer, signature, (header64 + "." + payload64).encode("ascii")
+            )
+            claims = read_object(unb64(payload64), MAX_TOKEN)
+            iat, exp = claims["iat"], claims["exp"]
+            if (
+                type(now) is not int
+                or type(iat) is not int
+                or type(exp) is not int
+                or not 0 <= iat <= now < exp
+                or exp - iat > 300
+                or now - iat > 60
+                or (
+                    "nbf" in claims
+                    and (type(claims["nbf"]) is not int or claims["nbf"] > now)
+                )
+            ):
+                raise Denied("stale attestation result")
+            if claims["iss"] != self.issuer or claims["eat_profile"] != PROFILE:
+                raise Denied("wrong attestation issuer/profile")
+            submods = claims["submods"]
+            if not isinstance(submods, dict) or set(submods) != {
+                a.submod for a in self.appraisals
+            }:
+                raise Denied("unexpected device appraisal set")
+            binding = None
+            for required in self.appraisals:
+                appraisal = submods[required.submod]
+                vector = appraisal["ear.trustworthiness-vector"]
+                if (
+                    appraisal["ear.status"] != "affirming"
+                    or appraisal["ear.appraisal-policy-id"] != required.policy_id
+                    or not isinstance(vector, dict)
+                    or any(
+                        type(v) is not int or v not in range(4) for v in vector.values()
+                    )
+                    or vector.get("hardware") != 2
+                    or vector.get("configuration") != 2
+                    or vector.get("executables") != 3
+                ):
+                    raise Denied("unacceptable device appraisal")
+                evidence = appraisal[ANNOTATED]
+                if not isinstance(evidence[required.tee], dict):
+                    raise Denied("missing expected hardware evidence")
+                if (
+                    required.submod == "cpu0"
+                    and evidence["init_data"] != self.init_data
+                ):
+                    raise Denied("wrong measured guest configuration")
+                current = evidence["runtime_data_claims"]["storage-binding"]
+                if not isinstance(current, dict) or set(current) != {
+                    "protocol",
+                    "audience",
+                    "nonce",
+                    "request_sha256",
+                    "key",
+                }:
+                    raise Denied("missing verified storage request binding")
+                if (
+                    current["protocol"] != PROTOCOL
+                    or current["audience"] != self.audience
+                    or current["nonce"] != nonce
+                    or current["request_sha256"] != request_sha256
+                    or (binding is not None and current != binding)
+                ):
+                    raise Denied("attestation request/device binding mismatch")
+                binding = current
+            key = public_key(binding["key"])
+            # Stable across fresh tokens/challenges, unique to the guest-held key,
+            # authority audience and pinned workload. This is not a bearer ID.
+            session = sha256(
+                compact(
+                    {
+                        "protocol": PROTOCOL,
+                        "audience": self.audience,
+                        "key": binding["key"],
+                        "policy_sha256": self.policy_sha256,
+                        "init_data": self.init_data,
+                    }
+                )
+            )
+            return (
+                AttestedPeer(self.policy_sha256, session),
+                key,
+                (iat, min(exp, iat + 61)),
+            )
+        except (KeyError, TypeError, ValueError, RecursionError) as exc:
+            raise Denied("malformed attestation result") from exc
+
+
+def proof_message(audience, nonce, request_sha256, token):
+    """Canonical, domain-separated input to ES256; all digests are lowercase hex."""
+    return compact(
+        {
+            "protocol": PROTOCOL,
+            "audience": audience,
+            "nonce": nonce,
+            "request_sha256": request_sha256,
+            "attestation_sha256": sha256(token.encode("ascii")),
+        }
+    )

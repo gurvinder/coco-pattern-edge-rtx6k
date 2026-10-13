@@ -37,14 +37,15 @@ Incomplete initialization stays owned until an explicit recovery protocol is
 implemented. This intentionally sacrifices availability on ambiguous failure.
 
 `AttestedPeer` contains trusted inputs. Constructing this dataclass does **not**
-validate evidence. A future adapter must verify fresh CPU/workload evidence,
-any required GPU evidence, and a guest-held channel key before calling this core.
+validate evidence. The development gateway below verifies signed AS results and
+guest-key proofs, but a real guest/evidence/transport adapter is still required.
 Never deserialize an untrusted HTTP body directly into `AttestedPeer` and treat
 it as authenticated. Administrative methods need separate authentication.
 
 Before deployment, implement and test:
 
-- An attestation verifier and authenticated, replay-resistant session transport.
+- Real hardware interoperability for the AS-result verifier and authenticated
+  session transport, including the required GPU runtime binding.
 - Signed/channel-bound responses covering every returned field, audience and
   activation; the current dictionary is an internal result, not a bearer token.
 - Guest receipts that bind durable initialization phases/header/profile to the
@@ -115,3 +116,21 @@ guest daemon or attested RPC adapter has been installed. The coordinator itself
 needs only the Python standard library; receipt signing and the full unit suite
 still require the pinned cryptography dependency. See
 [execution contract and tests](../../docs/confidential-storage/initialization-executor.md).
+
+## Attested request boundary
+
+`attestation.py` verifies pinned ES256 Trustee EAR results, exact measured InitData,
+configured CPU/GPU appraisals and a fresh request binding. `gateway.py` verifies
+proof of possession of the dedicated guest key, atomically consumes a one-use
+challenge and invokes only reopen/close. It constructs the internal `AttestedPeer`;
+the request cannot supply one or invoke administrator/format/key-delivery methods.
+
+The tests use real signatures and the SQLite core with synthetic EAR claims. No
+hardware evidence, network listener or production key is involved. The custom
+`storage-binding` runtime extension still needs a measured guest/AS integration;
+the inspected NVIDIA result does not export the required binding. GPU-required
+requests remain denied instead of falling back to CPU-only authorization.
+
+See [the gateway guide](../../docs/confidential-storage/attested-authority-gateway.md)
+for the protocol, retry behavior, pinned upstream source inspection, limitations
+and remaining deployment gates. Kata activation remains disabled.

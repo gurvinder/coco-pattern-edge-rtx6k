@@ -2,6 +2,8 @@
 
 Updated: 10 October 2026
 
+For a portable execution plan, audit commands, milestone gates and test matrix, see the [technical implementation handoff](confidential-storage-implementation-handoff.md).
+
 Use the internal OpenShift OCI registry to distribute immutable, populated LUKS2 disk images. A custom Kubernetes volume populator copies the encrypted images into raw-block PVCs. Confidential inference guests attest to Trustee, unlock and mount those volumes read-only, and start vLLM against a local model directory.
 
 Extend attestation to the approved model release and the serving endpoint. An independently administered release authority maintains current authorization; a measured guest loader verifies model contents and binds its result to fresh evidence. For immutable models, add a dm-verity root anchored in the signed release descriptor to reject replayed blocks as they are read. Signatures and dm-integrity alone do not establish that a release is still authorized.

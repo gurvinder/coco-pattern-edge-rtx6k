@@ -107,8 +107,8 @@
     {
       "source": "components/confidential-storage-guest/src/receipt.rs",
       "destination": "src/libs/confidential-storage-guest/src/receipt.rs",
-      "sourceSha256": "5109010b0ce7cd56db7493e6b6983b482d6b9227c401730f38623fa0e3d693fe",
-      "outputSha256": "5109010b0ce7cd56db7493e6b6983b482d6b9227c401730f38623fa0e3d693fe"
+      "sourceSha256": "6c53f79871665c02ecfdb4435057ca67945e5a2594418b100aa19add41ab706b",
+      "outputSha256": "6c53f79871665c02ecfdb4435057ca67945e5a2594418b100aa19add41ab706b"
     },
     {
       "source": "components/confidential-storage-guest/src/sealed_header.rs",

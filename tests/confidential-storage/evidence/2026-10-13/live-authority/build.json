@@ -1,0 +1,16 @@
+{
+  "purpose": "no-key-live-authority-probe",
+  "approvedForStorageKeys": false,
+  "inputsSha256": {
+    "base": "1f9b3a90c60ec7a94985ae966fc66ecb4d04055ca3471b9f0074068f4dac8b62",
+    "client": "1a9ea738602ccaebf7141e9e01ced3adfb3125e05a63b1332b930898a86509e5",
+    "probe": "7f110beea03c878599c3fd2d08069c22f542e53307e1475a93e70da5cc6bb4f5",
+    "config": "4d67eaa2ae879c17da82f163210e006111ddadc8e4919f18858b72dde3ffa22d"
+  },
+  "initrdSha256": "3eca4600fe773f1955d8e5687a57c2277f681e3b306ec82e03334088e427c72f",
+  "bytes": 62279691,
+  "launchMeasurement": "803bb809924482646eca4d535c9cb382b245aa076387f2e963f833b6f8dc27cc67fa642fe54a9b4f796ccb1906c46d68",
+  "kernelCommandLine": "tsc=reliable no_timer_check rcupdate.rcu_expedited=1 i8042.direct=1 i8042.dumbkbd=1 i8042.nopnp=1 i8042.noaux=1 noreplace-smp reboot=k cryptomgr.notests net.ifnames=0 pci=lastbus=0 console=hvc0 console=hvc1 quiet panic=1 nr_cpus=1 selinux=0 scsi_mod.scan=none agent.log=debug agent.launch_process_timeout=6 cgroup_no_v1=all systemd.unified_cgroup_hierarchy=1",
+  "vcpuType": "EPYC-v4",
+  "vcpus": 1
+}

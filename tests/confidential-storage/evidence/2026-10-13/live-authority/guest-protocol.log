@@ -1,0 +1,4 @@
+STORAGE_AUTHORITY_PROBE receipt_verified
+STORAGE_AUTHORITY_PROBE fresh_attestation_retry_verified
+STORAGE_AUTHORITY_PROBE close_and_replay_denial_verified
+STORAGE_AUTHORITY_PROBE PASS no_keys_no_storage_effects

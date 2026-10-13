@@ -1,0 +1,20 @@
+{
+  "scope": "live no-key authority protocol, not encrypted storage E2E",
+  "freshSnpAttestations": 5,
+  "verifiedGuestProofsAndExecutedRequests": 4,
+  "explicitReplayDenied": true,
+  "applicationUid": 1000,
+  "applicationCapabilities": 0,
+  "applicationNoNewPrivileges": true,
+  "execPolicyDenied": true,
+  "namespace": "confidential-storage-test",
+  "podUid": "3b092578-c14d-417b-85ef-e8e0badb06c7",
+  "applicationExitCode": 0,
+  "startedAt": "2026-10-13T22:39:31Z",
+  "finishedAt": "2026-10-13T22:41:11Z",
+  "byteIdenticalInitrdRebuild": true,
+  "storageKeysReleased": false,
+  "storageEffects": false,
+  "gpuTested": false,
+  "productionUnchanged": true
+}

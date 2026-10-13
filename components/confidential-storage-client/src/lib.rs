@@ -13,7 +13,7 @@ use serde_json::{json, Value};
 use std::{
     io::Read,
     net::SocketAddr,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 pub mod initialization;
@@ -34,6 +34,8 @@ pub enum Error {
     Binding,
     #[error("private guest attestation failed")]
     Attestation,
+    #[error("signed storage receipt rejected: {0}")]
+    Receipt(#[source] confidential_storage_guest::receipt::Error),
 }
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -174,14 +176,26 @@ impl<E: Evidence> AuthorityClient<E> {
             "binding":{"manifest_uri":expected.manifest_uri,"container_name":expected.container_name,"destination":expected.destination,"access":expected.access}}),
         )?;
         let response: Reopened = self.execute(&request)?;
-        let now = now()?;
-        Verifier::new(
+        let verifier = Verifier::new(
             self.config.receipt_public_key,
             self.config.receipt_issuer.clone(),
             self.config.receipt_key_id.clone(),
-        )
-        .verify(&response.receipt, expected, now)
-        .map_err(|_| Error::Binding)
+        );
+        // A guest RTC can lag the authority across a one-second boundary.
+        // Never accept a future receipt or extend expiry. Wait only after all
+        // signature/shape/binding checks passed, then reverify the same receipt.
+        // A monotonic deadline bounds this even if the wall clock moves back.
+        let deadline = Instant::now() + Duration::from_secs(2);
+        loop {
+            match verifier.verify(&response.receipt, expected, now()?) {
+                Err(confidential_storage_guest::receipt::Error::NotYetValid)
+                    if Instant::now() < deadline =>
+                {
+                    std::thread::sleep(Duration::from_millis(25));
+                }
+                result => return result.map_err(Error::Receipt),
+            }
+        }
     }
     /// Only call after proven application quiescence and all owned mounts/mappers
     /// are gone. The client cannot observe storage teardown itself.

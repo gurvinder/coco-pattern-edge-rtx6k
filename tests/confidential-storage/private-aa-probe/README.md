@@ -7,6 +7,11 @@ this diagnostic guest measurement for a storage/model key.
 
 ## Verified on 13 October 2026 (UTC)
 
+The later [live authority protocol probe](../../../docs/confidential-storage/live-authority-probe.md)
+adds fresh hardware challenges/proofs, signed receipts, close and explicit replay
+denial. It is still a no-key diagnostic. Its separate image is now selected in the
+test handler; the fixed-evidence v4 image below is retained as an earlier checkpoint.
+
 - Real SNP report version 5, VMPL 0. The report binds the fixed diagnostic runtime
   object and the explicitly supplied no-secret InitData.
 - The pinned-source AS verifies the AMD endorsement chain/report signature and

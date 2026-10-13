@@ -1,0 +1,15 @@
+{"event": "challenge", "fresh": true}
+{"event": "hardware_attestation_verified"}
+{"action": "reopen", "event": "proof_and_execution_verified", "receipt_exp": 1791931249, "receipt_iat": 1791931189}
+{"event": "challenge", "fresh": true}
+{"event": "hardware_attestation_verified"}
+{"action": "reopen", "event": "proof_and_execution_verified", "receipt_exp": 1791931249, "receipt_iat": 1791931189}
+{"event": "challenge", "fresh": true}
+{"event": "hardware_attestation_verified"}
+{"action": "close", "event": "proof_and_execution_verified"}
+{"event": "challenge", "fresh": true}
+{"event": "hardware_attestation_verified"}
+{"action": "close", "event": "proof_and_execution_verified"}
+{"event": "challenge", "fresh": true}
+{"event": "hardware_attestation_verified"}
+{"action": "reopen", "event": "execute_denied", "operation_replay": true}

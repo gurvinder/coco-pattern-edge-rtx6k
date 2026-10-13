@@ -11,6 +11,8 @@ pub enum Error {
     Binding,
     #[error("storage receipt is expired or not yet valid")]
     Freshness,
+    #[error("authenticated storage receipt is not yet valid")]
+    NotYetValid,
 }
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -65,7 +67,10 @@ impl VerifiedGrant {
         &self.0
     }
     pub fn check_time(&self, now: u64) -> Result<()> {
-        if now < self.0.iat || now >= self.0.exp {
+        if now < self.0.iat {
+            return Err(Error::NotYetValid);
+        }
+        if now >= self.0.exp {
             return Err(Error::Freshness);
         }
         Ok(())

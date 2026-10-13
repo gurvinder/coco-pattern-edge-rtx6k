@@ -1,0 +1,27 @@
+   Compiling confidential-storage-guest v0.1.0 (/build/storage-kbs-build/components/confidential-storage-guest)
+   Compiling confidential-storage-client v0.1.0 (/build/storage-kbs-build/components/confidential-storage-client)
+    Finished `release` profile [optimized] target(s) in 4.01s
+test_changed_challenge_does_not_collect_or_execute (test_transport.RustClientTests.test_changed_challenge_does_not_collect_or_execute) ... ok
+test_changed_initdata_session_binding_rejects_receipt (test_transport.RustClientTests.test_changed_initdata_session_binding_rejects_receipt) ... ok
+test_expired_receipt_remains_denied (test_transport.RustClientTests.test_expired_receipt_remains_denied) ... ok
+test_far_future_receipt_remains_denied (test_transport.RustClientTests.test_far_future_receipt_remains_denied) ... ok
+test_initialization_wrong_plan_cannot_acquire (test_transport.RustClientTests.test_initialization_wrong_plan_cannot_acquire) ... ok
+test_initialization_wrong_signer_rejected (test_transport.RustClientTests.test_initialization_wrong_signer_rejected) ... ok
+test_lost_execute_response_never_reissues_format (test_transport.RustClientTests.test_lost_execute_response_never_reissues_format) ... ok
+test_new_guest_key_cannot_take_over_after_rejected_response (test_transport.RustClientTests.test_new_guest_key_cannot_take_over_after_rejected_response) ... ok
+test_oversized_response_is_rejected_before_body_read (test_transport.RustClientTests.test_oversized_response_is_rejected_before_body_read) ... ok
+test_real_tls_ecdsa_proof_receipt_retry_close (test_transport.RustClientTests.test_real_tls_ecdsa_proof_receipt_retry_close) ... ok
+test_response_redirect_is_not_followed (test_transport.RustClientTests.test_response_redirect_is_not_followed) ... ok
+test_signed_initialization_decision_requires_exact_fresh_binding (test_transport.RustClientTests.test_signed_initialization_decision_requires_exact_fresh_binding) ... ok
+test_signed_initialization_ready_close_and_reopen (test_transport.RustClientTests.test_signed_initialization_ready_close_and_reopen) ... ok
+test_slightly_future_receipt_waits_until_actually_valid (test_transport.RustClientTests.test_slightly_future_receipt_waits_until_actually_valid) ... ok
+test_unapproved_hardware_claim_is_rejected (test_transport.RustClientTests.test_unapproved_hardware_claim_is_rejected) ... ok
+test_unknown_ca_is_rejected (test_transport.RustClientTests.test_unknown_ca_is_rejected) ... ok
+test_unknown_challenge_fields_are_rejected (test_transport.RustClientTests.test_unknown_challenge_fields_are_rejected) ... ok
+test_wrong_hostname_is_rejected (test_transport.RustClientTests.test_wrong_hostname_is_rejected) ... ok
+test_wrong_receipt_signer_is_rejected_after_durable_acquisition (test_transport.RustClientTests.test_wrong_receipt_signer_is_rejected_after_durable_acquisition) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 14.816s
+
+OK

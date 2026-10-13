@@ -1,0 +1,4 @@
+/opt/kata-storage-test/private-aa-probe-94354456b0c3/initrd-authority-v3.partial: OK
+/etc/kata-containers/kata-snp/configuration.toml: OK
+/etc/crio/crio.conf.d/50-kata-snp: OK
+Test image updated without reload or restart. CRIO_PID=694089

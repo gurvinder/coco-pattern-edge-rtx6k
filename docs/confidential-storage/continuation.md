@@ -6,6 +6,24 @@ before making changes. The original six-phase handoff still defines completion.
 
 ## Latest live checkpoint: real private-AA SNP verification
 
+**Latest (22:41 UTC):** the [live authority probe](live-authority-probe.md) now
+passes five fresh SNP attestations, guest signature proofs, signed receipt/retry,
+idempotent close and explicit closed-operation replay rejection. It has no key
+or storage effects. The application exits 0 with UID 1000, CapEff=0, NoNewPrivs=1;
+exec remains policy-denied. Production audit is unchanged. The separate handler
+now points to `initrd-authority-v3`, SHA-256
+`3eca4600fe773f1955d8e5687a57c2277f681e3b306ec82e03334088e427c72f`.
+Its diagnostic measurement remains ineligible for keys.
+
+The temporary TLS authority is stopped; isolated AS remains on compiler loopback.
+Private state (including retained failed diagnostic ownership records) is backed
+up outside Git at `work/confidential-storage-private/as-probe-20261013/live-probe-state.tar`.
+The compiler still expires around 23:03 UTC. Public evidence/reproducer, the
+namespace correction and bounded authenticated-receipt time handling are described
+in the linked guide. Nineteen TLS tests and 48+2 guest tests pass. Next: integrate
+the real key provider and RO/RW backend/formatter with measured configuration and
+actual agent lifecycle; neither full storage E2E is complete.
+
 Follow-up: the independent `sev-snp-measure==0.0.13` calculation matches the signed
 v4 launch measurement. A separate strict **diagnostic-only** policy now returns
 affirming (hardware=2, executables=3, configuration=2), and the actual Python

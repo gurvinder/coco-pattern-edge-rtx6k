@@ -154,6 +154,18 @@ class RustClientTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("PASS", result.stdout)
 
+    def test_slightly_future_receipt_waits_until_actually_valid(self):
+        self.f.issuer.clock = lambda: time.time() + 1
+        self.run_client()
+
+    def test_far_future_receipt_remains_denied(self):
+        self.f.issuer.clock = lambda: time.time() + 30
+        self.run_client(deny=True)
+
+    def test_expired_receipt_remains_denied(self):
+        self.f.issuer.clock = lambda: time.time() - 61
+        self.run_client(deny=True)
+
     def test_real_tls_ecdsa_proof_receipt_retry_close(self):
         self.run_client()
         self.assertIsNone(self.f.owner())

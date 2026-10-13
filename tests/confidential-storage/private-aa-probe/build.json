@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "purpose": "no-secret-private-aa-probe",
+  "baseSha256": "1f9b3a90c60ec7a94985ae966fc66ecb4d04055ca3471b9f0074068f4dac8b62",
+  "clientSha256": "1a9ea738602ccaebf7141e9e01ced3adfb3125e05a63b1332b930898a86509e5",
+  "runtimeDataSha256": "f2cb69a26e6e754d46dbd53138f6ff11b95964493f36155b2ee3554349fbce8b",
+  "initrdSha256": "94354456b0c3aff0704ff8eb0cbaf47023d6be66933fb2530d147b7e714a4678",
+  "bytes": 59324024,
+  "approvedForStorageKeys": false
+}

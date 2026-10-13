@@ -478,6 +478,30 @@ Do not interpret these missing interfaces as permission to enable the Kata gate.
 
 ### Remaining integration
 
+The private-AA diagnostic initrd is now built and locally checked; the exact
+reproducer, public runtime binding, image hash and proposed node installer are in
+`tests/confidential-storage/private-aa-probe/`. Its hash is
+`94354456b0c3aff0704ff8eb0cbaf47023d6be66933fb2530d147b7e714a4678`.
+Boot inputs and extracted artifact/client files are retained under
+`/private/tmp/storage-guest-boot-base/`; the latest image is
+`private-aa-probe-v2.initrd`. The builder preserves all original archive entries.
+
+**Pending explicit approval:** automatic approval review rejected installing the
+distinct handler and SIGHUP-reloading shared CRI-O. The installer did not run.
+An async approval question was sent covering the exact node/handler/reload. Do not
+retry or route around that rejection until the user approves. Continue independent
+guest/authority implementation while it is pending. A separate earlier rejection
+of broad host configuration export was resolved by copying only three boot
+binaries and reading whitelisted configuration fields; no configuration directory
+was exported. See the probe README for the concrete node changes and limitations.
+
+The host confirmed CRI-O `CanReload=yes` and SIGHUP `ExecReload`. Existing CPU
+handler already uses `/usr/bin/containerd-shim-kata-v2` with
+`runtime_config_path`, so a new shim binary or wrapper is unnecessary for this
+diagnostic. The production CPU config and CRI-O drop-in hashes are pinned by the
+installer. No new RuntimeClass exists; creating its pod with server dry-run was
+therefore rejected, as expected. The next live step depends on the approval.
+
 Connect authorized CreateContainer preparation to the tested guest-only installation
 seam, with authenticated authority/CDH/device providers and ownership of rootfs,
 shared mounts and remaining generic resources. Add policy-controlled production

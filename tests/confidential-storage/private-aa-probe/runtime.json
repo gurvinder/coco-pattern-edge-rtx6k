@@ -1,0 +1,14 @@
+{
+  "storage-binding": {
+    "audience": "https://storage-test.invalid/v1",
+    "key": {
+      "crv": "P-256",
+      "kty": "EC",
+      "x": "axfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpY",
+      "y": "T-NC4v4af5uO5-tKfA-eFivOM1drMV7Oy7ZAaDe_UfU"
+    },
+    "nonce": "6c03f988e2e893a1e9944b13ea7abf7d173579a72acb2428074ee6f53dfa9b55",
+    "protocol": "confidential-storage-request/v1",
+    "request_sha256": "0d1ef3f610ab376a8246b3fc97a074cb5faa7e3531325527d8c51a0669d5d117"
+  }
+}

@@ -2,6 +2,8 @@
 //! Real rustjail callbacks, root ONLY inside the disposable non-TEE kernel lab.
 #[path = "../src/start_fifo.rs"]
 mod start_fifo;
+#[path = "callback_lab/storage.rs"]
+mod storage;
 use confidential_storage_guest::agent_lifecycle::{Identity, Runtime};
 use confidential_storage_kata_adapter::runtime::KataRuntime;
 use rustjail::{container::LinuxContainer, process::Process, specconv::CreateOpts};
@@ -30,18 +32,35 @@ fn mkfifo(path: &Path) {
     run("/bin/mkfifo", &[path.to_str().unwrap()]);
 }
 fn setup(name: &str) -> (KataRuntime, Identity, std::path::PathBuf) {
+    setup_with_script(name, None)
+}
+fn setup_with_script(
+    name: &str,
+    script: Option<&str>,
+) -> (KataRuntime, Identity, std::path::PathBuf) {
     let root = std::path::PathBuf::from(format!("/run/callback-lab/{name}/rootfs"));
-    for dir in ["bin", "proc", "dev", "result"] {
+    for dir in ["bin", "proc", "dev", "result", "data"] {
         fs::create_dir_all(root.join(dir)).unwrap();
     }
     fs::set_permissions(root.join("result"), fs::Permissions::from_mode(0o777)).unwrap();
     fs::copy("/bin/busybox", root.join("bin/busybox")).unwrap();
-    for applet in ["sh", "sleep", "cat", "id", "grep"] {
+    for applet in [
+        "sh",
+        "sleep",
+        "cat",
+        "id",
+        "grep",
+        "sync",
+        "cp",
+        "chmod",
+        "rm",
+        "sha256sum",
+    ] {
         symlink("busybox", root.join("bin").join(applet)).unwrap();
     }
     let spec = serde_json::from_value(serde_json::json!({
         "ociVersion":"1.0.2", "root":{"path":root},
-        "process":{"user":{"uid":1000,"gid":1000}, "args":["/bin/sh","-c",r#"
+        "process":{"user":{"uid":1000,"gid":1000}, "args":["/bin/sh","-c",script.unwrap_or(r#"
 set -eu
 [ "$(id -u)" = 1000 ]
 [ ! -e /dev/vda ] && [ ! -e /test-key ]
@@ -50,7 +69,7 @@ for cap in CapInh CapPrm CapEff CapBnd CapAmb; do grep -Eq "^$cap:[[:space:]]+00
 cat /proc/self/status > /result/status
 printf 'unprivileged-rustjail-app\n' > /result/started
 exec sleep 600
-"#], "env":["PATH=/bin"],"cwd":"/", "noNewPrivileges":true,
+"#)], "env":["PATH=/bin"],"cwd":"/", "noNewPrivileges":true,
         "capabilities":{"bounding":[],"effective":[],"permitted":[],"inheritable":[],"ambient":[]}},
         "mounts":[{"destination":"/proc","type":"proc","source":"proc","options":["nosuid","noexec","nodev"]},
                   {"destination":"/dev","type":"tmpfs","source":"tmpfs","options":["nosuid","strictatime","mode=755","size=65536k"]}],
@@ -271,7 +290,7 @@ fn main() {
     // kernel API mounts. This changes only this disposable guest's test setup.
     assert_eq!(unsafe { libc::unshare(libc::CLONE_NEWNS) }, 0);
     run("/bin/mount", &["--make-rprivate", "/"]);
-    fs::create_dir("/callback-agent-root").unwrap();
+    fs::create_dir_all("/callback-agent-root").unwrap();
     run(
         "/bin/mount",
         &[
@@ -292,16 +311,33 @@ fn main() {
             run("/bin/mount", &["--rbind", &format!("/{dir}"), &dest]);
         }
     }
+    let storage_mode = std::env::args().nth(1).filter(|s| s.starts_with("storage"));
+    if storage_mode.is_some() {
+        fs::copy("/test-key", "/callback-agent-root/test-key").unwrap();
+        fs::set_permissions(
+            "/callback-agent-root/test-key",
+            fs::Permissions::from_mode(0o600),
+        )
+        .unwrap();
+    }
     std::env::set_current_dir("/callback-agent-root").unwrap();
     assert_eq!(unsafe { libc::chroot(c".".as_ptr()) }, 0);
     std::env::set_current_dir("/").unwrap();
-    fs::create_dir("/run/callback-runtime").unwrap();
-    fifo_without_child();
+    fs::create_dir_all("/run/callback-runtime").unwrap();
+    if storage_mode.is_none() {
+        fifo_without_child();
+    }
     tokio::runtime::Builder::new_multi_thread()
         .worker_threads(2)
         .enable_all()
         .build()
         .unwrap()
-        .block_on(callbacks());
+        .block_on(async {
+            if let Some(mode) = storage_mode {
+                storage::test(&mode).await;
+            } else {
+                callbacks().await;
+            }
+        });
     println!("COCO_TEST_PASS:rustjail-callback-lifecycle");
 }

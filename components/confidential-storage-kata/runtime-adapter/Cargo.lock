@@ -444,9 +444,11 @@ name = "confidential-storage-kata-adapter"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "base64 0.22.1",
  "confidential-storage-guest",
  "libc",
  "oci-spec",
+ "ring",
  "runtime-spec",
  "rustjail",
  "serde_json",

@@ -139,7 +139,10 @@ death. The application stays unprivileged; negative cases cover dead init, repla
 FIFO, cancelled startup and a replaced cgroup path that blocks cleanup until fixed.
 See [callback evidence](../../tests/confidential-storage/evidence/2026-10-13/kata-callback/README.md).
 
-The real callback test and encrypted backend test are still separate. Next connect
-`KataRuntime` to `Agent` and `LinuxBackend` in that lab; only afterward wire the
-Sandbox/reaper/IO/RPC entry points. Partial creation/destruction recovery and
-attested provider gates remain open.
+The [combined Kata/storage lab](kata-encrypted-lab.md) now connects that runtime
+to `Agent` and `LinuxBackend`. A real unprivileged container reads/writes encrypted
+`/data` and a new container reads it after a VM reboot. The test verifies busy-bind
+retention, lost-release acknowledgement retry, wrong-key/invalid-manifest startup
+denial, duplicate-operation handling and cleanup before runtime destruction.
+Synthetic providers are still used. Sandbox/reaper/IO/RPC integration, partial
+creation/destruction recovery and attested provider gates remain open.

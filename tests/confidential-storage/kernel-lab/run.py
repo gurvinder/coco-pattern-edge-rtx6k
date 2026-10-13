@@ -35,7 +35,10 @@ def main():
             ["--runtime-probe", str(args.runtime_probe.resolve(strict=True))]
             if args.runtime_probe else []
         )
-        + (["--callback-probe", str(args.callback_probe.resolve(strict=True))] if args.callback_probe else []),
+        + (
+            ["--callback-probe", str(args.callback_probe.resolve(strict=True))]
+            if args.callback_probe else []
+        ),
         check=True,
     )
     env = os.environ | {
@@ -103,16 +106,18 @@ def main():
                 check=False,
             )
         text = log.read_text(errors="replace")
+        required = [f"COCO_TEST_PASS:{phase}"]
+        if args.callback_probe and phase in ("initialize", "reopen"):
+            mode = "storage" if phase == "initialize" else "storage-reopen"
+            required.append(f"COCO_TEST_PASS:rustjail-encrypted-{mode}")
+            if phase == "initialize":
+                required.append("COCO_TEST_PASS:rustjail-callback-lifecycle")
+        if args.runtime_probe and phase == "initialize":
+            required.append("COCO_TEST_PASS:pinned-process-cgroup-subtree-quiescence")
         if (
             result.returncode
             or "COCO_TEST_FAIL:" in text
-            or f"COCO_TEST_PASS:{phase}" not in text
-            or (args.callback_probe and phase == "initialize"
-                and "COCO_TEST_PASS:rustjail-callback-lifecycle" not in text)
-            or (
-                args.runtime_probe and phase == "initialize"
-                and "COCO_TEST_PASS:pinned-process-cgroup-subtree-quiescence" not in text
-            )
+            or any(marker not in text for marker in required)
         ):
             raise RuntimeError(f"{phase} failed; inspect {log}")
         print(
@@ -121,7 +126,7 @@ def main():
         )
     print(
         "PASS non-TEE kernel lab; no attestation, Trustee, "
-        "Kata integration or crash recovery tested"
+        "agent RPC integration or crash recovery tested"
     )
 
 

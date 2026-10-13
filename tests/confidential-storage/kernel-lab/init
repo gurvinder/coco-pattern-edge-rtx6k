@@ -125,6 +125,9 @@ case " $(cat /proc/cmdline) " in
         [ "$phase" = initialize ] && [ "$journal" = false ] || fail invalid-opener-phase
         cryptsetup close coco-test || fail close-before-rust
         /usr/sbin/rust-opener-lab || fail rust-opener
+        if [ -x /usr/sbin/runtime-callback-lab ]; then
+            /usr/sbin/runtime-callback-lab storage || fail encrypted-callback
+        fi
         echo COCO_TEST_PASS:initialize
         trap - EXIT
         finish
@@ -147,6 +150,12 @@ if [ "$journal" = true ]; then
     printf '{"schemaVersion":1,"volumeId":"scratch","generation":1,"profileSha256":"%s","credentialUri":"kbs:///storage-test/keys/scratch-v1","luksUuid":"01234567-89ab-4cde-8123-456789abcdef","deviceBytes":134217728,"headerSha256":"%s","headerBytes":16777216,"dataOffsetBytes":16777216,"filesystem":"ext4"}' "$profile_sha256" "$header_sha256" > /run/manifest
     manifest_sha256=$(sha256sum /run/manifest | cut -d ' ' -f 1)
     journal_complete durability-barrier "$manifest_sha256"
+fi
+if [ -x /usr/sbin/runtime-callback-lab ]; then
+    case "$phase" in
+        initialize) /usr/sbin/runtime-callback-lab storage || fail encrypted-callback ;;
+        reopen) /usr/sbin/runtime-callback-lab storage-reopen || fail encrypted-callback-reopen ;;
+    esac
 fi
 echo "COCO_TEST_PASS:$phase"
 trap - EXIT

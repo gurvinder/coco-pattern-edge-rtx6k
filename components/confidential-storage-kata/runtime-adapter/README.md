@@ -123,10 +123,13 @@ kernel's original initramfs root cannot be pivoted. The application has its own
 root, mount/PID namespaces, UID/GID 1000, no capabilities and NoNewPrivs. It receives
 neither the fixture key nor the scratch disk. The callback VM uses 2 GiB RAM.
 
-This test does **not yet connect the real Kata callbacks to `LinuxBackend`**:
-the callback application uses an ordinary test directory. The encrypted-volume
-regression separately runs the existing synthetic runtime/backend. Agent RPCs,
-production reaper/IO ownership and attested providers remain absent.
+The callback example now also connects `Agent`, `KataRuntime` and `LinuxBackend`
+with synthetic authorization/key providers. Its `storage` mode runs after disk
+initialization; `storage-reopen` runs on the next VM boot. Real Kata applications
+write/read encrypted `/data`; busy cleanup and lost-release retries retain
+ownership, while wrong keys and invalid manifests prevent startup. See the
+[combined lab guide](../../../docs/confidential-storage/kata-encrypted-lab.md).
+Agent RPCs, production reaper/IO ownership and attested providers remain absent.
 
 Before enabling the mount request:
 
@@ -138,8 +141,8 @@ Before enabling the mount request:
    reporting and IO cleanup. The object must not simultaneously live in the
    ordinary container map. Do not call prepare while holding the sandbox lock:
    Kata's SIGCHLD handler takes the reaper lock before that lock.
-3. Combine the real runtime callbacks with the storage coordinator/backend and
-   test partial-create/destruction recovery. A failed create before process capture
+3. Test and implement partial-create/destruction recovery beyond the combined
+   runtime/storage happy path and retained-cleanup cases. A failed create before process capture
    still requires recovery. A partial runtime destruction may remain blocked.
    Neither path retries creation or returns fabricated success. Callback tests
    cover quiescence refusal/retry, not every partial rustjail destruction boundary.
@@ -147,4 +150,4 @@ Before enabling the mount request:
    There is no attestation/channel adapter or production key delivery in this crate.
 
 See [the coordinator guide](../../../docs/confidential-storage/agent-lifecycle.md)
-and [callback evidence](../../../tests/confidential-storage/evidence/2026-10-13/kata-callback/README.md).
+and [combined evidence](../../../tests/confidential-storage/evidence/2026-10-13/kata-storage/README.md).

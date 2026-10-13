@@ -180,9 +180,15 @@ destruction. Applications run with no capabilities, UID/GID 1000 and NoNewPrivs.
 A normal container and four failure/cancellation scenarios are checked, along
 with the FIFO reader-death race. See [callback evidence](../evidence/2026-10-13/kata-callback/README.md).
 
-The callback application uses ordinary test storage. Combining it with the
-existing encrypted `LinuxBackend` through `Agent` is the next test; neither this
-probe nor the runner's success implies installed agent RPC integration or TEE
-attestation. The test's tmpfs root is needed because the kernel's original
-initramfs root cannot be used as the old root for `pivot_root`. It does not relax
-the adapter's prohibition on `no_pivot_root`.
+After the existing initialization checks, the runner also invokes the callback
+program's `storage` mode. This connects the real Kata runtime to `Agent` and
+`LinuxBackend`, with synthetic providers, for six encrypted-volume cases. The
+reopen boot invokes `storage-reopen`: a new Kata container verifies the persisted
+file. The runner requires both encrypted-storage pass markers. See the
+[combined guide](../../../docs/confidential-storage/kata-encrypted-lab.md) and
+[evidence](../evidence/2026-10-13/kata-storage/README.md).
+
+This is library-level integration; neither the probe nor the runner's success
+implies installed agent RPC integration or TEE attestation. The test's tmpfs root
+is needed because the kernel's original initramfs root cannot be used as the old
+root for `pivot_root`. It does not relax the adapter's prohibition on `no_pivot_root`.

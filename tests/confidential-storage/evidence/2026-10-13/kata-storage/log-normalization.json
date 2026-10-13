@@ -1,0 +1,50 @@
+{
+  "storage-source-sha256.txt": {
+    "raw_sha256": "cdc4763ca410945ad755a64f451e7a9eb46eb7c44be3df5dcd4c26ac757f9b6a",
+    "stored_sha256": "cdc4763ca410945ad755a64f451e7a9eb46eb7c44be3df5dcd4c26ac757f9b6a"
+  },
+  "storage-build.log": {
+    "raw_sha256": "65f1fcd534f41f3b2b3ebd6f58c3b80f35dbd4e04e5f2749e0226864b6e087c1",
+    "stored_sha256": "65f1fcd534f41f3b2b3ebd6f58c3b80f35dbd4e04e5f2749e0226864b6e087c1"
+  },
+  "storage-tests.log": {
+    "raw_sha256": "8431921de98a5b88c7b75bdf4bc52a240d594584f8ca557e336358c7df6cd6a4",
+    "stored_sha256": "80547a2189ada8de71093e7f77752a02d250416090421437732ef957cfd06186"
+  },
+  "storage-clippy.log": {
+    "raw_sha256": "7b495840cb35ea4b28c3740c8864e313d66bb5496cf33d30603e3f8223a5b304",
+    "stored_sha256": "7b495840cb35ea4b28c3740c8864e313d66bb5496cf33d30603e3f8223a5b304"
+  },
+  "storage-fmt.log": {
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stored_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "storage-guest-build.log": {
+    "raw_sha256": "d006343210a0e1fdf3b428c573505c2778418da1d927a8eae56bcf0fda6365e7",
+    "stored_sha256": "d006343210a0e1fdf3b428c573505c2778418da1d927a8eae56bcf0fda6365e7"
+  },
+  "storage-guest-tests.log": {
+    "raw_sha256": "86c471f7075b7ede7465b6a7ab5c8c54617ca19f9621a94325a6057328bc3ea3",
+    "stored_sha256": "ec3fb7d22296548db3b1f7124ff98428dfae877ab92161eea8aedae4a39b173c"
+  },
+  "storage-summary.log": {
+    "raw_sha256": "9958ed2c9dd869b18e61409000848615073ff78030ade48b656894d642677c3e",
+    "stored_sha256": "9958ed2c9dd869b18e61409000848615073ff78030ade48b656894d642677c3e"
+  },
+  "initialize.log": {
+    "raw_sha256": "053c77e38d2fb0952e0b3c96015a65158c616122ec3ddf6015d339167c89d3c4",
+    "stored_sha256": "169f98275afe3ea488b7a835b6a0e1a45f1ef58603482992c81d9339d8f442fa"
+  },
+  "reopen.log": {
+    "raw_sha256": "8c503b6d37a8212ba43016cc08efdddbcc64be9a12ef06fc8b03f4cb51f3fa85",
+    "stored_sha256": "0279c063d989b52830307711ffa9d759111045e348ddaa5d5d860b23c1c655cc"
+  },
+  "wrong-key.log": {
+    "raw_sha256": "7f98d06a09b76a501c5aaa3558617b8277277a8333acc791c383bfd65a860c96",
+    "stored_sha256": "a3c9e940c4a953b292b50955b15b287a44593feb50144afcc5d687b5d49eeb60"
+  },
+  "corruption.log": {
+    "raw_sha256": "f42941068cc82957ef7dcf1e36d1951d23536648e08e67316bc8b739a00f38fe",
+    "stored_sha256": "08d54c21cb71db00e0aa14a110d083017d1d14b1a3e57a9d9381b4a8b2a20dc7"
+  }
+}

@@ -292,19 +292,40 @@ handshake, before the start write. Five adapter unit tests, 45 guest regressions
 formatting, strict Clippy and all four storage VM boots passed. See
 `tests/confidential-storage/evidence/2026-10-13/kata-callback/`.
 
-The callback application's directory is ordinary test storage. The encrypted
+At this checkpoint the callback application used ordinary test storage. The encrypted
 backend regression still uses its separate synthetic runtime. These two tested
 pieces must next be connected through `Agent<LinuxBackend, KataRuntime>` in the
 lab, with real mount attachment and teardown ordered around the paused Kata init.
 Then integrate Sandbox/reaper/IO/RPC ownership. Partial-create/destruction recovery
 and attested providers remain required; no live runtime or activation gate changed.
 
+## Combined Kata and encrypted RW storage checkpoint
+
+The [combined lab](kata-encrypted-lab.md) connects `Agent`, real `KataRuntime`
+callbacks and `LinuxBackend`. A UID/GID 1000 application with zero capabilities
+and NoNewPrivs writes/reads encrypted `/data`. Its only ext4 mount is `/data`, with
+nodev/nosuid/noexec; the raw disk, mapper, key and private staging are absent.
+A fresh VM boot and new Kata container verify the persisted payload hash.
+
+Six initial scenarios and one after reboot cover writes, reads, busy references,
+lost release acknowledgements, wrong keys and invalid manifests. Traces enforce
+quiescence before bind removal and release before destruction. No raw device
+reference remains at release. Exact retries do not repeat create/start/key fetch.
+All four boots, five adapter unit tests, 45 guest regressions, formatting and
+strict Clippy passed; evidence is in
+`tests/confidential-storage/evidence/2026-10-13/kata-storage/`.
+
+This supersedes the separate-runtime/backend limitation above. The providers are
+still synthetic; the test uses a disposable non-TEE VM and has not enabled agent
+RPCs or changed the live runtime. KServe and production configuration are unchanged.
+
 ## Next engineering step
 
-The immediate isolated test is the combined real Kata runtime plus encrypted
-Linux backend described above. Do not jump from these callback tests to installing
-a shim or opening the activation gate. Verify application IO, no inherited private
-staging alias, cleanup ordering and ownership retention with failure injection.
+Integrate Sandbox process ownership, exit reporting and IO cleanup with the
+coordinator, keeping reaper-before-sandbox lock ordering and a single owner of
+runtime state. Route every create/start/exec/remove/teardown path through that
+boundary. Extend partial-create/destruction recovery tests before deployment;
+keep the activation gate closed pending attested providers and an approved artifact.
 
 Build the guest-managed mount integration in an isolated artifact before installing
 anything on the node. The installed Go runtime still lacks the new adapter. The

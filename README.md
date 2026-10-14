@@ -5,6 +5,8 @@
 > recorded tests and model-key policy. The clean-cluster procedure has not been
 > replay-verified and the lab is not production hardened.
 
+> **Implemented confidential storage example:** [Qwen RO/RW data paths and actual resources](docs/confidential-storage/qwen-storage-walkthrough-and-gaps.md), [CoCo/Validated Pattern additions and remaining gaps](docs/confidential-storage/minimal-integration-and-stock-gaps.md), and [ConfidentialVolume controller](docs/confidential-storage/confidential-volume-controller.md). Validated lab snapshot; installation and trusted rollout are not fully automated.
+
 Validated pattern for deploying confidential containers on OpenShift using the [Validated Patterns](https://validatedpatterns.io/) framework.
 
 Confidential containers use hardware-backed Trusted Execution Environments (TEEs) to isolate workloads from cluster and hypervisor administrators. This pattern deploys and configures the Red Hat CoCo stack — including the sandboxed containers operator, Trustee (Key Broker Service) operator, and Kata infrastructure — on Azure cloud instances and bare metal.

@@ -1,173 +1,155 @@
-# Minimal integration changes and comparison with stock OpenShift CoCo
+# Implemented storage extensions and gaps against CoCo / the Validated Pattern
 
-**Controller update:** namespace reconciliation, signed configuration publication and CR status are now implemented. See [ConfidentialVolume controller](confidential-volume-controller.md). Earlier descriptions of an offline-only compiler below record the pre-controller implementation; trusted package approval and rollout remain explicit.
+**As implemented and validated on 14 October 2026:** Qwen GPU storage revision v19
+(`eb07abd`) plus ConfidentialVolume controller (`018ae67`). This replaces the
+original planning checklist. It records existing components and remaining gaps;
+it is not a claim that a new clean-cluster installation is already automated.
 
-**Current implementation:** the combined GPU/RO/RW deployment is now validated. Use the [implementation walkthrough and updated gap register](qwen-storage-walkthrough-and-gaps.md) for completed work versus remaining gaps. This document retains the original planning baseline.
+Read the [Qwen implementation walkthrough](qwen-storage-walkthrough-and-gaps.md)
+for actual CR/PVC examples, data and authorization diagrams, and test evidence.
+The [controller guide](confidential-volume-controller.md) describes its precise
+reconciliation boundary.
 
-Implementation progress is tracked in the [14 October checkpoint](multi-volume-implementation.md);
-planning tables below describe the target and original baseline.
+## Comparison scope
 
-**Planning baseline, 14 October 2026.** This narrows the
-[GPU integration plan](qwen-kserve-gpu-integration-plan.md). Reuse the working
-Qwen GPU guest, its attestation components, standard pattern Trustee, existing
-CSI and KServe. Keep a per-component delta so prototype limitations are not
-misreported as missing stock-platform capabilities.
+“CoCo” and “the CoCo Validated Pattern” are different layers. CoCo/Kata supplies
+the confidential guest, attestation/key-retrieval components and policy enforcement.
+OSC packages and operates the OpenShift runtime. The Validated Pattern composes
+operators, configuration, secrets and examples through Helm/GitOps. Adding a Helm
+chart to the pattern cannot by itself add a missing guest-agent capability.
 
-## What changes inside the guest
-
-| Component | Minimum action | Reason / boundary |
+| Baseline | What was inspected | Limits of this comparison |
 | --- | --- | --- |
-| `kata-agent` | Extend the existing native lifecycle patch and rebuild the agent | Resolve a bounded list of approved devices, wait for private storage activation, insert filesystem mounts, remove raw storage access and clean up after consumer exit |
-| Private `confidential-storage-service` | Package the existing daemon; generalize its one-volume state to a per-volume map | Own LUKS/verity/integrity/filesystem operations, authority grants, keys and cleanup; application gets only mounts |
-| Agent/service configuration | Replace one fixed binding with the authenticated binding collection | Exact volume/consumer/destination/profile and first-use approval; no Kubernetes API credentials in guest |
-| CDH and Attestation Agent | Reuse the installed GPU-capable binaries and private interfaces where possible | The Qwen guest already knows CPU/GPU attestation and standard Trustee key retrieval |
-| Storage key adapter | Replace `SnpCpuKbs` usage with a private CDH adapter retaining permit checks | Do not add a second attestation implementation; reconcile ASCII-hex versus raw credential encoding explicitly |
-| Guest startup/interface permissions | Start service before container RPCs; restrict its socket and AA/CDH interfaces; disable application-accessible key endpoints | Existing Qwen application fetches its own key over localhost HTTP; storage credentials must remain in trusted infrastructure |
-| Userspace tools | Include matching `cryptsetup`, `veritysetup`, `integritysetup`, `dmsetup`, `mkfs.ext4` and required libraries | These are guest infrastructure, not a privileged application/helper container |
-| Guest kernel | Inspect the GPU guest for matching device-mapper, crypt, verity, integrity, ext4 and crypto support; add missing matching modules first | A kernel source change is not a prerequisite. Rebuild only if the required configuration/modules are genuinely absent |
-| NVIDIA driver, CUDA, GPU attester | Preserve the working baseline and validate coexistence with storage | Change our over-restrictive device/hook handling where necessary, not the working GPU stack indiscriminately |
-| InitData and agent policy | Generate exact new workload/binding policy; measure and approve the resulting guest | Mount destinations and key access are security-relevant changes |
+| Official Validated Pattern | Pinned upstream tree [`aa04a093268be8ac92174313848a4c44298fbc41`](https://github.com/validatedpatterns/coco-pattern/tree/aa04a093268be8ac92174313848a4c44298fbc41), especially `values-baremetal.yaml`, `values-global.yaml` and `charts/` | This is the project baseline, not a claim about today's upstream HEAD |
+| Installed OpenShift runtime | OpenShift 4.22.15, OSC 1.13.0, Trustee 1.2.0, downstream Kata 3.31.0, kernel `6.12.0-211.16.1.el10_2.x86_64`; existing `topolvm.io` / `lvms-vg1` Block CSI | Versions recorded in the [compatibility inventory](compatibility-report.md); its early test-status sections are historical |
+| Actual GPU guest | [Base inventory](../../tests/confidential-storage/gpu-guest/base-inventory.json), preserved AA/CDH/NVIDIA binaries and added storage dependencies | Conclusions apply to this measured guest, not every upstream CoCo build |
+| Documented stock storage path | [OSC 1.13 block-volume recipe, section 4.9.2](https://docs.redhat.com/en/documentation/openshift_sandboxed_containers/1.13/html/deploying_confidential_containers_on_bare-metal_servers/configure-cc-overview_metal-cc) | Documents raw-block LUKS and a Trustee-supplied passphrase, with privileged helper/application containers, shared process namespace and hooks; helper example is 1.13.1, not our installed 1.13.0 inventory |
 
-The native patch currently changes Kata agent `main.rs` and `rpc.rs` and adds
-`storage_service.rs`. Reuse Kata's process/cgroup/namespace lifecycle. The current
-patch includes strict admission/diagnostic restrictions as well as storage hooks;
-do not describe the integration as a single harmless mount call. Review and record
-that full delta when rebasing onto the actual GPU agent source/build features.
+Stock encrypted persistent storage therefore already exists as a documented
+recipe. We did not validate that helper on our GPU workload. Our specific addition
+is an approved RO model and managed RW filesystem delivered by guest infrastructure
+to an **unprivileged application**, with explicit release/initialization history.
+This comparison does not establish that all other upstream approaches lack those
+capabilities. Confidential `emptyDir`, encrypted container-image storage and
+peer-pods storage are related work, but are not the persistent block-volume path
+implemented here. See the [upstream reuse discussion](../encrypted-model-volume-proposal.md).
 
-Keep cryptographic storage code outside the agent in the private daemon for this
-iteration. Moving it into CDH could be an upstream architectural follow-up, but
-patching both large components now is not the minimum integration path.
+## What we reuse without a source fork
 
-The planning baseline removed all devices and host binds and rejected hooks.
-The [GPU candidate](gpu-guest-candidate.md) now preserves bounded guest-generated
-NVIDIA CDI while still rejecting host hooks and raw storage exposure. Hardware
-validation is pending. Allowing all devices or restoring arbitrary host mounts
-would defeat this design.
-
-## What is installed or configured outside the guest
-
-| Component | Minimum action | New runtime service? |
+| Existing layer | Role in the implemented path | Configuration we supplied |
 | --- | --- | --- |
-| Versioned runtime handler and RuntimeClass | Point at the combined measured GPU/storage guest, retaining the existing handler for rollback | No new controller |
-| Kata Go shim, QEMU, CRI-O | Keep binaries; configure the new handler and validate two/multiple block attachments with GPU passthrough | No source changes planned; observed integration failures may change this assessment |
-| Existing TopoLVM/LVMS CSI | Use existing Block PVC provisioning and attachment | No new CSI driver |
-| Existing internal OCI registry | Reuse it for the complete model-distribution E2E | No new registry |
-| Encrypted model populator | Reuse existing implementation, its source CRD, registration/RBAC and temporary import Jobs; enable it for the target namespace when testing population | Existing controller; no importer needed merely to reopen a populated PVC |
-| Storage authority | Deploy the existing code persistently with stable TLS, protected signer and retained database; adapt its attestation interface | One persistent custom service; it is not included in stock Trustee |
-| Standard pattern Trustee | Provision scoped keys, policies and approved references; retain existing GPU attestation | No replacement KBS/AS and no source fork assumed |
-| Proposed ConfidentialVolume API | Add namespaced CRD and configuration compilation; see the two stages below | A new controller is deferred in the smallest first integration |
-| KServe and chatbot | Update desired InferenceService, measured startup and PVC bindings; preserve vLLM GPU settings and existing chat endpoint | No new serving operator |
+| Kubernetes and LVMS CSI | Provision Block PVCs, enforce supported attachment rules and attach ciphertext disks | Model 2 GiB and data 1 GiB, `ReadWriteOncePod`, `lvms-vg1`; model has a custom `dataSourceRef` |
+| OpenShift internal registry | Store/distribute the encrypted model disk artifact | Pinned OCI manifest/disk digests and namespace-restricted registry access |
+| Kata host shim, QEMU and CRI-O | Launch the SEV-SNP VM and transport block/GPU devices | Isolated candidate handler and RuntimeClass pointing to the combined guest |
+| Guest AA and CDH | Gather CPU/GPU evidence and retrieve KBS resources | Private interfaces, approved InitData and exact resource policy; original binaries preserved |
+| NVIDIA guest driver / GPU stack | Confidential GPU access and CUDA execution | Existing GPU stack retained; native agent admission adapted to its bounded guest-generated CDI |
+| Standard Trustee KBS / AS | Appraise CPU/GPU evidence, issue signed attestation results and gate keys | Separate model/data resources with scoped launch/InitData requirements; existing CPU/GPU requirements retained |
+| Pattern Vault / ESO | Deliver private credentials to Trustee and authority secrets to the authority | Existing provisioning mechanism, new scoped resources; no secrets committed |
+| KServe and vLLM | Reconcile serving workload and run GPU inference | Exact reviewed predictor template, local model path and `/data` caches; one replica, Recreate |
 
-The current populator watches one configured namespace. Reuse its image/code;
-deploy/configure the necessary namespace instance rather than accidentally
-installing competing controllers for the same source/claim. Preserve the existing
-populator's tested namespace restrictions and registry trust configuration.
+“No source fork” does not mean “no configuration change.” In particular, the
+candidate runtime, key policies and workload InitData differ from the original
+Qwen service. Neither a custom CSI driver nor a replacement Trustee server was
+needed. The storage authority described below is a separate service, not a new
+Trustee component.
 
-No CAA/peer-pods CSI component is required for this bare-metal path. No application
-or application-side storage helper receives `privileged`, CAP_SYS_ADMIN, mapper
-control or keys. Trusted guest root still performs privileged kernel operations.
+## What we added or changed
 
-## Two stages for the new API
-
-### Stage A: minimum running GPU/storage integration
-
-Use the [ConfidentialVolume resource shape](confidential-volume-api-proposal.md)
-as declarative input. A deterministic administrator/build-time compiler resolves
-the actual claim UIDs and approved manifests, validates the bindings and emits the
-exact guest configuration/InitData. The authority independently approves it.
-
-This can run as a CLI or controlled one-shot Job. A CRD alone does not reconcile
-anything; clearly label this stage as explicit compilation, not an automated
-operator. If CR instances are stored in the API, install the schema, but do not
-claim Ready/status automation until its reconciler exists. Deployment requires
-the explicitly generated approved contract, not merely creation of the CR.
-
-Retain the authority even in this stage: static configuration does not replace
-durable RW first-use/ownership state or approved model freshness. Use the retained
-encrypted model disk and original credential for initial testing. Complete the
-existing OCI/populator distribution test after the combined guest works.
-
-### Stage B: reconciliation of the same API
-
-Add a small `ConfidentialVolume` reconciler around the same compiler. It watches
-declarations and PVC identities, resolves authority approvals, publishes immutable
-public contract artifacts and status, and makes missing/invalid approval visible.
-It never retrieves volume keys or obtains an unrestricted approval-signing key.
-
-For minimum deployment overhead, it can be an additional reconciler in the
-existing populator controller binary after reviewing namespace/RBAC changes.
-The responsibilities remain separate: population moves ciphertext; resolution
-prepares authorized consumption metadata. Do not colocate the trusted authority
-or its private signer in that untrusted controller process.
-
-Keep explicit Helm/GitOps references to generated contracts initially. No mutating
-webhook is required. A binding change creates a new approved contract and workload
-rollout; the controller must not rewrite a running pod's security configuration.
-
-## Standard Trustee adapter and remaining hardware gate
-
-The [standard Trustee adapter](standard-trustee-adapter.md) now implements
-operation authentication through the existing KBS RCAR `/auth` and `/attest`
-interfaces. The authority retains a fresh KBS session for each pending request,
-verifies signed CPU+GPU claims and requires the guest's request-specific proof.
-This preserves request freshness and ownership without adding custom runtime
-claims to the standard EAR. No Trustee, AA or CDH server source change was made.
-
-Key retrieval remains a separate private CDH operation authorized by an opaque
-storage permit. The authority adapter never requests a storage key from KBS.
-
-The implemented TLS client passed a live `/auth` probe; signed synthetic claim
-and replay tests passed. Real composite `/attest` interoperability, exact live
-claim shape and key retrieval still require the GPU-compatible candidate guest.
-Do not enable initialization or key permits for that candidate until those tests
-pass. The isolated CPU AS mode remains available only for its existing tests.
-
-## What stock OpenShift already provides
-
-The current [OSC 1.13 bare-metal configuration guide, section 4.9.2](https://docs.redhat.com/en/documentation/openshift_sandboxed_containers/1.13/html/deploying_confidential_containers_on_bare-metal_servers/configure-cc-overview_metal-cc)
-documents raw-block LUKS storage inside the TEE using `osc-storage-helper` and a
-Trustee-provided sealed passphrase. Its published example uses privileged helper
-and application containers, shared process namespace and a postStart hook.
-Therefore, “stock CoCo has no encrypted persistent storage” would be inaccurate.
-
-That current example references helper version 1.13.1. Our recorded installed
-baseline was OSC 1.13.0; compare exact installed artifacts before asserting feature
-parity. Documentation review is not a live verification of the helper on this GPU
-guest, nor proof that other upstream implementations cannot provide more.
-
-## Gap register: classify rather than overclaim
-
-| Requirement / issue | Classification | How to establish it |
+| Addition / modification | Implementation location | What it does today |
 | --- | --- | --- |
-| Filesystem mounts prepared by guest infrastructure for a capability-free app | Product integration gap relative to the documented privileged-helper recipe | Show that our workload has no privileged app/init/sidecar and identify the required agent hooks |
-| Authenticated RO verity root plus independently approved model generation | Additional model-security feature | Demonstrate tamper/old-release rejection; do not infer stock support or absence from basic LUKS documentation |
-| Keyed integrity and controlled first-use formatting with durable recovery state | Additional storage-security/lifecycle feature | Audit the exact stock helper and installed guest; compare its behavior with our tested requirements |
-| Declarative ConfidentialVolume and per-container authenticated bindings | New API/controller feature | Record CRD/compiler/controller additions separately from Kata changes |
-| OCI encrypted-disk population | Add-on distribution component | Existing custom populator/source CRD; stock CSI still performs provisioning |
-| Matching dm-integrity/tools in the GPU initrd | Guest packaging item to verify | Inventory exact GPU image, kernel configuration and modules; CPU-image results are not sufficient |
-| CPU-only KBS wrapper, one-volume service, fixed RW geometry, UID 1000 | Our prototype limitations | Fix our code; do not report these as stock OpenShift limitations |
-| Custom authority protocol versus AllInOne Trustee interface | Our protocol compatibility gap | Verify a supported adapter using real evidence and signed claims |
-| Crash recovery, fencing and operator upgrades | Operational work still required | Failure/restart tests and explicit recovery runbook; no force-takeover shortcut |
-| Whole-disk RW rollback | Unsolved by LUKS/dm-integrity alone | Separate externally anchored freshness design if required |
+| Encrypted model publication and distribution | [Populator component](../../components/encrypted-model-populator/), [chart and source CRD](../../charts/coco-supported/encrypted-model-populator/) | Publisher creates the encrypted disk/verity artifact; `EncryptedModelSource` pins its identity; controller/importer populate a prime PVC and rebind its PV to the target. Includes a local namespace-colocation change to `lib-volume-populator` v3.2.0 |
+| Declarative volume contract | [Compiler](../../components/confidential-volume-contract/), [ConfidentialVolume CRD/chart](../../charts/coco-supported/confidential-volumes/) | Immutable profile/access/key-reference/initialization declarations bound to actual claim UIDs, workload/container identities and destinations |
+| ConfidentialVolume controller and public package approval | [Controller and signing tool](../../components/confidential-volume-controller/), [public deployment values](../../overrides/values-confidential-volume-controller-edge.yaml) | Deployed namespace-scoped resync loop resolves inputs, publishes requests, verifies separately signed Ed25519 approvals and publishes immutable artifacts/status. No workload writes, key reads or formatting |
+| Kata agent changes | [Native agent patch and modules](../../components/confidential-storage-kata/native-agent/) | Admission/create/cleanup hooks; actual block-device resolution; private storage-service activation; approved mounts into app; raw storage nodes/grants removed; bounded NVIDIA CDI retained |
+| Trusted guest storage daemon and backend | [Service](../../components/confidential-storage-service/), [backend](../../components/confidential-storage-guest/) | RO verity/LUKS validation and mount; RW approved blank-device initialization, keyed integrity, reopen, journal and cleanup. Runs as guest root, outside application containers |
+| Private key adapter | [CDH adapter](../../components/confidential-storage-kbs/src/private_cdh.rs) | Enforces authority-derived permits and exact key-resource allowlist; uses existing private CDH ttRPC; explicitly converts stored hex credential to raw bytes |
+| Storage operation authentication and state | [Authority](../../components/confidential-storage-authority/), [guest client](../../components/confidential-storage-client/) | Request-bound CPU/GPU authentication through standard KBS RCAR; signed grants; retained model-generation, ownership, initialization and policy history. Authority holds no volume keys |
+| Combined measured GPU/storage guest | [Guest assembly](../../tests/confidential-storage/native-guest/build.py), [Qwen preparer](../../tests/confidential-storage/gpu-guest/prepare.py) | Packages patched agent, daemon, workload-specific public config, cryptsetup/verity/integrity/filesystem tools and missing matching modules. AA/CDH/NVIDIA binaries preserved; kernel source unchanged |
+| Scoped Trustee configuration | [GPU/model-key override](../../overrides/values-trustee-gpu-model-keys.yaml) | Adds two retained credentials and exact approved guest/workload identities through existing KBS policy and Vault/ESO mechanisms |
+| Serving and demonstration integration | [Qwen test chart](../../tests/confidential-storage/gpu-guest/chart/), [chatbot chart](../../charts/coco-supported/qwen-chat/) | Reviewed KServe template, narrow UID-1001 SCC, startup verification, two mounts and separate chatbot port 30081 |
 
-For the eventual stock-gap report, record for every item: exact installed version,
-documented behavior, source inspection, reproduced behavior, our added files or
-configuration, tests, and likely upstream owner. Distinguish “not documented”,
-“not tested”, “prototype does not support”, and “demonstrated absent”.
+The privileged operations are in the **guest kernel and trusted guest daemon**.
+vLLM is UID/GID 1001, drops all capabilities, has a read-only root filesystem and
+receives no raw storage devices, key sockets or service-account token. There is
+no privileged application-side storage helper. Removing application privileges
+does not remove the trusted guest infrastructure's need to create device-mapper
+mappings and mount filesystems.
 
-## Delivery order
+The existing GPU image had dm-crypt and dm-verity support but lacked the required
+dm-integrity module. The combined image adds matching `dm-integrity`, `xor`,
+`async_tx` and `async_xor` modules plus userspace dependencies. That is a concrete
+image-packaging delta, not evidence that OpenShift storage generally lacks integrity.
 
-1. Inventory exact GPU guest modules/interfaces and pin its current source baseline.
-2. Resolve private CDH key access and authority compatibility; preserve current
-   GPU evidence verification and resource policy.
-3. Generalize the existing service/agent for multiple volumes, package a separate
-   measured GPU guest and generate static authenticated bindings.
-4. Prove Qwen with the available RO disk and a fresh RW claim, with no application
-   privileges, then prove fresh-VM persistence and denial/cleanup.
-5. Exercise OCI/populator distribution and add the CRD reconciler using the same
-   descriptor format. Preserve a clear report of which stages are implemented.
+## Gaps in the pinned Validated Pattern
 
-This gives a small initial integration surface: one patched guest agent, one
-packaged private storage daemon, guest dependencies/configuration, one persistent
-authority and deployment manifests. Reuse the existing populator when needed;
-automate the new API only after the guest contract is working.
+The upstream baseline already composes OSC/Trustee, Vault/ESO, bare-metal runtime
+configuration, backing storage, InitData policies and example workloads. Its
+[`values-baremetal.yaml`](https://github.com/validatedpatterns/coco-pattern/blob/aa04a093268be8ac92174313848a4c44298fbc41/values-baremetal.yaml)
+also contains GPU chart wiring, commented out in that baseline. We are not adding
+confidential GPU execution, CSI storage or key brokering from scratch.
+
+The following integrated storage use case is absent from that pinned pattern.
+Some pieces now exist in our fork, but are not a default pattern installation.
+
+| Missing pattern integration | What exists in our implementation | Remaining integration boundary / likely maintainer |
+| --- | --- | --- |
+| OCI model-volume distribution | Working publisher, source CRD, populator Helm chart and proven import | Pattern: package images, install CRD/controller/RBAC in ordered applications, configure registry trust and document publication/import lifecycle |
+| ConfidentialVolume API and reconciliation | Deployed schema/controller with signed package validation | Pattern: wire chart/public signer trust into cluster-group configuration and upgrades; establish who supplies approved packages |
+| Combined GPU + persistent-storage guest | Working custom measured initrd and RuntimeClass | CoCo/Kata/OSC: maintain agent/service interfaces and guest packaging; pattern: select supported artifact and manage runtime/reference rollout |
+| Storage lifecycle authority | Restricted service, retained state PVC and Vault/ESO credentials | Define ownership of this additional service and trusted state; package deployment, enrollment, backup and recovery. It is not covered merely by installing Trustee |
+| Scoped storage-key and measurement enrollment | Working standard Trustee configuration for these two resources | Pattern/Trustee integration: reviewed credential/reference provisioning and upgrade/revocation workflow; CR creation must not authorize its own key release |
+| Unprivileged KServe storage example | Working test chart and real model/data mounts with measured process policy | Pattern: supported example/application values, policy-generation and KServe mutation compatibility, readiness evidence and user-facing runbook |
+| Integrated validation and lifecycle | Retained RO/RW/GPU/controller positive and denial evidence | Pattern/OSC: clean-cluster replay, supported upgrade matrix, failure/recovery tests and retention rules across component upgrades |
+
+The added charts are not yet wired into the normal top-level cluster-group
+applications as a complete storage feature. The Qwen integration chart remains
+under `tests/`, and guest preparation, authority enrollment and rollout use
+explicit tooling. The controller's publication is real; it does not turn this
+fork into a “declare volumes and workload, then everything deploys” installation.
+
+## Gaps at the CoCo / Kata interface
+
+These are the parts pattern YAML alone cannot supply:
+
+- **Guest storage activation before application startup.** Our downstream agent
+  patch resolves devices, invokes trusted storage code and supplies only mounts.
+  A maintained upstream interface/build is needed to avoid carrying this patch.
+- **Authenticated, reusable volume configuration.** Our service configuration is
+  currently embedded in a workload-specific measured guest, with matching InitData.
+  Generic configuration delivery needs an authenticated contract covering volume,
+  consumer, destination, profile, key reference and initialization policy.
+- **Supported private AA/CDH and attestation-result contracts.** We reuse binaries
+  but add adapters, including an explicit installed EAR compatibility profile.
+  Versioned interoperability tests are needed across guest and Trustee upgrades.
+- **Integrated lifecycle semantics.** First formatting, identity retention,
+  ownership, cleanup and recovery span agent, storage service and authority.
+  They need defined interfaces and maintained tests, not only a mount command.
+
+These are integration needs for the behavior demonstrated here, not assertions
+that every upstream proposal lacks overlapping features. Our custom
+`storage.confidentialcontainers.org/v1alpha1` APIs are not upstream standards.
+
+## Limits still present in our implementation
+
+| Limit | Current behavior / implication |
+| --- | --- |
+| Approval is not deployment | Controller publishes public artifacts and status. Guest build, trusted enrollment, Trustee updates and KServe rollout remain explicit. No admission gate automatically ties KServe launch to CR status |
+| Approval is not runtime revocation | Expiry withdraws controller approval status; it does not stop an existing VM or erase a key already released. Validation used a 24-hour lab approval |
+| Limited tested profiles | Live pair: 2 GiB RO model and 1 GiB RW ext4, one application container/replica, exclusive RWOP claims. Compiler supports up to eight bindings; this does not prove eight-volume hardware coverage |
+| Crash recovery and fencing | Clean close/fresh-VM reopen tested; uncertain effects retain ownership for explicit recovery. Authority ownership is not physical fencing of an already unlocked VM |
+| Authority trust and rollback | Retained state survives restarts, but same-cluster storage/admin control cannot provide hostile-admin rollback resistance. Production freshness needs an independently trusted state domain |
+| RW replay protection | Keyed dm-integrity detects unauthenticated changes, not replay of old valid sectors or snapshots. Full RW freshness remains a separate design requirement |
+| Key and artifact lifecycle | No complete automated rotation/adoption/revocation/restore workflow; no controller artifact garbage collection/finalizers. Retain used volume keys and authority history |
+| Confidential transport | Chat port 30081 and backend are HTTP; the chatbot is outside the VM. Protected model/data storage does not imply protected client-to-TEE prompts |
+| Installation/support coverage | Successful lab integration is not a qualified stock OSC feature or a replay-verified clean-cluster procedure |
+
+## Evidence for what is complete
+
+- [GPU startup log](../../tests/confidential-storage/evidence/2026-10-14/gpu-live-bringup/kserve-startup-v19.log): RO model hash verification, RW reopen, CUDA probe and vLLM startup.
+- [VM/device mapping](../../tests/confidential-storage/evidence/2026-10-14/gpu-live-bringup/kserve-vm-v19.json) and [launch verification](../../tests/confidential-storage/evidence/2026-10-14/gpu-live-bringup/live-launch-v19.json): actual confidential VM and GPU attachment.
+- [Authority history](../../tests/confidential-storage/evidence/2026-10-14/gpu-live-bringup/authority-state-v19.json): retained Ready volumes and initialization journal.
+- [Chat audit](../../tests/confidential-storage/evidence/2026-10-14/gpu-live-bringup/chat-audit-v19.json): real response through the separate chatbot/predictor path.
+- [Controller validation](../../tests/confidential-storage/evidence/2026-10-14/volume-controller/validation.json) and [signature rejection](../../tests/confidential-storage/evidence/2026-10-14/volume-controller/signature-denial.json): both real declarations, signed publication, negative approval test and restart persistence; 21 controller plus 15 compiler tests recorded.
+
+These are retained test results, not a new live health check. The controller was
+validated against the already running v19 workload; it did not perform its rollout.

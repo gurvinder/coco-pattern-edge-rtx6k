@@ -1,17 +1,18 @@
 # ConfidentialVolume and authenticated workload bindings
 
-**Controller update:** namespace reconciliation, signed configuration publication and CR status are now implemented. See [ConfidentialVolume controller](confidential-volume-controller.md). Earlier descriptions of an offline-only compiler below record the pre-controller implementation; trusted package approval and rollout remain explicit.
+**Current status, 14 October 2026:** the two-volume Qwen GPU E2E and namespace
+ConfidentialVolume controller are implemented and validated. The controller
+resolves declarations/bindings, verifies signed deployment packages and publishes
+immutable configuration/status; trusted preparation and rollout remain explicit.
+See the [current walkthrough](qwen-storage-walkthrough-and-gaps.md),
+[controller guide](confidential-volume-controller.md) and
+[baseline gap report](minimal-integration-and-stock-gaps.md).
 
-**Current status:** the two-volume Qwen GPU E2E is now validated. The schema/compiler remain offline inputs; no general ConfidentialVolume reconciler is installed. See the [current walkthrough](qwen-storage-walkthrough-and-gaps.md). The original design/checkpoint text below predates that live integration.
-
-**Status: development schema and offline approval-request compiler implemented;
-not installed, no reconciler or runtime approval resolver yet.** This extends the
-[Qwen/KServe integration plan](qwen-kserve-gpu-integration-plan.md). The deployed
-guest prototype supports a single explicitly configured volume. A multi-volume
-agent/service extension is now unit-tested; see the
-[implementation checkpoint](multi-volume-implementation.md). The implementation
-must support a bounded list of volumes, with the initial GPU example using one RO
-model and one RW data volume.
+This document retains the API design and intended security requirements that
+preceded those implementations. It extends the
+[Qwen/KServe integration plan](qwen-kserve-gpu-integration-plan.md); implementation
+status and tested limits are recorded in the current guides above. The initial
+live workload binds one RO model and one RW data volume to one consumer.
 
 ## Resource responsibilities
 

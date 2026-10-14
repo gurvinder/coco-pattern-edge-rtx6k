@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-14",
+  "scope": "development multi-volume source validation; not installed; no GPU/storage E2E claim",
+  "baseCommit": "328c30b",
+  "rustToolchain": "1.94.1",
+  "kataSourceVersion": "3.31.0",
+  "results": {
+    "contractCompiler": {
+      "passed": 14
+    },
+    "authority": {
+      "passed": 110
+    },
+    "guest": {
+      "passed": 55,
+      "ignored": 3
+    },
+    "client": {
+      "passed": 3
+    },
+    "privateCdh": {
+      "passed": 2
+    },
+    "service": {
+      "passedPerBuild": 8,
+      "builds": [
+        "default",
+        "private-cdh"
+      ]
+    },
+    "nativeAgent": {
+      "passed": 12
+    },
+    "chartLint": "passed",
+    "crdServerDryRun": "passed; not installed",
+    "cleanNativeSourcePreparation": "passed",
+    "previewAll": "unavailable: no Make target",
+    "validateSchema": "existing bare-metal values rendering fails: global.hardware.profile absent"
+  },
+  "liveChanges": {
+    "isolatedCpuCompilerPod": true,
+    "productionRuntime": false,
+    "kserve": false,
+    "trustee": false,
+    "storageDisksOrKeys": false,
+    "crdInstalled": false
+  },
+  "qwenHealth": {
+    "podUid": "d5cc3080-ae0b-4490-b145-56a216732566",
+    "phase": "Running",
+    "readyContainers": 2,
+    "restarts": 0
+  },
+  "sourceSha256": {
+    "components/confidential-storage-kata/native-agent/storage_service.rs": "6109766ebf459692cdf2e24421bfc1ba999d7767b65587e2e57b9471e3a420af",
+    "components/confidential-storage-kata/native-agent/native-lifecycle.patch": "77133a0ca0a89a88e582d1366d7ad8dd6f2bc27be09074645506078683b6be61",
+    "components/confidential-storage-service/src/main.rs": "3b0d24cfff6f471c9ffe6bcd6adff38540fe65058319a66fba5a066a8ae407eb",
+    "components/confidential-storage-service/src/group.rs": "f50b241e5f9d7e9e74ba42edbeba38a84ecfc7b38fb8b41c034776d1691cc7e0",
+    "components/confidential-storage-kbs/src/private_cdh.rs": "679f544e88036a5aa99fcfacd9a3b316ec52d03f3409be67fe0278b1c73ff208",
+    "components/confidential-volume-contract/compiler.py": "779101862d65752e1266f06d93227ad0c5e57a2e5d7369f5a64d1332213e2ffb",
+    "charts/coco-supported/confidential-volumes/crds/confidentialvolumes.yaml": "876d9dc1afd122deff9225d436c7e515e005acd2b206bfedcf36aff162c4f297"
+  }
+}

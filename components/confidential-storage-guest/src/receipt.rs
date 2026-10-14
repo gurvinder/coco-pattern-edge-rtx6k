@@ -178,10 +178,9 @@ impl Verifier {
         {
             return Err(Error::Invalid);
         }
-        if !matches!(
-            (claims.access.as_str(), claims.destination.as_str()),
-            ("rw", "/data") | ("ro", "/models")
-        ) {
+        if !matches!(claims.access.as_str(), "rw" | "ro")
+            || !crate::binding::destination(&claims.destination)
+        {
             return Err(Error::Invalid);
         }
         let actual = Expected {

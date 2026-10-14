@@ -10,6 +10,9 @@ use reqwest::{redirect, tls, Certificate, Url};
 use std::{net::SocketAddr, time::Duration};
 use zeroize::Zeroizing;
 
+#[cfg(all(feature = "private-cdh", target_os = "linux"))]
+pub mod private_cdh;
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("invalid measured storage KBS configuration")]

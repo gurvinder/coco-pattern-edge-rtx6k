@@ -35,10 +35,9 @@ def validate_binding(value):
         result["manifest_uri"],
     ):
         raise Denied("invalid manifest URI")
-    if (result["access"], result["destination"]) not in (
-        ("rw", "/data"),
-        ("ro", "/models"),
-    ):
+    from storage_profiles import destination
+
+    if result["access"] not in {"rw", "ro"} or not destination(result["destination"]):
         raise Denied("invalid access/destination")
     return result
 

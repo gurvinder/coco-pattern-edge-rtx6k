@@ -1,7 +1,9 @@
 # Native agent lifecycle experiment
 
 This is a separate guest-only integration against the installed Kata 3.31.0
-source baseline. It is **development code, installed only in the isolated test handler**.
+source baseline. It is **development code**. The earlier single-volume build is
+installed only in the isolated test handler; the current multi-volume overlay is
+unit-tested and not installed.
 Only the explicitly measured RO/RW test images and strict policies are authorized. It
 keeps Kata's normal rustjail process, signal, cgroup and namespace lifecycle.
 It supersedes the earlier adapter assumptions for this live experiment; do not
@@ -12,11 +14,12 @@ systemd cgroups and no incoming PID namespace. The native integration explicitly
 admits one trusted pause plus one measured consumer instead of routing either
 through the earlier custom process manager.
 
-Before normal device handling, the agent resolves the one SCSI attachment,
+Before normal device handling, the agent resolves the approved SCSI attachments by their transport paths,
 contacts the private guest storage service, removes raw block devices and
 positive block/wildcard device grants, then inserts the service's read-only
-`/models` or read-write `/data` bind mount according to the measured binding. The application must have a read-only rootfs, non-root UID,
-NoNewPrivs and empty capability sets. Additional block storage, namespace paths,
+`/models` or read-write `/data` bind mount (version 1), or up to eight explicitly
+bound mounts (version 2). The application must have a read-only rootfs, non-root UID,
+NoNewPrivs and empty capability sets. Unlisted block storage, namespace paths,
 hooks, private-tree aliases and alternate CDI/CDH privileged helpers are denied.
 All host-provided file bind mounts are removed before native mounting, including
 `/etc/hosts`, passwd/group injection and termination-log mounts. `/dev/shm` is
@@ -58,7 +61,7 @@ cargo +1.94.1 build --locked --release -p kata-agent --no-default-features \
   --features init-data,agent-policy
 ```
 
-Nine tests pass, covering the actual runtime shape, independent privilege escape
+Twelve tests pass, covering the actual runtime shape, independent privilege escape
 attempts, mount/path aliases, sandbox hooks/modules/recreation and cleanup
 admission, discarded-copy bounds and exact Kubernetes label selection. The name
 check uses `io.kubernetes.container.name`, matching the strict policy; CRI-O
@@ -74,3 +77,14 @@ networking is available; a transport error or failed cleanup retains ownership.
 [Model inference](../../../docs/confidential-storage/native-model-serving.md) and
 [RW service integration](../../../docs/confidential-storage/native-rw-storage.md) now pass.
 The additional RW test rejects application capabilities and overlapping mounts.
+
+Version 2 accepts one consumer with multiple model/data volumes. It rejects
+missing/duplicate SCSI locators, unexpected raw devices, overlapping targets,
+swapped service responses and duplicate activation sources. It publishes no app
+mount until the complete response validates. Mount targets are restricted to
+approved paths under `/models`, `/data` and `/checkpoints`.
+
+**GPU integration remains disabled:** the overlay still rejects non-storage
+devices and hooks, and the lifecycle patch still skips NVIDIA CDI processing in
+storage guests. Preserve and validate the measured GPU provisioning path before
+using this build for Qwen. Compiling these tests is not GPU E2E validation.

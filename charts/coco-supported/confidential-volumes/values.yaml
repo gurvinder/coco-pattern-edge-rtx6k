@@ -1,0 +1,3 @@
+# This chart installs the schema only. It installs no reconciler, approval signer,
+# storage keys or guest runtime. Contracts require explicit compilation/approval.
+{}

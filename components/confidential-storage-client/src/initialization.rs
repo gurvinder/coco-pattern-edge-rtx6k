@@ -388,9 +388,11 @@ impl<E: Evidence> AuthorityClient<E> {
         let e = &request.expected;
         if e.session_sha256 != self.session
             || e.policy_sha256 != self.config.policy_sha256
-            || e.profile_sha256 != confidential_storage_guest::profile::profile_sha256()
+            || !confidential_storage_guest::profile::supports_binding(
+                &e.profile_sha256,
+                &e.destination,
+            )
             || e.access != "rw"
-            || e.destination != "/data"
             || !digest(&e.nonce)
             || !digest(&request.plan_sha256)
         {

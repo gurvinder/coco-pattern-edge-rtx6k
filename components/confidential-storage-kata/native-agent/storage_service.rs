@@ -22,7 +22,8 @@ const CONFIG: &str = "/etc/confidential-storage/service.json";
 const SOCKET: &str = "/run/coco/storage-service/agent.sock";
 const DEVICE: &str = "/dev/encrypted-data";
 const ROOT: &str = "/run/coco/storage";
-const MAX_FRAME: usize = 4096;
+const MAX_FRAME: usize = 16384;
+const MAX_VOLUMES: usize = 8;
 lazy_static! {
     static ref STATE: Arc<Mutex<State>> = Arc::new(Mutex::new(State::default()));
 }
@@ -50,16 +51,38 @@ struct Binding {
     container_name: String,
     destination: String,
     access: String,
+    #[serde(default = "legacy_id")]
+    binding_id: String,
+    #[serde(default = "legacy_device")]
+    transport_path: String,
+}
+fn legacy_id() -> String {
+    "legacy".into()
+}
+fn legacy_device() -> String {
+    DEVICE.into()
+}
+#[derive(Clone)]
+struct Bindings {
+    legacy: bool,
+    volumes: Vec<Binding>,
+}
+#[derive(Deserialize)]
+struct VolumeBinding {
+    binding_id: String,
+    transport_path: String,
+    expected: Binding,
 }
 #[derive(Deserialize)]
 struct Config {
     schema_version: u32,
     purpose: String,
-    expected: Binding,
+    expected: Option<Binding>,
+    volumes: Option<Vec<VolumeBinding>>,
 }
 #[derive(Default)]
 pub struct State {
-    config: Option<Option<Binding>>,
+    config: Option<Option<Bindings>>,
     sandbox: Option<String>,
     pause: Option<String>,
     consumer: Option<String>,
@@ -74,7 +97,7 @@ pub async fn lock() -> Result<OwnedMutexGuard<State>> {
     }
     Ok(state)
 }
-fn load() -> Result<Option<Binding>> {
+fn load() -> Result<Option<Bindings>> {
     let mut file = match OpenOptions::new()
         .read(true)
         .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
@@ -100,24 +123,110 @@ fn load() -> Result<Option<Binding>> {
     (&mut file).take(256 * 1024 + 1).read_to_end(&mut bytes)?;
     ensure!(bytes.len() <= 256 * 1024, "storage config too large");
     let config: Config = serde_json::from_slice(&bytes)?;
-    ensure!(
-        config.schema_version == 1
-            && config.purpose == "isolated-confidential-storage/v1"
-            && matches!(
-                (
-                    config.expected.access.as_str(),
-                    config.expected.destination.as_str()
-                ),
-                ("ro", "/models") | ("rw", "/data")
-            )
-            && !config.expected.container_name.is_empty(),
-        "unsupported storage binding"
-    );
-    Ok(Some(config.expected))
+    Ok(Some(parse_bindings(config)?))
 }
+fn safe_destination(value: &str) -> bool {
+    if value.len() > 256 || !value.starts_with('/') {
+        return false;
+    }
+    let parts: Vec<_> = value[1..].split('/').collect();
+    !parts.is_empty()
+        && parts.len() <= 8
+        && ["models", "data", "checkpoints"].contains(&parts[0])
+        && parts.iter().all(|p| {
+            !p.is_empty()
+                && p.len() <= 63
+                && p.as_bytes()[0].is_ascii_alphanumeric()
+                && p.bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
+        })
+}
+fn parse_bindings(config: Config) -> Result<Bindings> {
+    let (legacy, volumes) = match (
+        config.schema_version,
+        config.purpose.as_str(),
+        config.expected,
+        config.volumes,
+    ) {
+        (1, "isolated-confidential-storage/v1", Some(b), None) => {
+            ensure!(
+                matches!(
+                    (b.access.as_str(), b.destination.as_str()),
+                    ("ro", "/models") | ("rw", "/data")
+                ) && b.binding_id == "legacy"
+                    && b.transport_path == DEVICE,
+                "invalid legacy binding"
+            );
+            (true, vec![b])
+        }
+        (2, "confidential-storage-guest/v2", None, Some(volumes)) => (
+            false,
+            volumes
+                .into_iter()
+                .map(|v| Binding {
+                    binding_id: v.binding_id,
+                    transport_path: v.transport_path,
+                    ..v.expected
+                })
+                .collect(),
+        ),
+        _ => bail!("unsupported storage binding schema"),
+    };
+    ensure!(
+        !volumes.is_empty() && volumes.len() <= MAX_VOLUMES,
+        "invalid volume count"
+    );
+    let mut ids = std::collections::BTreeSet::new();
+    let mut paths = std::collections::BTreeSet::new();
+    for (index, b) in volumes.iter().enumerate() {
+        ensure!(
+            !b.container_name.is_empty()
+                && b.container_name == volumes[0].container_name
+                && matches!(b.access.as_str(), "ro" | "rw")
+                && safe_destination(&b.destination)
+                && !b.binding_id.is_empty()
+                && b.binding_id.len() <= 63
+                && b.binding_id.as_bytes()[0].is_ascii_lowercase()
+                && b.binding_id
+                    .bytes()
+                    .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'-')
+                && ids.insert(&b.binding_id)
+                && paths.insert(&b.transport_path)
+                && (legacy
+                    || (0..MAX_VOLUMES)
+                        .any(|n| b.transport_path == format!("/dev/coco-volume-{n}")))
+                && volumes[..index]
+                    .iter()
+                    .all(|a| !Path::new(&a.destination).starts_with(&b.destination)
+                        && !Path::new(&b.destination).starts_with(&a.destination)),
+            "invalid or overlapping storage binding"
+        );
+    }
+    Ok(Bindings { legacy, volumes })
+}
+#[derive(Serialize)]
+struct Attachment {
+    binding_id: String,
+    device_path: String,
+    major: u32,
+    minor: u32,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MountedVolume {
+    binding_id: String,
+    source: String,
+    destination: String,
+    readonly: bool,
+}
+
 #[derive(Serialize)]
 #[serde(tag = "action", rename_all = "kebab-case")]
 enum Request {
+    ActivateMany {
+        container_id: String,
+        devices: Vec<Attachment>,
+    },
     Activate {
         container_id: String,
         device_path: String,
@@ -131,6 +240,9 @@ enum Request {
 #[derive(Deserialize)]
 #[serde(tag = "result", rename_all = "kebab-case", deny_unknown_fields)]
 enum Response {
+    MountedMany {
+        mounts: Vec<MountedVolume>,
+    },
     Mounted {
         source: String,
         destination: String,
@@ -171,7 +283,7 @@ async fn call(request: Request) -> Result<Response> {
     .map_err(|_| anyhow!("private service worker failed; retained state requires cleanup"))?
 }
 impl State {
-    fn binding(&self) -> Option<&Binding> {
+    fn binding(&self) -> Option<&Bindings> {
         self.config.as_ref().and_then(|v| v.as_ref())
     }
     pub fn enabled(&self) -> bool {
@@ -308,7 +420,7 @@ impl State {
         spec: &mut oci::Spec,
         sandbox: &Arc<Mutex<crate::sandbox::Sandbox>>,
     ) -> Result<()> {
-        let Some(binding) = self.binding().cloned() else {
+        let Some(bindings) = self.binding().cloned() else {
             return Ok(());
         };
         ensure!(!self.closing && !self.closed, "storage guest closed");
@@ -343,61 +455,71 @@ impl State {
             self.pause.as_deref() == Some(&sid) && self.consumer.is_none(),
             "only one measured consumer per guest"
         );
-        validate(req, spec, &binding)?;
+        validate_many(req, spec, &bindings.volumes)?;
         // Reserve before any asynchronous/device/network effect. Never admit a
         // replacement consumer after cancellation or uncertain create failure.
         self.consumer = Some(req.container_id.clone());
-        let source =
-            crate::device::scsi_device_handler::get_scsi_device_name(sandbox, &req.devices[0].id)
-                .await?;
-        let file = OpenOptions::new()
-            .read(true)
-            .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
-            .open(&source)?;
-        let info = file.metadata()?;
-        ensure!(
-            info.file_type().is_block_device(),
-            "resolved attachment is not block storage"
-        );
-        let response = call(Request::Activate {
-            container_id: req.container_id.clone(),
-            device_path: source,
-            major: libc::major(info.rdev()),
-            minor: libc::minor(info.rdev()),
-        })
-        .await?;
-        let Response::Mounted {
-            source,
-            destination,
-            readonly,
-        } = response
-        else {
-            // No consumer has been created yet. A completed denial is safe to
-            // clean up now, while guest networking is still available. Close
-            // retains ownership on any uncertain/busy failure and permanently
-            // closes admission; a transport error above never enters this path.
-            self.close().await?;
-            bail!("private storage activation denied; cleanup completed");
+        let mut devices = Vec::new();
+        for binding in &bindings.volumes {
+            let device = req
+                .devices
+                .iter()
+                .find(|d| d.container_path == binding.transport_path)
+                .context("missing bound device")?;
+            let source =
+                crate::device::scsi_device_handler::get_scsi_device_name(sandbox, &device.id)
+                    .await?;
+            let file = OpenOptions::new()
+                .read(true)
+                .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+                .open(&source)?;
+            let info = file.metadata()?;
+            ensure!(
+                info.file_type().is_block_device(),
+                "resolved attachment is not block storage"
+            );
+            devices.push(Attachment {
+                binding_id: binding.binding_id.clone(),
+                device_path: source,
+                major: libc::major(info.rdev()),
+                minor: libc::minor(info.rdev()),
+            });
+        }
+        let request = if bindings.legacy {
+            let d = devices.pop().unwrap();
+            Request::Activate {
+                container_id: req.container_id.clone(),
+                device_path: d.device_path,
+                major: d.major,
+                minor: d.minor,
+            }
+        } else {
+            Request::ActivateMany {
+                container_id: req.container_id.clone(),
+                devices,
+            }
         };
-        ensure!(
-            destination == binding.destination && readonly == (binding.access == "ro"),
-            "private service binding mismatch"
-        );
-        let suffix = source
-            .strip_prefix(&format!("{ROOT}/"))
-            .context("invalid private source")?;
-        ensure!(
-            !suffix.is_empty()
-                && suffix.len() <= 128
-                && suffix
-                    .bytes()
-                    .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
-                && suffix != "."
-                && suffix != "..",
-            "invalid private activation identity"
-        );
-        // Only the guest-resolved service mount is exposed. The original host
-        // raw device and every positive block/wildcard cgroup grant are removed.
+        let response = call(request).await?;
+        let mounts = match response {
+            Response::Mounted {
+                source,
+                destination,
+                readonly,
+            } if bindings.legacy => vec![MountedVolume {
+                binding_id: bindings.volumes[0].binding_id.clone(),
+                source,
+                destination,
+                readonly,
+            }],
+            Response::MountedMany { mounts } if !bindings.legacy => mounts,
+            _ => {
+                self.close().await?;
+                bail!("private storage activation denied; cleanup completed");
+            }
+        };
+        validate_mounts(&mounts, &bindings.volumes)?;
+        // This adapter still admits only storage devices. GPU admission will be
+        // added against the actual measured GPU runtime shape, not a wildcard.
         req.devices.clear();
         let linux = spec.linux_mut().as_mut().context("missing linux spec")?;
         linux.set_devices(Some(vec![]));
@@ -408,25 +530,66 @@ impl State {
                 });
             }
         }
-        let mount = oci::MountBuilder::default()
-            .destination(destination)
-            .typ("bind")
-            .source(source)
-            .options(vec![
-                "bind".to_owned(),
-                if readonly { "ro".into() } else { "rw".into() },
-                "nosuid".into(),
-                "nodev".into(),
-                "noexec".into(),
-            ])
-            .build()?;
-        spec.mounts_mut()
-            .as_mut()
-            .context("missing mounts")?
-            .push(mount);
+        for mounted in mounts {
+            let mount = oci::MountBuilder::default()
+                .destination(mounted.destination)
+                .typ("bind")
+                .source(mounted.source)
+                .options(vec![
+                    "bind".to_owned(),
+                    if mounted.readonly {
+                        "ro".into()
+                    } else {
+                        "rw".into()
+                    },
+                    "nosuid".into(),
+                    "nodev".into(),
+                    "noexec".into(),
+                ])
+                .build()?;
+            spec.mounts_mut()
+                .as_mut()
+                .context("missing mounts")?
+                .push(mount);
+        }
         self.mounted = true;
         Ok(())
     }
+}
+fn validate_mounts(mounts: &[MountedVolume], bindings: &[Binding]) -> Result<()> {
+    ensure!(
+        mounts.len() == bindings.len(),
+        "private mount count mismatch"
+    );
+    let mut ids = std::collections::BTreeSet::new();
+    let mut sources = std::collections::BTreeSet::new();
+    for mounted in mounts {
+        let binding = bindings
+            .iter()
+            .find(|b| b.binding_id == mounted.binding_id)
+            .context("unknown mounted binding")?;
+        ensure!(
+            ids.insert(&mounted.binding_id)
+                && sources.insert(&mounted.source)
+                && mounted.destination == binding.destination
+                && mounted.readonly == (binding.access == "ro"),
+            "private service binding mismatch"
+        );
+        let suffix = mounted
+            .source
+            .strip_prefix(&format!("{ROOT}/"))
+            .context("invalid private source")?;
+        ensure!(
+            !suffix.is_empty()
+                && suffix.len() <= 128
+                && suffix.as_bytes()[0].is_ascii_alphanumeric()
+                && suffix
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b)),
+            "invalid private activation identity"
+        );
+    }
+    Ok(())
 }
 fn strip_host_binds(spec: &mut oci::Spec) -> Result<()> {
     let mounts = spec.mounts_mut().as_mut().context("missing mounts")?;
@@ -470,7 +633,20 @@ fn measured_container_name(spec: &oci::Spec) -> &str {
         .unwrap_or("")
 }
 
+#[cfg(test)]
 fn validate(req: &CreateContainerRequest, spec: &oci::Spec, binding: &Binding) -> Result<()> {
+    validate_many(req, spec, std::slice::from_ref(binding))
+}
+fn validate_many(
+    req: &CreateContainerRequest,
+    spec: &oci::Spec,
+    bindings: &[Binding],
+) -> Result<()> {
+    ensure!(
+        !bindings.is_empty() && bindings.len() <= MAX_VOLUMES,
+        "invalid binding count"
+    );
+    let binding = &bindings[0];
     ensure!(
         measured_container_name(spec) == binding.container_name,
         "unapproved consumer"
@@ -484,19 +660,30 @@ fn validate(req: &CreateContainerRequest, spec: &oci::Spec, binding: &Binding) -
         "invalid consumer ID"
     );
     ensure!(
-        req.devices.len() == 1
-            && req.devices[0].type_ == "scsi"
-            && req.devices[0].container_path == DEVICE,
-        "one SCSI attachment required"
+        req.devices.len() == bindings.len(),
+        "exact storage attachments required"
     );
-    let fields: Vec<_> = req.devices[0].id.split(':').collect();
-    ensure!(
-        fields.len() == 2
-            && fields
-                .iter()
-                .all(|f| !f.is_empty() && f.bytes().all(|b| b.is_ascii_digit())),
-        "invalid SCSI locator"
-    );
+    let mut paths = std::collections::BTreeSet::new();
+    let mut locators = std::collections::BTreeSet::new();
+    for device in &req.devices {
+        ensure!(
+            device.type_ == "scsi"
+                && paths.insert(&device.container_path)
+                && locators.insert(&device.id)
+                && bindings
+                    .iter()
+                    .any(|b| b.transport_path == device.container_path),
+            "unexpected storage attachment"
+        );
+        let fields: Vec<_> = device.id.split(':').collect();
+        ensure!(
+            fields.len() == 2
+                && fields
+                    .iter()
+                    .all(|f| !f.is_empty() && f.bytes().all(|b| b.is_ascii_digit())),
+            "invalid SCSI locator"
+        );
+    }
     validate_process(spec.process().as_ref().context("missing process")?)?;
     ensure!(
         spec.hooks().is_none() && req.shared_mounts.is_empty(),
@@ -510,10 +697,14 @@ fn validate(req: &CreateContainerRequest, spec: &oci::Spec, binding: &Binding) -
     );
     let linux = spec.linux().as_ref().context("missing linux")?;
     let devices = linux.devices().as_ref().context("missing raw attachment")?;
+    let mut raw_paths = std::collections::BTreeSet::new();
     ensure!(
-        devices.len() == 1
-            && devices[0].typ() == oci::LinuxDeviceType::B
-            && devices[0].path() == Path::new(DEVICE),
+        devices.len() == bindings.len()
+            && devices.iter().all(|d| d.typ() == oci::LinuxDeviceType::B
+                && raw_paths.insert(d.path())
+                && bindings
+                    .iter()
+                    .any(|b| d.path() == Path::new(&b.transport_path))),
         "unexpected raw devices"
     );
     ensure!(
@@ -525,8 +716,10 @@ fn validate(req: &CreateContainerRequest, spec: &oci::Spec, binding: &Binding) -
     );
     for mount in spec.mounts().as_ref().context("missing mounts")? {
         ensure!(
-            !mount.destination().starts_with(&binding.destination)
-                && !Path::new(&binding.destination).starts_with(mount.destination()),
+            bindings
+                .iter()
+                .all(|b| !mount.destination().starts_with(&b.destination)
+                    && !Path::new(&b.destination).starts_with(mount.destination())),
             "overlapping model destination"
         );
         let typ = mount.typ().as_deref().context("missing mount type")?;
@@ -612,11 +805,16 @@ mod tests {
             container_name: "consumer".into(),
             destination: "/models".into(),
             access: "ro".into(),
+            binding_id: legacy_id(),
+            transport_path: legacy_device(),
         }
     }
     fn state() -> State {
         State {
-            config: Some(Some(binding())),
+            config: Some(Some(Bindings {
+                legacy: true,
+                volumes: vec![binding()],
+            })),
             ..State::default()
         }
     }
@@ -644,6 +842,90 @@ mod tests {
     }
     fn valid(req: &CreateContainerRequest, value: Value) -> bool {
         validate(req, &serde_json::from_value(value).unwrap(), &binding()).is_ok()
+    }
+    fn multiple() -> Bindings {
+        parse_bindings(serde_json::from_value(json!({"schema_version":2,"purpose":"confidential-storage-guest/v2",
+            "volumes":[
+                {"binding_id":"model","transport_path":"/dev/coco-volume-0","expected":{"container_name":"consumer","destination":"/models/qwen","access":"ro"}},
+                {"binding_id":"data","transport_path":"/dev/coco-volume-1","expected":{"container_name":"consumer","destination":"/data/results","access":"rw"}}
+            ]})).unwrap()).unwrap()
+    }
+    #[test]
+    fn multiple_bindings_resolve_by_transport_path_and_reject_extra_devices() {
+        let bindings = multiple();
+        let (mut req, mut value) = fixture();
+        req.devices[0].container_path = bindings.volumes[0].transport_path.clone();
+        let mut second = req.devices[0].clone();
+        second.container_path = bindings.volumes[1].transport_path.clone();
+        second.id = "0:2".into();
+        req.devices.push(second);
+        value["linux"]["devices"] = json!([
+            {"path":"/dev/coco-volume-1","type":"b","major":8,"minor":16},
+            {"path":"/dev/coco-volume-0","type":"b","major":8,"minor":0}]);
+        let spec: oci::Spec = serde_json::from_value(value).unwrap();
+        assert!(validate_many(&req, &spec, &bindings.volumes).is_ok());
+        req.devices.reverse();
+        assert!(validate_many(&req, &spec, &bindings.volumes).is_ok());
+        req.devices[0].id = req.devices[1].id.clone();
+        assert!(validate_many(&req, &spec, &bindings.volumes).is_err());
+        req.devices[0].id = "0:2".into();
+        req.devices[0].type_ = "vfio-pci".into();
+        assert!(validate_many(&req, &spec, &bindings.volumes).is_err());
+    }
+    #[test]
+    fn private_response_cannot_swap_mounts_access_or_duplicate_sources() {
+        let bindings = multiple();
+        let mut mounts = vec![
+            MountedVolume {
+                binding_id: "model".into(),
+                source: format!("{ROOT}/model-activation"),
+                destination: "/models/qwen".into(),
+                readonly: true,
+            },
+            MountedVolume {
+                binding_id: "data".into(),
+                source: format!("{ROOT}/data-activation"),
+                destination: "/data/results".into(),
+                readonly: false,
+            },
+        ];
+        validate_mounts(&mounts, &bindings.volumes).unwrap();
+        mounts.reverse();
+        validate_mounts(&mounts, &bindings.volumes).unwrap();
+        mounts[0].readonly = true;
+        assert!(validate_mounts(&mounts, &bindings.volumes).is_err());
+        mounts[0].readonly = false;
+        mounts[0].source = mounts[1].source.clone();
+        assert!(validate_mounts(&mounts, &bindings.volumes).is_err());
+        mounts[0].source = format!("{ROOT}/../private");
+        assert!(validate_mounts(&mounts, &bindings.volumes).is_err());
+        mounts.pop();
+        assert!(validate_mounts(&mounts, &bindings.volumes).is_err());
+    }
+    #[test]
+    fn configuration_rejects_overlapping_destinations_and_mixed_consumers() {
+        for path in [
+            "/",
+            "/proc/key",
+            "/data/../models",
+            "/data//child",
+            "/data/.",
+            "/data/é",
+        ] {
+            assert!(!safe_destination(path));
+        }
+        for field in ["destination", "container_name"] {
+            let mut value = json!({"schema_version":2,"purpose":"confidential-storage-guest/v2","volumes":[
+                {"binding_id":"a","transport_path":"/dev/coco-volume-0","expected":{"container_name":"consumer","destination":"/data","access":"rw"}},
+                {"binding_id":"b","transport_path":"/dev/coco-volume-1","expected":{"container_name":"consumer","destination":"/models","access":"ro"}}
+            ]});
+            value["volumes"][1]["expected"][field] = if field == "destination" {
+                json!("/data/child")
+            } else {
+                json!("other")
+            };
+            assert!(parse_bindings(serde_json::from_value(value).unwrap()).is_err());
+        }
     }
     #[test]
     fn measured_name_uses_kubernetes_label_without_cri_fallback() {

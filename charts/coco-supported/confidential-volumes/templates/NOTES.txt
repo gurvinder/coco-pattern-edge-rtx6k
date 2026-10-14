@@ -1,0 +1,3 @@
+ConfidentialVolume schema installed. No controller, guest configuration, key,
+formatting operation or workload rollout is created by this chart.
+Compile declarations explicitly and obtain independent authority approval.

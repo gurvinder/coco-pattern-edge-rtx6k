@@ -36,7 +36,12 @@ def private_pem(path):
 def require_storage_profiles():
     # Package the public profile files beside the authority source. Missing or
     # invalid profiles must prevent startup, not fail after attestation succeeds.
-    for profile in (RO_PROFILE, RW_PROFILE):
+    for profile in (
+        RO_PROFILE,
+        RW_PROFILE,
+        RO_PROFILE.with_name("ro-luks2-verity-v2.json"),
+        RW_PROFILE.with_name("rw-luks2-v2.json"),
+    ):
         read_object(profile.read_bytes(), 64 * 1024)
 
 

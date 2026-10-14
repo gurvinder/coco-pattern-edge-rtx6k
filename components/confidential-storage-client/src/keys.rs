@@ -67,16 +67,14 @@ impl<E: Evidence> AuthorityClient<E> {
     /// or caller-constructed grant cannot be turned into a key permit.
     pub fn authorize_reopen_key(&self, expected: &Expected) -> Result<(VerifiedGrant, KeyPermit)> {
         let profile_ok = match expected.access.as_str() {
-            "rw" => {
-                expected.destination == "/data"
-                    && expected.profile_sha256
-                        == confidential_storage_guest::profile::profile_sha256()
-            }
-            "ro" => {
-                expected.destination == "/models"
-                    && expected.profile_sha256
-                        == confidential_storage_guest::ro_profile::profile_sha256()
-            }
+            "rw" => confidential_storage_guest::profile::supports_binding(
+                &expected.profile_sha256,
+                &expected.destination,
+            ),
+            "ro" => confidential_storage_guest::ro_profile::supports_binding(
+                &expected.profile_sha256,
+                &expected.destination,
+            ),
             _ => false,
         };
         if !profile_ok {

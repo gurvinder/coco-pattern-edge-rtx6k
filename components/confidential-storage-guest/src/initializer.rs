@@ -41,6 +41,7 @@ pub struct Initializer {
     header: Option<File>,
     digest: Option<String>,
     phase: Phase,
+    filesystem_owner: (u32, u32),
 }
 fn invalid() -> std::io::Error {
     std::io::Error::other("trusted storage initialization rejected")
@@ -95,6 +96,23 @@ impl Initializer {
         uuid: &str,
         activation: &str,
     ) -> Result<Self> {
+        Self::preflight_profile(
+            device,
+            expected_bytes,
+            uuid,
+            activation,
+            &crate::profile::profile_sha256(),
+        )
+    }
+    pub fn preflight_profile(
+        device: BlockDevice,
+        expected_bytes: u64,
+        uuid: &str,
+        activation: &str,
+        profile_sha256: &str,
+    ) -> Result<Self> {
+        let filesystem_owner =
+            crate::profile::filesystem_owner(profile_sha256).ok_or_else(invalid)?;
         uuid_bytes(uuid)?;
         uuid_bytes(activation)?;
         if device.bytes != expected_bytes {
@@ -112,6 +130,7 @@ impl Initializer {
             header: None,
             digest: None,
             phase: Phase::Fresh,
+            filesystem_owner,
         })
     }
     pub fn header_sha256(&self) -> Result<&str> {
@@ -251,6 +270,10 @@ impl Initializer {
         self.phase = Phase::CreatingFilesystem;
         let mapping = self.mapping();
         let text = mapping.to_str().ok_or_else(invalid)?;
+        let filesystem_options = format!(
+            "lazy_itable_init=0,lazy_journal_init=0,root_owner={}:{}",
+            self.filesystem_owner.0, self.filesystem_owner.1
+        );
         opener::run_bounded(
             "/usr/sbin/mkfs.ext4",
             &[
@@ -259,7 +282,7 @@ impl Initializer {
                 "-U",
                 &self.uuid,
                 "-E",
-                "lazy_itable_init=0,lazy_journal_init=0,root_owner=1000:1000",
+                &filesystem_options,
                 text,
             ],
             &[],
@@ -349,6 +372,7 @@ mod tests {
     #[test]
     fn uncertain_steps_cannot_be_reexecuted_or_skipped() {
         let mut x = Initializer {
+            filesystem_owner: (1000, 1000),
             device: device(),
             uuid: "be000000-1111-4222-8333-444444444444".into(),
             name: "not-used-by-tests".into(),

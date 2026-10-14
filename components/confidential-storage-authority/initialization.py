@@ -11,6 +11,7 @@ import sqlite3
 import uuid
 
 from authority import Denied, digest, identifier
+from storage_profiles import destination
 
 STEPS = (
     "luks-format",
@@ -84,7 +85,8 @@ def approve(authority, volume_id, plan):
             or record["state"] != "Uninitialized"
             or record["owner"] is not None
             or not binding
-            or (binding["access"], binding["destination"]) != ("rw", "/data")
+            or binding["access"] != "rw"
+            or not destination(binding["destination"])
         ):
             raise Denied("initialization approval requires a new bound writable volume")
         intent = {

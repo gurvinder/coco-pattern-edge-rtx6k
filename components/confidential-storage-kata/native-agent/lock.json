@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "status": "development-isolated-ro-and-rw-e2e-verified",
+  "status": "development-multi-volume-unit-tested-not-gpu-integrated",
   "sourceArchive": "kata-containers-3.31.0.tar.gz",
   "sourceArchiveSha256": "ab8972dc026cfaad85705e93019506384c2af286f715bd364701062c88330891",
   "hostRuntimeChanges": false,
   "files": {
     "native-lifecycle.patch": "77133a0ca0a89a88e582d1366d7ad8dd6f2bc27be09074645506078683b6be61",
-    "storage_service.rs": "6ff0c3cfa67eb1931491606c620d1bfce9ac732f2881d924ba16f7e7c703d778"
+    "storage_service.rs": "6109766ebf459692cdf2e24421bfc1ba999d7767b65587e2e57b9471e3a420af"
   }
 }

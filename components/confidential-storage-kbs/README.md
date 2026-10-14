@@ -8,8 +8,8 @@ method, token-export method or configurable AA endpoint.
 This reuses CoCo's KBS RCAR and encrypted-response implementation, also used by
 CDH, from guest-components fork commit
 `0ab1fb1be6e46293f29600085f929ae035ca3739`. It does **not** retrofit grant enforcement
-into the installed CDH daemon or deploy any key policy. Both live storage E2Es
-remain unfinished and the Kata activation gate remains closed.
+into the installed CDH daemon or deploy any key policy. The isolated CPU RO and RW E2Es passed; the new multi-volume/GPU integration
+is not installed. See the [implementation checkpoint](../../docs/confidential-storage/multi-volume-implementation.md).
 
 ## Authorization and lifecycle
 
@@ -29,7 +29,7 @@ remain unfinished and the Kata activation gate remains closed.
   policy, exact credential allowlist and expiry before access and again before
   returning bytes. Expiry during retrieval discards the result. It exposes no
   method to create a permit from an arbitrary URI or caller-supplied receipt.
-- Each retrieval creates a new KBS protocol client, private TEE key and cookie
+- In the legacy `SnpCpuKbs` provider, each retrieval creates a new KBS protocol client, private TEE key and cookie
   jar. No token or volume key is cached between calls. The returned `KeyMaterial`
   has no Debug/Clone/serialization implementation; its owned allocation is wiped
   on drop. Caller copies, process dumps, swapping and tracing still need guest
@@ -113,3 +113,17 @@ evidence and AS decisions are synthetic. **Never enable `test-fixture`, install
 
 Evidence and remaining gates are in
 [the private key-delivery checkpoint](../../docs/confidential-storage/private-key-delivery.md).
+
+## Existing CDH adapter (opt-in, not live validated)
+
+Feature `private-cdh` adds a provider using only the fixed root-private CDH ttRPC
+socket. The service selects `provider: private-cdh` with a measured resource map
+and explicit `raw32` or `lower-hex64` encoding. It consumes the same opaque permit
+and checks expiry before and after retrieval. There is no fallback to the CPU
+provider, alternate endpoint or encoding autodetection.
+
+CDH may reuse its own KBS attestation session. A fresh authority permit does not
+mean fresh CPU/GPU evidence was collected for every key request. Approve the
+actual GPU CDH/AA configuration, resource policies and acceptable session age
+before enabling this provider. This adapter alone does not solve the authority's
+custom operation-binding protocol against standard Trustee.

@@ -12,6 +12,7 @@ from pathlib import Path
 from authority import Denied, digest, identifier
 from initialization import STEPS, validate_result
 from receipts import AUDIENCE, MAX_LIFETIME, compact, encoded, validate_binding
+from storage_profiles import supports
 
 ACTIONS = {
     "initialization-plan",
@@ -61,7 +62,7 @@ def validate_request(body):
     for field in ("nonce", "profile_sha256", "plan_sha256"):
         digest(body[field])
     binding = validate_binding(body["binding"])
-    if (binding["access"], binding["destination"]) != ("rw", "/data"):
+    if binding["access"] != "rw":
         raise Denied("only private writable storage may initialize")
     if "activation_id" in extra:
         identifier(body["activation_id"])
@@ -92,7 +93,7 @@ def require_record(authority, peer, body):
         or peer.policy_sha256 != record["policy_sha256"]
         or record["generation"] != body["generation"]
         or record["profile_sha256"] != body["profile_sha256"]
-        or record["profile_sha256"] != hashlib.sha256(PROFILE.read_bytes()).hexdigest()
+        or not supports("rw", record["profile_sha256"], body["binding"]["destination"])
         or record.get("mount_binding") != body["binding"]
         or not approval
         or approval["plan_sha256"] != body["plan_sha256"]

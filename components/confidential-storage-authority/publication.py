@@ -11,6 +11,7 @@ import re
 
 from authority import Denied, digest
 from initialization import canonical_uuid
+from storage_profiles import profile_digest, supports
 
 PROFILE_PATH = (
     Path(__file__).resolve().parents[1]
@@ -59,7 +60,7 @@ def validate_manifest(raw, record):
     }
     if any(m[k] != v or type(m[k]) is not type(v) for k, v in expected.items()):
         raise Denied("model manifest does not match registration")
-    if m["profileSha256"] != profile_sha256():
+    if m["profileSha256"] not in {profile_sha256(), profile_digest("ro-luks2-verity-v2")}:
         raise Denied("unsupported model storage profile")
     digest(m["headerSha256"])
     canonical_uuid(m["luksUuid"])
@@ -220,7 +221,8 @@ def approve(authority, volume_id, raw):
         binding = record.get("mount_binding") or {}
         if (
             record["revoked"]
-            or (binding.get("access"), binding.get("destination")) != ("ro", "/models")
+            or binding.get("access") != "ro"
+            or not supports("ro", record["profile_sha256"], binding.get("destination"))
             or record.get("initialization_approval")
             or record.get("initialization_steps")
         ):
@@ -255,11 +257,11 @@ def require_ready(record, header, manifest):
     if (
         record["state"] != "Ready"
         or not approved
-        or (binding.get("access"), binding.get("destination")) != ("ro", "/models")
+        or binding.get("access") != "ro"
+        or not supports("ro", record["profile_sha256"], binding.get("destination"))
         or record.get("initialization_approval")
         or record.get("initialization_steps")
         or approved["header_sha256"] != header
         or approved["manifest_sha256"] != manifest
-        or record["profile_sha256"] != profile_sha256()
     ):
         raise Denied("published model is not approved for this exact manifest")

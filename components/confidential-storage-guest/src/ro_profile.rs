@@ -8,6 +8,11 @@ use serde::Deserialize;
 use std::collections::BTreeSet;
 
 pub const PROFILE: &[u8] = include_bytes!("../profiles/ro-luks2-verity-v1.json");
+pub const PROFILE_V2: &[u8] = include_bytes!("../profiles/ro-luks2-verity-v2.json");
+pub fn supports_binding(digest: &str, destination: &str) -> bool {
+    (digest == profile_sha256() && destination == "/models")
+        || (digest == sha256(PROFILE_V2) && crate::binding::destination(destination))
+}
 pub fn profile_sha256() -> String {
     sha256(PROFILE)
 }
@@ -102,8 +107,7 @@ impl RoManifest {
             return Err(Error::Manifest);
         }
         if c.access != "ro"
-            || c.destination != "/models"
-            || m.profile_sha256 != profile_sha256()
+            || !supports_binding(&m.profile_sha256, &c.destination)
             || m.filesystem != "ext4"
             || m.header_bytes != HEADER_BYTES as u64
             || m.data_offset_bytes != HEADER_BYTES as u64

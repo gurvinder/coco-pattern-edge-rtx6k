@@ -3,13 +3,45 @@
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read, Write};
 
+pub mod group;
+
 pub const SOCKET: &str = "/run/coco/storage-service/agent.sock";
 pub const CONFIG: &str = "/etc/confidential-storage/service.json";
-pub const MAX_FRAME: usize = 4096;
+pub const MAX_FRAME: usize = 16384;
+pub const MAX_VOLUMES: usize = 8;
+
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Attachment {
+    pub binding_id: String,
+    pub device_path: String,
+    pub major: u32,
+    pub minor: u32,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct MountedVolume {
+    pub binding_id: String,
+    pub source: String,
+    pub destination: String,
+    pub readonly: bool,
+}
+pub fn binding_id(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 63
+        && value.as_bytes()[0].is_ascii_lowercase()
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(tag = "action", rename_all = "kebab-case", deny_unknown_fields)]
 pub enum Request {
+    ActivateMany {
+        container_id: String,
+        devices: Vec<Attachment>,
+    },
     Activate {
         container_id: String,
         device_path: String,
@@ -23,7 +55,9 @@ pub enum Request {
 impl Request {
     pub fn container(&self) -> &str {
         match self {
-            Self::Activate { container_id, .. } | Self::Close { container_id } => container_id,
+            Self::Activate { container_id, .. }
+            | Self::ActivateMany { container_id, .. }
+            | Self::Close { container_id } => container_id,
         }
     }
     pub fn validate(&self) -> io::Result<()> {
@@ -50,6 +84,34 @@ impl Request {
                 return Err(invalid());
             }
         }
+        if let Self::ActivateMany {
+            devices,
+            container_id,
+        } = self
+        {
+            if devices.is_empty() || devices.len() > MAX_VOLUMES {
+                return Err(invalid());
+            }
+            let mut ids = std::collections::BTreeSet::new();
+            let mut paths = std::collections::BTreeSet::new();
+            let mut numbers = std::collections::BTreeSet::new();
+            for device in devices {
+                if !binding_id(&device.binding_id)
+                    || !ids.insert(&device.binding_id)
+                    || !paths.insert(&device.device_path)
+                    || !numbers.insert((device.major, device.minor))
+                {
+                    return Err(invalid());
+                }
+                Self::Activate {
+                    container_id: container_id.clone(),
+                    device_path: device.device_path.clone(),
+                    major: device.major,
+                    minor: device.minor,
+                }
+                .validate()?;
+            }
+        }
         Ok(())
     }
 }
@@ -57,6 +119,9 @@ impl Request {
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(tag = "result", rename_all = "kebab-case", deny_unknown_fields)]
 pub enum Response {
+    MountedMany {
+        mounts: Vec<MountedVolume>,
+    },
     Mounted {
         source: String,
         destination: String,
@@ -101,7 +166,11 @@ pub struct Reservation {
 impl Reservation {
     pub fn reserve(&mut self, request: &Request) -> io::Result<()> {
         request.validate()?;
-        if !matches!(request, Request::Activate { .. }) || self.closed {
+        if !matches!(
+            request,
+            Request::Activate { .. } | Request::ActivateMany { .. }
+        ) || self.closed
+        {
             return Err(invalid());
         }
         match &self.request {
@@ -187,6 +256,40 @@ mod tests {
             r#"{"action":"close","container_id":"x","command":"format"}"#
         )
         .is_err());
+    }
+    #[test]
+    fn batch_protocol_rejects_duplicate_devices_ids_and_excess_count() {
+        let base = vec![
+            Attachment {
+                binding_id: "a".into(),
+                device_path: "/dev/sda".into(),
+                major: 8,
+                minor: 0,
+            },
+            Attachment {
+                binding_id: "b".into(),
+                device_path: "/dev/sdb".into(),
+                major: 8,
+                minor: 16,
+            },
+        ];
+        let request = |devices| Request::ActivateMany {
+            container_id: "a".repeat(64),
+            devices,
+        };
+        request(base.clone()).validate().unwrap();
+        assert!(request(vec![]).validate().is_err());
+        assert!(request(vec![base[0].clone(); 9]).validate().is_err());
+        for kind in 0..4 {
+            let mut changed = base.clone();
+            match kind {
+                0 => changed[1].binding_id = changed[0].binding_id.clone(),
+                1 => changed[1].device_path = changed[0].device_path.clone(),
+                2 => changed[1].minor = changed[0].minor,
+                _ => changed[1].device_path = "/dev/mapper/x".into(),
+            }
+            assert!(request(changed).validate().is_err());
+        }
     }
     #[test]
     fn frames_are_bounded_and_truncation_rejected() {

@@ -6,6 +6,20 @@ use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use serde::Deserialize;
 
 pub const PROFILE: &[u8] = include_bytes!("../profiles/rw-luks2-v1.json");
+pub const PROFILE_V2: &[u8] = include_bytes!("../profiles/rw-luks2-v2.json");
+pub fn supports_binding(digest: &str, destination: &str) -> bool {
+    (digest == profile_sha256() && destination == "/data")
+        || (digest == sha256(PROFILE_V2) && crate::binding::destination(destination))
+}
+pub fn filesystem_owner(digest: &str) -> Option<(u32, u32)> {
+    if digest == profile_sha256() {
+        Some((1000, 1000))
+    } else if digest == sha256(PROFILE_V2) {
+        Some((1001, 1001))
+    } else {
+        None
+    }
+}
 pub const HEADER_BYTES: usize = 16 * 1024 * 1024;
 const METADATA_BYTES: usize = 16384;
 
@@ -58,8 +72,7 @@ impl RwManifest {
             return Err(Error::Manifest);
         }
         if c.access != "rw"
-            || c.destination != "/data"
-            || m.profile_sha256 != profile_sha256()
+            || !supports_binding(&m.profile_sha256, &c.destination)
             || m.filesystem != "ext4"
             || m.header_bytes != HEADER_BYTES as u64
             || m.data_offset_bytes != HEADER_BYTES as u64

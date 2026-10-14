@@ -2,7 +2,9 @@
 
 This prepares the **same consumer** with `/models/qwen` from the previously
 OCI-populated encrypted model PVC and `/data` from a new 1 GiB block PVC. It is
-an implementation checkpoint, not a successful hardware E2E or a stock CoCo feature.
+verified live on 14 October 2026 with a second KServe predictor and VPN chatbot.
+It is a custom prototype, not a stock CoCo feature. See the
+[runbook and evidence](../../../docs/confidential-storage/gpu-guest-candidate.md).
 The user has now allocated the former encrypted-file demo GPU permanently for a
 second Qwen/KServe deployment and a separate chatbot port. Preserve the original
 Qwen/KServe/chatbot throughout that handover.

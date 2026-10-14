@@ -248,6 +248,7 @@ def prepare(args):
         "TRANSFORMERS_OFFLINE": "1",
         "VLLM_CACHE_ROOT": "/data/vllm",
         "VLLM_NO_USAGE_STATS": "1",
+        "VLLM_USE_FLASHINFER_SAMPLER": "0",
         "DO_NOT_TRACK": "1",
         "OMP_NUM_THREADS": "1",
         "TRITON_CACHE_DIR": "/data/triton",

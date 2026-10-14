@@ -1,0 +1,41 @@
+{
+  "records": [
+    {
+      "volumeId": "qwen-gpu-data-v1",
+      "state": "Ready",
+      "owned": true,
+      "generation": 1,
+      "policySha256": "df69e8641fef991bbb182859370d3399d0954013a1b3c222fb328cc5897cb3f3",
+      "initializationPolicySha256": "698d3b3d935937be235562ad1568ffc32c70093e8c859145e297eafef45c9572",
+      "steps": [
+        {
+          "step": "luks-format",
+          "status": "Complete"
+        },
+        {
+          "step": "integrity-initialize",
+          "status": "Complete"
+        },
+        {
+          "step": "filesystem-create",
+          "status": "Complete"
+        },
+        {
+          "step": "durability-barrier",
+          "status": "Complete"
+        }
+      ]
+    },
+    {
+      "volumeId": "qwen-gpu-model-v1",
+      "state": "Ready",
+      "owned": true,
+      "generation": 1,
+      "policySha256": "df69e8641fef991bbb182859370d3399d0954013a1b3c222fb328cc5897cb3f3",
+      "initializationPolicySha256": null,
+      "steps": []
+    }
+  ],
+  "operations": 8,
+  "integrity": "ok"
+}

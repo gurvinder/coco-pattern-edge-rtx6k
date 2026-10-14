@@ -1,0 +1,51 @@
+{
+  "checkedAt": "2026-10-14T13:11:21.545253+00:00",
+  "pods": [
+    {
+      "namespace": "gpu-workload",
+      "name": "encrypted-qwen-predictor-c68947bb9-gw9ml",
+      "uid": "d5cc3080-ae0b-4490-b145-56a216732566",
+      "containers": [
+        {
+          "name": "kserve-container",
+          "ready": true,
+          "restarts": 0
+        },
+        {
+          "name": "results",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "namespace": "gpu-workload",
+      "name": "qwen-chat-6fd79bd4b-vvrqc",
+      "uid": "839d51fc-94fe-491b-9e77-cec5a4c1ae48",
+      "containers": [
+        {
+          "name": "chat",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "namespace": "confidential-storage-test",
+      "name": "qwen-storage-predictor-775f794c77-hlvrg",
+      "uid": "c7e5ca9d-6120-4057-b72d-2aeadabe41cb",
+      "containers": [
+        {
+          "name": "kserve-container",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    }
+  ],
+  "originalInference": {
+    "health": 200,
+    "inference": 200,
+    "reply": "OK."
+  }
+}

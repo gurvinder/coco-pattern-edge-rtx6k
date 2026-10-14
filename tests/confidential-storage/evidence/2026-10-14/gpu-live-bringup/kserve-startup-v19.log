@@ -1,0 +1,7 @@
+STORAGE_MODEL_RO_HASHES_PASS
+STORAGE_DATA_REOPEN_PASS
+{"event": "CUDA_GPU_PROBE_PASS", "device": "NVIDIA RTX PRO 6000 Blackwell Server Edition", "torch": "2.9.0a0+50eac811a6.nv25.09", "cuda": "13.0"}
+(EngineCore_0 pid=73) WARNING 10-14 13:04:25 [topk_topp_sampler.py:54] FlashInfer is available, but it is not enabled. Falling back to the PyTorch-native implementation of top-p & top-k sampling. For the best performance, please set VLLM_USE_FLASHINFER_SAMPLER=1.
+(EngineCore_0 pid=73) INFO 10-14 13:04:26 [gpu_model_runner.py:2007] Model loading took 1.1201 GiB and 0.454373 seconds
+(EngineCore_0 pid=73) INFO 10-14 13:04:28 [gpu_worker.py:276] Available KV cache memory: 22.37 GiB
+(APIServer pid=1) INFO:     Application startup complete.

@@ -1,6 +1,6 @@
 {
   "date": "2026-10-14",
-  "status": "in progress; not serving model",
+  "status": "second KServe and VPN chatbot serving GPU inference from RO encrypted model with persistent RW data",
   "gpuAssignment": "User permanently allocated former encrypted-file GPU to second Qwen/KServe and separate chatbot",
   "retirementCommit": "da6e4a9e6b250d18db30062217b5651b399ba86e",
   "retiredResources": [
@@ -41,7 +41,7 @@
   "authorityTestsInsideImagePassed": 135,
   "storageKeysProvisioned": true,
   "dataFormatted": true,
-  "gpuInferencePassed": false,
+  "gpuInferencePassed": true,
   "originalQwenUid": "d5cc3080-ae0b-4490-b145-56a216732566",
   "originalChatUid": "839d51fc-94fe-491b-9e77-cec5a4c1ae48",
   "originalQwenAndChatReadyWithZeroRestarts": true,
@@ -51,12 +51,12 @@
   "authorityStatePath": "/state/retained/authority.db",
   "authorityVaultPath": "secret/hub/storageGpuAuthority",
   "standardTrusteeTlsPinnedRcarChallengePassed": true,
-  "activeCandidate": "v18",
-  "activeCandidateInitrdSha256": "69e5e15f89576d3a91c704e22dbe901f495308baf84131c54431dbb4c9d82a4d",
+  "activeCandidate": "v19",
+  "activeCandidateInitrdSha256": "c5b8384a1622b203c6d5d5785b3012c37df39b01aec21df7ea02f8677be4997e",
   "gpuCdiAdmissionPassed": true,
-  "storageActivation": "both retained volumes have fresh reopen ownership; application startup pending",
+  "storageActivation": "both retained volumes reopened; model hashes, persisted canary and CUDA verified",
   "authorityRecords": 2,
-  "authorityOperations": 4,
+  "authorityOperations": 8,
   "authorityIntegrity": "ok",
   "authorityVaultIdempotencyPassed": true,
   "measuredPolicyTestPassed": true,
@@ -78,7 +78,6 @@
     "rustPinnedTlsProbe": "HTTP 403 for deliberately malformed request; TLS verified",
     "guestReachedAuthority": true
   },
-  "standardTrusteeBindingCommit": "ab8a31cc61c04e367ae64e0f8a31ae73d9b644f2",
   "standardTrusteeCpuAppraisal": {
     "status": "affirming",
     "hardware": 2,
@@ -96,8 +95,9 @@
   "storageKeyProvisioningIdempotencyPassed": true,
   "standardTrusteeRolloutReason": "Reload subPath-mounted policy/reference files, then startup-converted new scoped key resources",
   "originalQwenInferenceAfterPolicyRollout": {
-    "status": 200,
-    "reply": "OK"
+    "health": 200,
+    "inference": 200,
+    "reply": "OK."
   },
   "dataInitializationSteps": [
     "luks-format: Complete",
@@ -105,13 +105,6 @@
     "filesystem-create: Complete",
     "durability-barrier: Complete"
   ],
-  "standardTrusteeReload": {
-    "rolloutRequests": 2,
-    "secondRequestDidNotReplacePod": true,
-    "stalePodExplicitlyReplaced": true,
-    "currentPodUid": "0951aed0-b0da-4d51-95c0-bd0247789444",
-    "bothNewKeyConversionRecordsVerified": true
-  },
   "unstartedRecovery": {
     "oldPodUid": "d0d7d54e-c477-4510-a797-42723c0562bd",
     "formattingPermitsIssued": 0,
@@ -121,7 +114,7 @@
     "historyAndOperationIdsRetained": true,
     "recoveryTestsPassed": 4
   },
-  "currentCandidatePodUid": "1273e795-9149-418f-b040-2ade09ef2e81",
+  "currentCandidatePodUid": "c7e5ca9d-6120-4057-b72d-2aeadabe41cb",
   "storageCudaCheckpoint": {
     "podUid": "1273e795-9149-418f-b040-2ade09ef2e81",
     "modelHashes": "pass",
@@ -138,14 +131,39 @@
     "authorityTests": 134,
     "retainedVolumesPolicyUpdated": true,
     "freshVmReopenPending": true,
-    "supersededBy": "v18"
+    "supersededBy": "v19"
   },
-  "activePodUid": "a519df38-0e2e-44d2-a4d1-adb3c4c8f602",
+  "activePodUid": "c7e5ca9d-6120-4057-b72d-2aeadabe41cb",
   "retainedInitializationIdentity": {
     "originalPolicySha256": "698d3b3d935937be235562ad1568ffc32c70093e8c859145e297eafef45c9572",
-    "activePolicySha256": "d49d2b941be3e59ac279da278bbafc60cb35c564146fee1fb2542862bae820bf",
+    "activePolicySha256": "df69e8641fef991bbb182859370d3399d0954013a1b3c222fb328cc5897cb3f3",
     "completedSteps": 4,
     "keysAndManifestsUnchanged": true,
     "guestClientTestsPassed": 8
+  },
+  "freshVmPersistencePassed": true,
+  "chatUrl": "http://10.14.202.14:30081",
+  "kserveReady": true,
+  "chatAudit": "chat-audit-v19.json",
+  "execDeniedByGuestPolicy": true,
+  "kserveWorkload": {
+    "inferenceService": "qwen-storage",
+    "namespace": "confidential-storage-test",
+    "serviceAccount": "qwen-storage",
+    "scc": "qwen-storage-confidential-storage-test",
+    "gpuPci": "0000:8c:00.0",
+    "nodePort": 30081,
+    "modelWeightMemoryGiB": 1.1201,
+    "noexecDataRetained": true,
+    "flashinferSamplerEnabled": false
+  },
+  "initialStorageBindingCommit": "ab8a31cc61c04e367ae64e0f8a31ae73d9b644f2",
+  "standardTrusteeBindingCommit": "f83687d",
+  "initialTrusteeReloadCheckpoint": {
+    "rolloutRequests": 2,
+    "secondRequestDidNotReplacePod": true,
+    "stalePodExplicitlyReplaced": true,
+    "bothNewKeyConversionRecordsVerified": true,
+    "podUidAtThatCheckpoint": "0951aed0-b0da-4d51-95c0-bd0247789444"
   }
 }

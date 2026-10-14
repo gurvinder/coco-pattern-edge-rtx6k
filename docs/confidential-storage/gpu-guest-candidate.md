@@ -1,9 +1,61 @@
 # GPU and storage guest candidate
 
-**14 October 2026: source, packaging and concrete configuration prepared; not installed.**
-The candidate adds an explicit NVIDIA path to the previously storage-only agent.
-The current Qwen/KServe runtime, Trustee policies, model PVC and retained RW state
-are unchanged. This checkpoint does not establish GPU inference from a LUKS PVC.
+**14 October 2026: second Qwen/KServe GPU service and chatbot verified live.**
+
+Open [the separate VPN chatbot](http://10.14.202.14:30081/). It reaches
+`confidential-storage-test/qwen-storage` through the KServe predictor Service.
+The original chatbot on port 30080 and original KServe pods retain their identities
+and zero restarts. This is a custom integration prototype; it is not a stock CoCo
+storage capability.
+
+| Live component | Configuration |
+| --- | --- |
+| Predictor | `qwen-storage-predictor-775f794c77-hlvrg`, one unprivileged container, UID/GID 1001 |
+| Confidential VM | SEV-SNP, 8 vCPUs, `kata-snp-nvidia-gpu-storage-candidate` |
+| GPU | RTX PRO 6000 Blackwell Server Edition, passed through from `0000:8c:00.0` |
+| RO model | `/models/qwen`, `qwen-luks-model-v1`, LUKS + dm-verity, 2 GiB Block/RWOP PVC |
+| RW data | `/data`, `qwen-gpu-data-v1`, guest-initialized LUKS + dm-integrity, 1 GiB Block/RWOP PVC |
+| Key release | Standard pattern Trustee; fresh CPU+GPU attestation and exact guest launch/InitData bindings |
+| State authority | Separate restricted pod, retained initialization/ownership history; no model keys |
+| Chat | `http://10.14.202.14:30081/`, VPN/network access, no login |
+
+The model PVC has an actual `dataSourceRef` to the `EncryptedModelSource`
+`qwen-luks-model-v1`. It was populated from the internal OpenShift OCI registry,
+repository `confidential-storage-test/qwen-luks-e2e`, manifest
+`sha256:49d4cc9827fc214fa339206c660656d8523dc8c2de1e95a9c1d9f7992934cd25`.
+Its encrypted disk digest is
+`sha256:c350a0f6ea363219ab750a3a3c7d309f7d35fc009b5171d417acde33c69fa8b7`.
+The bound claim is reused without repopulation; guest verity and file hashes verify
+its contents on each fresh VM launch.
+
+The blank RW claim was initialized once in the guest. Its four completed journal
+steps and original approval survive workload upgrades. Fresh VMs recovered the
+same fsynced canary. The application has no raw block devices, storage-control
+sockets, `CAP_SYS_ADMIN`, or privilege escalation. Administrator `oc exec` was
+rejected by the measured agent policy.
+
+Verified logs include:
+
+```text
+STORAGE_MODEL_RO_HASHES_PASS
+STORAGE_DATA_REOPEN_PASS
+CUDA_GPU_PROBE_PASS
+Model loading took 1.1201 GiB
+Available KV cache memory: 22.37 GiB
+Application startup complete.
+```
+
+A KServe inference returned HTTP 200 and `2 plus 2 equals 4.` The public NodePort
+chat test sent a unique marker, checked the reply, traced both Service endpoints to
+the exact pod UIDs, and observed that predictor's vLLM success counter increase.
+See [the chat audit](../../tests/confidential-storage/evidence/2026-10-14/gpu-live-bringup/chat-audit-v19.json),
+[live VM mapping](../../tests/confidential-storage/evidence/2026-10-14/gpu-live-bringup/kserve-vm-v19.json),
+and [startup excerpts](../../tests/confidential-storage/evidence/2026-10-14/gpu-live-bringup/kserve-startup-v19.log).
+
+The chatbot and backend currently use HTTP. This validates confidential storage
+and GPU execution; it does not claim TLS termination inside the TEE or protection
+of prompts on the network. The trusted authority/Trustee lab boundary is described
+below.
 
 ## Reused installed components
 
@@ -24,8 +76,8 @@ The installed runtime uses cold-plug VFIO and `guest-kernel` mode. The inspected
 Kata 3.31 source strips host VFIO nodes from the application OCI specification and
 adds `cdi.k8s.io/vfioN: nvidia.com/gpu=0` for a single GPU. Read-only CRI inspection
 confirmed Qwen's host VFIO device and absence of host hooks. **That inspection is
-not a capture of the guest's generated CDI file.** Exact live CDI compatibility
-remains an acceptance test.
+not a capture of the guest's generated CDI file.** Live CDI compatibility was subsequently verified by the GPU startup and inference
+tests recorded above.
 
 ## Agent changes and trust boundary
 
@@ -129,16 +181,15 @@ resources and tests. The existing populated model PVC is bound by UID. The new
 The encrypted-file demo has been permanently retired in GitOps commit
 `da6e4a9e6b250d18db30062217b5651b399ba86e`. Its GPU is allocated to the second
 Qwen/KServe instance. The original Qwen/KServe and chatbot retain their pod UIDs
-and remain ready. Port 30081 is the intended second chatbot port; it is not yet
-exposed.
+and remain ready. The separate chatbot is exposed on port 30081.
 
 The candidate RuntimeClass aliases the existing isolated `kata-snp-storage-probe`
 handler. Only that test handler's configuration was switched to a hash-named
 NVIDIA guest image, with previous configurations retained. The production GPU
 configuration is unchanged; CRI-O was neither reloaded nor restarted. The live
 QEMU image/kernel/firmware hashes, eight-vCPU EPYC-v4 configuration and exact
-command line match the independently calculated v14 reference; the historical
-v12 comparison is retained separately.
+command line match the independently calculated v19 reference. Historical checkpoint
+measurements remain in the evidence directory.
 
 During diagnostic hashing, reading the whole 214 MB initrd into memory caused
 the VFIO-manager helper container to be OOMKilled at 11:08:23 UTC and restart
@@ -151,11 +202,10 @@ PVCs. Real NVIDIA CDI output required bounded compatibility handling: normalize
 readonly regular-file binds, omit the private persistence socket/daemon, pinned
 firmware files and display modesetting device. Unknown mounts, block devices,
 broad device grants and privilege changes still fail closed. The fixed guest libcuda environment addition is admitted. All 23 native tests
-and the real Regorus policy tests pass. Live GPU CDI admission now succeeds;
-private storage activation is denied and cleanup completes. No application has
-started and no GPU storage E2E is claimed.
+and the real Regorus policy tests pass. Live GPU CDI admission, storage activation, fresh-VM persistence and GPU
+inference now pass. Earlier denied attempts and their fixes are retained below.
 
-The authority image passed all 131 tests inside the built image. Its deployment
+The authority image passed all 135 tests inside the built image. Its deployment
 uses `restricted-v2`, namespace UID 1001100000, no capabilities, no service-account
 token and a read-only container root. Vault/ESO supplies its TLS and receipt keys.
 Its two-volume database is retained on `storage-gpu-authority-state` at
@@ -163,7 +213,7 @@ Its two-volume database is retained on `storage-gpu-authority-state` at
 a fresh database. A pinned-TLS RCAR challenge against the standard pattern Trustee
 passed. The real guest also obtains a fresh challenge and submits composite
 CPU/GPU evidence; both CPU and GPU now have affirming appraisals after independently approved
-references were loaded. Final end-to-end storage activation remains under test.
+references were loaded. End-to-end storage activation and inference now pass.
 
 The first TLS failure was a generated authority certificate with `CA=true`.
 The guest Rust verifier correctly rejected its use as a server leaf
@@ -201,7 +251,7 @@ reference-merge tests passed. Trustee was rolled twice to load subPath-mounted
 references/policy and then startup-converted new resources. Original Qwen/chatbot
 pod identities and zero restarts were retained; real inference returned HTTP 200.
 
-## Verified storage and CUDA checkpoint (14 October 2026)
+## Earlier storage and CUDA checkpoint (superseded by v19)
 
 Guest pod `1273e795-9149-418f-b040-2ade09ef2e81` completed standard Trustee
 composite CPU/GPU attestation, RO model verification, first-use RW initialization,
@@ -265,14 +315,53 @@ Environment revisions preserve these explicit alternatives. The candidate also
 sets the exact `INFERENCE_SERVICE_NAME=qwen-storage` that KServe injects, keeps its
 fixed hostname, and permits neither arbitrary environment values nor shell exec.
 
-## Remaining acceptance work
+## Deploying and checking the separate service
 
-- Reopen the same RO and RW disks in a fresh VM, verify the persistent canary,
-  independently compare the new live launch, and complete vLLM inference.
-- Deploy a second KServe InferenceService and chatbot on port 30081, preserving
-  the original endpoint. Exercise OCI population for a new model PVC as well.
+The GPU test chart renders the second InferenceService from the reviewed prepared
+`pod.json`. Set `createDataClaim=false` when reusing the initialized claim,
+`kserveEnabled=true`, and supply `candidatePodJson` with `--set-file`. Keep
+`workloadEnabled=false`: the standalone Pod and KServe must not compete for the
+exclusive claims. Before a handover, stop the old consumer and verify the authority
+has closed both owners. KServe uses one replica and Recreate updates.
 
-See the [live bring-up record](../../tests/confidential-storage/evidence/2026-10-14/gpu-live-bringup/progress.json).
+The chart creates a dedicated `qwen-storage` service account and SCC. It permits
+only UID 1001, group 1001 and PVC volumes; denies privileged containers, capability
+gains and host access; and requires a read-only root. Only that service account
+receives the SCC `use` Role. The application needs no Kubernetes API token or
+storage administrative capability.
+
+The chatbot reuses `charts/coco-supported/qwen-chat` in the test namespace with:
+
+```yaml
+backend: http://qwen-storage-predictor.confidential-storage-test.svc:80
+model: qwen3-0.6b
+publicHost: 10.14.202.14:30081
+publicScheme: http
+service:
+  type: NodePort
+  nodePort: 30081
+```
+
+Run the repeatable end-to-end test from the repository root:
+
+```bash
+python3 tests/confidential-storage/gpu-guest/audit-chat.py \
+  --kubeconfig /private/path/cluster.kubeconfig \
+  --url http://10.14.202.14:30081 \
+  --output /private/path/chat-audit.json
+```
+
+The measured environment sets `USER`, `LOGNAME`, cache paths, an explicit image
+PATH plus the observed CRI default PATH, and KServe's fixed service-name variable.
+`VLLM_USE_FLASHINFER_SAMPLER=0` selects GPU PyTorch sampling. FlashInfer otherwise
+tries to load a cached shared library from `/data`, which is deliberately mounted
+`noexec`. The mount flags were retained. Weight loading uses 1.12 GiB; the larger
+GPU allocation is predominantly KV cache under the 25% GPU-memory limit.
+
+Remaining production gaps include stock-agent integration, a general reconciler
+for the confidential-volume approval API, external durable anti-rollback authority
+state, robust interrupted-initialization recovery, and TLS to the confidential
+endpoint. These are separate from the demonstrated RO/RW GPU serving path.
 
 ### Unstarted initialization recovery
 

@@ -1,0 +1,2 @@
+health 200
+{"status": 200, "model": "qwen3-0.6b", "answer": "2 plus 2 equals 4.", "usage": {"prompt_tokens": 23, "total_tokens": 32, "completion_tokens": 9, "prompt_tokens_details": null}}

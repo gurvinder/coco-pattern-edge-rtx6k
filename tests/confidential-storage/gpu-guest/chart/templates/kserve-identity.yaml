@@ -1,0 +1,64 @@
+{{- if .Values.kserveEnabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: qwen-storage
+  namespace: {{ .Release.Namespace | quote }}
+automountServiceAccountToken: false
+---
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: qwen-storage-{{ .Release.Namespace }}
+allowPrivilegedContainer: false
+allowPrivilegeEscalation: false
+defaultAllowPrivilegeEscalation: false
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+readOnlyRootFilesystem: true
+allowedCapabilities: []
+requiredDropCapabilities: [ALL]
+runAsUser:
+  type: MustRunAs
+  uid: 1001
+seLinuxContext:
+  type: MustRunAs
+fsGroup:
+  type: MustRunAs
+  ranges: [{min: 1001, max: 1001}]
+supplementalGroups:
+  type: MustRunAs
+  ranges: [{min: 1001, max: 1001}]
+seccompProfiles: [runtime/default]
+volumes: [persistentVolumeClaim]
+users: []
+groups: []
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: qwen-storage-scc
+  namespace: {{ .Release.Namespace | quote }}
+rules:
+  - apiGroups: [security.openshift.io]
+    resources: [securitycontextconstraints]
+    resourceNames: [qwen-storage-{{ .Release.Namespace }}]
+    verbs: [use]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: qwen-storage-scc
+  namespace: {{ .Release.Namespace | quote }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: qwen-storage-scc
+subjects:
+  - kind: ServiceAccount
+    name: qwen-storage
+    namespace: {{ .Release.Namespace | quote }}
+{{- end }}

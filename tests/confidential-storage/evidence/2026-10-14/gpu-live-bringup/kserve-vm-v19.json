@@ -1,0 +1,14 @@
+{
+  "pod": "qwen-storage-predictor-775f794c77-hlvrg",
+  "podUid": "c7e5ca9d-6120-4057-b72d-2aeadabe41cb",
+  "sandbox": "097e866c3fb0f1bc1188742337a3da17f5ec2e803fd52c44b290ea2d40b123e3",
+  "qemuPid": "3610913",
+  "machine": "q35,accel=kvm,kernel_irqchip=split,confidential-guest-support=snp",
+  "snpObjects": [
+    "sev-snp-guest,id=snp,cbitpos=51,reduced-phys-bits=1,kernel-hashes=on,policy=196608,host-data=SXmE1+DRhkoxFQCA7Mc13d4xJKdVidQJu5t1KcZ9bAs="
+  ],
+  "gpu": [
+    "vfio-pci,host=0000:8c:00.0,x-pci-vendor-id=0x10de,x-pci-device-id=0x2bb5,bus=rp0,iommufd=iommufdvfio-7ef685c35d814a801"
+  ],
+  "initrd": "/var/opt/kata-storage-test/gpu-candidate-c5b8384a1622/initrd"
+}

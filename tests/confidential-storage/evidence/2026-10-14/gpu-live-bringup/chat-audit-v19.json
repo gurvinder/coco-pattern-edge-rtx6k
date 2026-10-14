@@ -1,0 +1,49 @@
+{
+  "checkedAt": "2026-10-14T13:07:31.286243+00:00",
+  "url": "http://10.14.202.14:30081",
+  "backend": "http://qwen-storage-predictor.confidential-storage-test.svc:80",
+  "model": "qwen3-0.6b",
+  "chatPod": "qwen-chat-777b4d7f44-tzch7",
+  "chatUid": "ee6a4a4b-2e67-4eea-b537-9dbd3b96804c",
+  "modelPod": "qwen-storage-predictor-775f794c77-hlvrg",
+  "modelUid": "c7e5ca9d-6120-4057-b72d-2aeadabe41cb",
+  "inferenceServiceUid": "3994808f-5baf-4eed-92e9-c40e75fdf9f2",
+  "runtimeClass": "kata-snp-nvidia-gpu-storage-candidate",
+  "scc": "qwen-storage-confidential-storage-test",
+  "initDataSha256": "497984d7e0d1864a31150080ecc735ddde3124a75589d409bb9b7529c67d6c0b",
+  "chatSourceSha256": "062f1675059cb1fe0ff3e7921124d7e050ecba86b5ce87abe28ba0ba1b1401e2",
+  "applicationSecurityContext": {
+    "allowPrivilegeEscalation": false,
+    "capabilities": {
+      "drop": [
+        "ALL"
+      ]
+    },
+    "privileged": false,
+    "readOnlyRootFilesystem": true,
+    "runAsGroup": 1001,
+    "runAsNonRoot": true,
+    "runAsUser": 1001
+  },
+  "syntheticRequest": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly this text and nothing else: STORAGE-GPU-647a2525fcbc"
+      }
+    ]
+  },
+  "reply": {
+    "message": "STORAGE-GPU-647a2525fcbc",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 35,
+      "total_tokens": 51,
+      "completion_tokens": 16,
+      "prompt_tokens_details": null
+    }
+  },
+  "vllmSuccessBefore": 1.0,
+  "vllmSuccessAfter": 2.0,
+  "note": "Endpoint/UID trace and live inference; use with separate CPU/GPU attestation and QEMU evidence."
+}

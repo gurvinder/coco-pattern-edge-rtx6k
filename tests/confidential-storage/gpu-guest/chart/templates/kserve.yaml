@@ -15,6 +15,7 @@ metadata:
     serving.kserve.io/deploymentMode: Standard
 spec:
   predictor:
+    serviceAccountName: qwen-storage
     minReplicas: 1
     maxReplicas: 1
     deploymentStrategy:

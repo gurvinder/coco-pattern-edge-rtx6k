@@ -1,0 +1,167 @@
+{
+  "checkedAt": "2026-10-14T13:56:08.951992+00:00",
+  "scope": "Controller configuration reconciliation; no new storage initialization or GPU guest rollout",
+  "namespace": "confidential-storage-test",
+  "deployment": "confidential-volume-controller",
+  "image": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/confidential-volume-controller@sha256:f691827a836ce171e27eb1866a15327640bf971fe5590bdb21e11560cc15b55f",
+  "unitTests": {
+    "controller": 21,
+    "compiler": 15,
+    "builtImageTests": true
+  },
+  "liveChecks": {
+    "pendingWithoutApproval": true,
+    "validSignedPackagePublished": true,
+    "invalidSignatureBlockedBothVolumes": true,
+    "validApprovalRestored": true,
+    "controllerRestartRetainedArtifactUIDs": true,
+    "chatInferenceAndCounterIncrease": true,
+    "existingQwenPodUIDsAndZeroRestartsPreserved": true
+  },
+  "artifactUIDs": {
+    "cv-approved-2992c1972afae337df21d817e71ac4e6260b13c2f1d471e0": "12ecb967-b742-4c5b-9d89-dc696757a02c",
+    "cv-request-8ad17bc8f431094a3fecde51b6b625c275b18a0f3eb1425a": "5a73d10c-3313-46ed-b486-fb0214737459"
+  },
+  "rbac": {
+    "getSecrets": false,
+    "patchPVCs": false,
+    "createPods": false,
+    "patchInferenceServices": false,
+    "createConfigMaps": true,
+    "updateVolumeStatus": true
+  },
+  "volumes": [
+    {
+      "name": "qwen-gpu-data",
+      "uid": "5b687a79-d9d1-4fd9-b0ce-50b359384403",
+      "spec": {
+        "access": "ReadWrite",
+        "claimRef": {
+          "name": "qwen-gpu-data-v1",
+          "uid": "9bd3b354-b1f1-41a9-bd45-f13de5aec3ad"
+        },
+        "initialization": {
+          "filesystem": "ext4",
+          "owner": {
+            "gid": 1001,
+            "uid": 1001
+          },
+          "policy": "OnceIfApproved"
+        },
+        "keyResource": "kbs:///default/model-keys/qwen-gpu-data-v1",
+        "profile": "luks-integrity-v1"
+      },
+      "status": {
+        "conditions": [
+          {
+            "lastTransitionTime": "2026-10-14T13:42:32Z",
+            "observedGeneration": 1,
+            "reason": "ClaimResolved",
+            "status": "True",
+            "type": "Resolved"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T13:50:38Z",
+            "observedGeneration": 1,
+            "reason": "SignedConfigurationPublished",
+            "status": "True",
+            "type": "Approved"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T13:50:38Z",
+            "observedGeneration": 1,
+            "reason": "SignedConfigurationPublished",
+            "status": "True",
+            "type": "ConfigurationPublished"
+          }
+        ],
+        "consumers": [
+          {
+            "approvalSha256": "2992c1972afae337df21d817e71ac4e6260b13c2f1d471e068635432d07c94c7",
+            "artifactConfigMap": "cv-approved-2992c1972afae337df21d817e71ac4e6260b13c2f1d471e0",
+            "expiresAt": 1792072165,
+            "kind": "InferenceService",
+            "name": "qwen-storage",
+            "phase": "Approved",
+            "reason": "SignedConfigurationPublished",
+            "requestConfigMap": "cv-request-8ad17bc8f431094a3fecde51b6b625c275b18a0f3eb1425a",
+            "requestSha256": "8ad17bc8f431094a3fecde51b6b625c275b18a0f3eb1425a88512c1b07dc85c0",
+            "uid": "3994808f-5baf-4eed-92e9-c40e75fdf9f2"
+          }
+        ],
+        "observedGeneration": 1,
+        "phase": "Approved",
+        "resolvedClaimUID": "9bd3b354-b1f1-41a9-bd45-f13de5aec3ad"
+      }
+    },
+    {
+      "name": "qwen-gpu-model",
+      "uid": "422cd36f-0333-4f7b-9458-6a5a3d54edc6",
+      "spec": {
+        "access": "ReadOnly",
+        "claimRef": {
+          "name": "qwen-luks-model-v1",
+          "uid": "997cefd0-0f9b-4325-b57e-b5220cc08d3e"
+        },
+        "content": {
+          "approvedManifestRef": "qwen-luks-e2e-v1"
+        },
+        "initialization": {
+          "policy": "Never"
+        },
+        "keyResource": "kbs:///default/model-keys/qwen-gpu-model-v1",
+        "profile": "luks-verity-v1"
+      },
+      "status": {
+        "conditions": [
+          {
+            "lastTransitionTime": "2026-10-14T13:42:32Z",
+            "observedGeneration": 1,
+            "reason": "ClaimResolved",
+            "status": "True",
+            "type": "Resolved"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T13:50:38Z",
+            "observedGeneration": 1,
+            "reason": "SignedConfigurationPublished",
+            "status": "True",
+            "type": "Approved"
+          },
+          {
+            "lastTransitionTime": "2026-10-14T13:50:38Z",
+            "observedGeneration": 1,
+            "reason": "SignedConfigurationPublished",
+            "status": "True",
+            "type": "ConfigurationPublished"
+          }
+        ],
+        "consumers": [
+          {
+            "approvalSha256": "2992c1972afae337df21d817e71ac4e6260b13c2f1d471e068635432d07c94c7",
+            "artifactConfigMap": "cv-approved-2992c1972afae337df21d817e71ac4e6260b13c2f1d471e0",
+            "expiresAt": 1792072165,
+            "kind": "InferenceService",
+            "name": "qwen-storage",
+            "phase": "Approved",
+            "reason": "SignedConfigurationPublished",
+            "requestConfigMap": "cv-request-8ad17bc8f431094a3fecde51b6b625c275b18a0f3eb1425a",
+            "requestSha256": "8ad17bc8f431094a3fecde51b6b625c275b18a0f3eb1425a88512c1b07dc85c0",
+            "uid": "3994808f-5baf-4eed-92e9-c40e75fdf9f2"
+          }
+        ],
+        "observedGeneration": 1,
+        "phase": "Approved",
+        "resolvedClaimUID": "997cefd0-0f9b-4325-b57e-b5220cc08d3e"
+      }
+    }
+  ],
+  "repositoryWideChecks": "pattern.sh preview-all and validate-schema cannot reach the sandbox-blocked local Podman socket. Focused Helm lint/render, server dry run, unit/build and live reconciliation checks passed.",
+  "limits": [
+    "Explicit trusted package approval; no automatic authority enrollment or runtime build",
+    "No workload mutation or automated rollout",
+    "Approved reports package provenance, not guest StorageReady",
+    "24-hour lab deployment approval; expiry withdraws status, not a running workload",
+    "General authenticated guest configuration delivery remains separate"
+  ]
+}

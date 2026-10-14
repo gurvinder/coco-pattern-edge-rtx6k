@@ -1,5 +1,7 @@
 # ConfidentialVolume approval-request compiler
 
+The [ConfidentialVolume controller](../confidential-volume-controller/README.md) now invokes this compiler against live namespace resources. The standalone CLI remains available; neither compiler nor controller grants storage authorization.
+
 Development tooling, not an operator or a runtime authorization service.
 `compiler.py` takes a JSON snapshot containing one Pod or KServe InferenceService,
 ConfidentialVolume declarations and actual Block PVC identities. It validates

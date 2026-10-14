@@ -1,5 +1,7 @@
 # Multi-volume integration checkpoint — 14 October 2026
 
+**Controller update:** namespace reconciliation, signed configuration publication and CR status are now implemented. See [ConfidentialVolume controller](confidential-volume-controller.md). Earlier descriptions of an offline-only compiler below record the pre-controller implementation; trusted package approval and rollout remain explicit.
+
 **Historical checkpoint:** the subsequent two-volume GPU deployment and standard Trustee integration passed live tests. See the [current walkthrough and gaps](qwen-storage-walkthrough-and-gaps.md); the validation gates below record their status at this earlier checkpoint.
 
 **Development implementation; not installed in the GPU guest.** The earlier

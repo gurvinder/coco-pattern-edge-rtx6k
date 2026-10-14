@@ -1,5 +1,7 @@
 # GPU and storage guest candidate
 
+The separate [ConfidentialVolume controller](confidential-volume-controller.md) now reconciles these declarations and public approval artifacts without changing the running Qwen guest.
+
 [Read the implementation walkthrough and toolchain gap register](qwen-storage-walkthrough-and-gaps.md) for the concrete CR/PVC examples, workload bindings and end-to-end diagram.
 
 **14 October 2026: second Qwen/KServe GPU service and chatbot verified live.**

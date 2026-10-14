@@ -1,5 +1,7 @@
 # ConfidentialVolume and authenticated workload bindings
 
+**Controller update:** namespace reconciliation, signed configuration publication and CR status are now implemented. See [ConfidentialVolume controller](confidential-volume-controller.md). Earlier descriptions of an offline-only compiler below record the pre-controller implementation; trusted package approval and rollout remain explicit.
+
 **Current status:** the two-volume Qwen GPU E2E is now validated. The schema/compiler remain offline inputs; no general ConfidentialVolume reconciler is installed. See the [current walkthrough](qwen-storage-walkthrough-and-gaps.md). The original design/checkpoint text below predates that live integration.
 
 **Status: development schema and offline approval-request compiler implemented;

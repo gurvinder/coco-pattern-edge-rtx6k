@@ -1,0 +1,8 @@
+# Opt-in test namespace controller; public verification key only.
+# Apply with -n confidential-storage-test. This does not enroll storage or roll Qwen.
+controller:
+  enabled: true
+  image: image-registry.openshift-image-registry.svc:5000/confidential-storage-test/confidential-volume-controller@sha256:f691827a836ce171e27eb1866a15327640bf971fe5590bdb21e11560cc15b55f
+  clusterId: edge-rtx6k
+  approvalKeys:
+    storage-release-v1: ca6ea5a4e428cd899a28cb431fe2b00b8b53137f47e6cec52cbbd798ceb4977a

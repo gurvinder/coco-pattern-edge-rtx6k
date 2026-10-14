@@ -1,0 +1,86 @@
+[
+  {
+    "name": "qwen-gpu-data",
+    "status": {
+      "conditions": [
+        {
+          "lastTransitionTime": "2026-10-14T13:42:32Z",
+          "observedGeneration": 1,
+          "reason": "ClaimResolved",
+          "status": "True",
+          "type": "Resolved"
+        },
+        {
+          "lastTransitionTime": "2026-10-14T13:50:23Z",
+          "observedGeneration": 1,
+          "reason": "ApprovalPending",
+          "status": "False",
+          "type": "Approved"
+        },
+        {
+          "lastTransitionTime": "2026-10-14T13:50:23Z",
+          "observedGeneration": 1,
+          "reason": "ApprovalPending",
+          "status": "False",
+          "type": "ConfigurationPublished"
+        }
+      ],
+      "consumers": [
+        {
+          "kind": "InferenceService",
+          "name": "qwen-storage",
+          "phase": "Blocked",
+          "reason": "InvalidApproval",
+          "requestConfigMap": "cv-request-8ad17bc8f431094a3fecde51b6b625c275b18a0f3eb1425a",
+          "requestSha256": "8ad17bc8f431094a3fecde51b6b625c275b18a0f3eb1425a88512c1b07dc85c0",
+          "uid": "3994808f-5baf-4eed-92e9-c40e75fdf9f2"
+        }
+      ],
+      "observedGeneration": 1,
+      "phase": "Blocked",
+      "resolvedClaimUID": "9bd3b354-b1f1-41a9-bd45-f13de5aec3ad"
+    }
+  },
+  {
+    "name": "qwen-gpu-model",
+    "status": {
+      "conditions": [
+        {
+          "lastTransitionTime": "2026-10-14T13:42:32Z",
+          "observedGeneration": 1,
+          "reason": "ClaimResolved",
+          "status": "True",
+          "type": "Resolved"
+        },
+        {
+          "lastTransitionTime": "2026-10-14T13:50:23Z",
+          "observedGeneration": 1,
+          "reason": "ApprovalPending",
+          "status": "False",
+          "type": "Approved"
+        },
+        {
+          "lastTransitionTime": "2026-10-14T13:50:23Z",
+          "observedGeneration": 1,
+          "reason": "ApprovalPending",
+          "status": "False",
+          "type": "ConfigurationPublished"
+        }
+      ],
+      "consumers": [
+        {
+          "kind": "InferenceService",
+          "name": "qwen-storage",
+          "phase": "Blocked",
+          "reason": "InvalidApproval",
+          "requestConfigMap": "cv-request-8ad17bc8f431094a3fecde51b6b625c275b18a0f3eb1425a",
+          "requestSha256": "8ad17bc8f431094a3fecde51b6b625c275b18a0f3eb1425a88512c1b07dc85c0",
+          "uid": "3994808f-5baf-4eed-92e9-c40e75fdf9f2"
+        }
+      ],
+      "observedGeneration": 1,
+      "phase": "Blocked",
+      "resolvedClaimUID": "997cefd0-0f9b-4325-b57e-b5220cc08d3e"
+    }
+  }
+]

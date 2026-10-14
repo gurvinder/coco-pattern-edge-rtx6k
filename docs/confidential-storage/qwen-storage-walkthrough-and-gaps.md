@@ -1,5 +1,7 @@
 # Qwen confidential storage: implementation, workflow and integration gaps
 
+**Controller update:** namespace reconciliation, signed configuration publication and CR status are now implemented. See [ConfidentialVolume controller](confidential-volume-controller.md). Earlier descriptions of an offline-only compiler below record the pre-controller implementation; trusted package approval and rollout remain explicit.
+
 **Implementation snapshot: 14 October 2026, validated workload revision v19.**
 This describes the implementation and retained test evidence at commit `eb07abd`.
 It is not a new live health check. Examples use the actual Qwen storage identities;

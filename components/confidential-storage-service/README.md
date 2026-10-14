@@ -1,5 +1,7 @@
 # Private guest storage service (development)
 
+**Current status:** the v2 multi-volume service with private CDH and standard Trustee RCAR is deployed in the validated Qwen GPU guest. See the [current walkthrough](../../docs/confidential-storage/qwen-storage-walkthrough-and-gaps.md). Earlier deployment-status statements below are historical checkpoints.
+
 This component connects the tested authority client, private SNP KBS client and
 read-only LUKS/dm-verity opener and journaled RW initializer/opener. It is
 **previous single-volume version is installed only in the isolated development guest**.

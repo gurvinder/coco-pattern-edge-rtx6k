@@ -1,5 +1,7 @@
 # GPU and storage guest candidate
 
+[Read the implementation walkthrough and toolchain gap register](qwen-storage-walkthrough-and-gaps.md) for the concrete CR/PVC examples, workload bindings and end-to-end diagram.
+
 **14 October 2026: second Qwen/KServe GPU service and chatbot verified live.**
 
 Open [the separate VPN chatbot](http://10.14.202.14:30081/). It reaches

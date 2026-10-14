@@ -1,5 +1,7 @@
 # Minimal integration changes and comparison with stock OpenShift CoCo
 
+**Current implementation:** the combined GPU/RO/RW deployment is now validated. Use the [implementation walkthrough and updated gap register](qwen-storage-walkthrough-and-gaps.md) for completed work versus remaining gaps. This document retains the original planning baseline.
+
 Implementation progress is tracked in the [14 October checkpoint](multi-volume-implementation.md);
 planning tables below describe the target and original baseline.
 

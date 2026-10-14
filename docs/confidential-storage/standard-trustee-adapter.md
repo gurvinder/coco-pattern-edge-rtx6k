@@ -1,5 +1,7 @@
 # Standard Trustee request-authentication adapter
 
+**Historical checkpoint:** full CPU/GPU attestation and key retrieval subsequently passed in the Qwen storage guest. See the [current walkthrough](qwen-storage-walkthrough-and-gaps.md) and [installed EAR compatibility profile](gpu-guest-candidate.md). The protocol description below includes the earlier, stricter source-default claim profile.
+
 **14 October 2026: implemented and unit-tested; not deployed in the GPU workload.**
 The implemented adapter obtained an authentication challenge from the running
 standard Trustee over verified TLS. Full real SNP+GPU attestation through this

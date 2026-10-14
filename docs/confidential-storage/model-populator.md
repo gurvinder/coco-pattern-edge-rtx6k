@@ -1,5 +1,7 @@
 # Encrypted model publisher and volume populator
 
+**Current status:** the populated model PVC is now consumed by the validated Qwen GPU workload alongside guest-initialized RW storage. See the [current walkthrough](qwen-storage-walkthrough-and-gaps.md). Statements below about remaining guest integration describe this component's earlier checkpoint.
+
 This development component implements the **ciphertext distribution** part of the
 storage proposal. It prepares Qwen3-0.6B as a real LUKS2/ext4 image with dm-verity
 over the complete header and ciphertext, publishes it to the internal OpenShift

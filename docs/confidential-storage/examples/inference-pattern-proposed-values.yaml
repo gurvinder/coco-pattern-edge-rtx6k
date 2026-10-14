@@ -1,0 +1,135 @@
+# DESIGN EXAMPLE ONLY. Not consumed by the current charts.
+# Proposed schema for the NEW confidential-inference-pattern repository.
+# No key material, access token, copied PVC UID or approval signature belongs here.
+inferencePattern:
+  installation:
+    mode: addon
+    base: existing-coco-pattern
+    gitops:
+      mode: existing
+      # Site-specific GitOps namespace/project are discovered and explicitly confirmed.
+      namespace: ""
+      applicationName: confidential-inference-addon
+    namespace: confidential-inference
+    releaseLock: releases/v0.1.0/lock.json
+    profile: osc-snp-nvidia-x86_64-v1
+    clusterIdentity: "" # Required stable site identity, not a copied lab name.
+
+  serving:
+    kserve:
+      mode: existing # Or explicitly install-if-absent; never overwrite another owner.
+      qualifiedVersion: v0.20.0
+    runtimeClassName: "" # Resolved against the approved profile and installed runtime.
+    applicationImage: "" # Required stock vLLM image by digest, selected by release lock.
+    appIdentity: {uid: 1001, gid: 1001}
+    replicas: 1
+    rollout: Recreate
+    gpu:
+      required: true
+      count: 1
+      resourceName: nvidia.com/gpu
+      requireConfidentialModeAndAttestation: true
+
+  registry:
+    mode: existing-openshift-internal
+    origin: "" # Discover endpoint; verify TLS and guest/importer access.
+    repository: confidential-inference/encrypted-models
+    caRef: registry-trust
+    publisherIdentityRef: model-publisher
+    importerIdentityRef: model-importer
+
+  model:
+    release: qwen3-0.6b-v1
+    source: Qwen/Qwen3-0.6B
+    revision: c1899de289a04d12100db370d81485cdf75e47ca
+    fileManifest: models/qwen3-0.6b/files.json
+    servedName: qwen3-0.6b
+    mountPath: /model
+    offlineAtInference: true
+    publisher:
+      location: trusted-external-runner
+      credentialRef: model-release-key # Backend reference only.
+
+  volumes:
+    model:
+      mode: Block
+      accessModes: [ReadWriteOncePod]
+      storageClassName: ""
+      size: 2Gi
+      profile: luks-verity-v1
+      initialization: Never
+    data:
+      mode: Block
+      accessModes: [ReadWriteOncePod]
+      storageClassName: ""
+      size: 1Gi
+      profile: luks-integrity-v1
+      initialization: OnceIfApproved
+      filesystem: ext4
+      mountPath: /data
+      owner: {uid: 1001, gid: 1001}
+    retention:
+      deleteOnUninstall: false
+      reuseRequiresExactIdentity: true
+
+  trust:
+    topology: existing-trusted-services # Single trusted lab or separate trusted cluster.
+    trustee:
+      mode: existing
+      url: ""
+      caRef: trustee-trust
+      policyOwner: existing-coco-vp
+      keyBackendRoleRef: inference-release-provisioner
+    authority:
+      mode: managed-addon # In the trusted administrative domain.
+      stateStorageClassName: ""
+      retainState: true
+      tlsCredentialRef: storage-authority-tls
+      receiptSigningCredentialRef: storage-authority-receipts
+    deploymentApproval:
+      mode: trusted-explicit # Optional preauthorized trusted issuer in a later mode.
+      signerRef: inference-release-signer
+      publicKeyringRef: inference-approval-public-keys
+      lifetimeSeconds: 86400
+      renewalBeforeExpirySeconds: 3600
+
+  chat:
+    serviceType: ClusterIP
+    servicePort: 8080
+    exposure: port-forward
+    route:
+      enabled: false
+      host: ""
+      tlsMode: edge # If enabled, this is NOT guest-terminated prompt confidentiality.
+
+  validation:
+    runId: qwen-demo-001
+    mode: fresh
+    requireFreshModelPublication: true
+    requireBlankDataInitialization: true
+    requireFreshVMReopen: true
+    requireRealGPUInference: true
+    preserveEvidence: true
+
+# Example SITE override for the edge hardware, to merge over the generic values.
+# This is intentionally not a second complete installation document.
+# inferencePattern:
+#   installation:
+#     clusterIdentity: edge-rtx6k
+#     profile: osc-snp-nvidia-x86_64-v1
+#     gitops:
+#       namespace: vp-gitops
+#   serving:
+#     runtimeClassName: kata-cc-nvidia-gpu
+#     guestResources: {vcpus: 8, memoryMiB: 65536}
+#   volumes:
+#     model: {storageClassName: lvms-vg1}
+#     data: {storageClassName: lvms-vg1}
+#   registry:
+#     origin: https://image-registry.openshift-image-registry.svc:5000
+#   chat:
+#     exposure: vpn-nodeport
+#     serviceType: NodePort
+#     nodePort: 30082 # Only after conflict/capacity checks; preserve 30080/30081.
+#     publicHost: 10.14.202.14
+# Never copy the current lab's PVC UIDs, keys, InitData or approved launch hashes.

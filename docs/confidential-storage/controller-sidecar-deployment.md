@@ -13,6 +13,11 @@ new keys/volumes. The lab uses the existing offline trusted signer. A production
 approval service can publish the same envelope; automatic approval issuance and
 renewal are separate from this controller's deployment reconciliation.
 
+For the proposed **separate add-on repository** and a fresh installation starting
+from CoCo VP, see the [implementation plan](confidential-inference-pattern-plan.md)
+and [clean-install demo specification](qwen-clean-cluster-demo-plan.md). Those
+future install targets are not implemented by this controller deployment alone.
+
 ## Why a separate workload declaration
 
 The desired application and generated two-container predictor must be distinct.

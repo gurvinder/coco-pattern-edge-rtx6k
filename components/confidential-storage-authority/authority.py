@@ -211,6 +211,10 @@ class Authority:
                         "policy update requires closed Ready volumes and fresh policy"
                     )
             for record in records:
+                if record.get("initialization_approval"):
+                    from initialization import approved_policy
+
+                    record["initialization_policy_sha256"] = approved_policy(record)
                 record.setdefault("retired_workload_policies", []).append(old_policy)
                 record["policy_sha256"] = new_policy
                 record["last_policy_update"] = {

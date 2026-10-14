@@ -25,9 +25,18 @@ def revise(previous, guest_path, server_path, output, additions):
         "Prior measured policy mismatch",
     )
     for field in ("environment", "requiredEnvironment"):
-        env = dict(item.split("=", 1) for item in workload[field])
-        env.update(additions)
-        workload[field] = sorted(f"{k}={v}" for k, v in env.items())
+        # The allowlist can contain several explicitly approved values for one
+        # name (e.g. image PATH and CRI PATH). Preserve unrelated alternatives.
+        workload[field] = sorted(
+            [item for item in workload[field] if item.split("=", 1)[0] not in additions]
+            + [f"{k}={v}" for k, v in additions.items()]
+        )
+    # CRI-O can append its default PATH even alongside the explicit image PATH.
+    # Both exact values were observed; arbitrary PATH prefixes remain forbidden.
+    workload["environment"] = sorted(
+        set(workload["environment"])
+        | {"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+    )
     env = {item["name"]: item["value"] for item in workload["podEnvironment"]}
     env.update(additions)
     workload["podEnvironment"] = [{"name": k, "value": v} for k, v in env.items()]

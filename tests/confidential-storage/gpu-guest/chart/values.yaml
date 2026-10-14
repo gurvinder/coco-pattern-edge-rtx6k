@@ -21,3 +21,5 @@ authorityRuntime:
   image: ""
   serverJson: ""
   uid: null
+
+kserveEnabled: false

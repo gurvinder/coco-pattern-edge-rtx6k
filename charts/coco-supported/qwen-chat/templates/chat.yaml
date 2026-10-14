@@ -43,6 +43,8 @@ spec:
           env:
             - {name: LISTEN_ADDRESS, value: "0.0.0.0"}
             - {name: PYTHONDONTWRITEBYTECODE, value: "1"}
+            - name: QWEN_MODEL
+              value: {{ .Values.model | quote }}
             - name: QWEN_BACKEND
               value: {{ .Values.backend | quote }}
             - name: PUBLIC_HOST

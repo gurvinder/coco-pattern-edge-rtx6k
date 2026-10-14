@@ -231,3 +231,20 @@ evidence. Supply the existing DB, exact volume/activation IDs and evidence hash.
 The transactional guard retires the old session and preserves the operation ledger.
 It cannot recover a Started step or initialized disk, and is not exposed by the
 workload-facing gateway. See the detailed candidate guide before using recovery.
+
+### Existing initialized volumes and measured environment changes
+
+Use `update-environment.py` with the previous public preparation and current
+public guest/server configuration. It emits new policy/InitData and preserves
+volume manifests, initialization-plan hashes, receipt/TLS public pins and key
+references; it never generates credentials or a new database. Explicitly review
+the new workload, independently measure its guest, and update only its scoped
+Trustee release bindings. Back up retained authority state before invoking the
+administrator-only `update_policy.py` for closed Ready records. Preserve the
+original initialization policy and journal; never seed or format an existing disk.
+
+The chart's `kserveEnabled=true` renders the isolated `qwen-storage` Standard
+InferenceService with one replica and a Recreate strategy. It is mutually exclusive
+with `workloadEnabled`; stop the standalone test and verify both volume owners
+closed before switching. The reviewed pod's fixed hostname, exact environment,
+InitData, unprivileged security context and block attachments are retained.

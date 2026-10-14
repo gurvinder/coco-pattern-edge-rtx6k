@@ -12,7 +12,7 @@ import subprocess
 import urllib.error
 import urllib.request
 
-MODEL = 'qwen3-0.6b-encrypted'
+MODEL = os.environ.get('QWEN_MODEL', 'qwen3-0.6b-encrypted')
 SERVICE_PATH = '/api/v1/namespaces/gpu-workload/services/encrypted-qwen:8000/proxy'
 
 

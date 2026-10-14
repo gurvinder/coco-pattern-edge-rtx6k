@@ -159,6 +159,10 @@ def view(record):
         )
     }
     if record["state"] == "Ready":
+        if "initialization_policy_sha256" in record:
+            from initialization import approved_policy
+
+            result["initialization_policy_sha256"] = approved_policy(record)
         raw = manifest(record, record["header_sha256"])
         if hashlib.sha256(raw).hexdigest() != record["manifest_sha256"]:
             raise Denied("committed manifest is not the approved initialization layout")

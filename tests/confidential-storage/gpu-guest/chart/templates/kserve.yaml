@@ -1,0 +1,27 @@
+{{- if .Values.kserveEnabled }}
+{{- if .Values.workloadEnabled }}
+{{- fail "Use either the standalone candidate or KServe, never both for the exclusive PVCs" }}
+{{- end }}
+{{- $pod := required "Supply the reviewed candidatePodJson" .Values.candidatePodJson | fromJson }}
+{{- if or (ne $pod.kind "Pod") (ne $pod.metadata.namespace .Release.Namespace) (ne $pod.spec.hostname "qwen-gpu-storage-candidate") }}
+{{- fail "Unexpected reviewed GPU candidate" }}
+{{- end }}
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: qwen-storage
+  namespace: {{ .Release.Namespace | quote }}
+  annotations:
+    serving.kserve.io/deploymentMode: Standard
+spec:
+  predictor:
+    minReplicas: 1
+    maxReplicas: 1
+    deploymentStrategy:
+      type: Recreate
+    labels:
+      coco.io/skip-initdata: "true"
+    annotations:
+{{ $pod.metadata.annotations | toYaml | indent 6 }}
+{{ omit $pod.spec "restartPolicy" | toYaml | indent 4 }}
+{{- end }}

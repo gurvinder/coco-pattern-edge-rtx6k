@@ -36,9 +36,9 @@
   },
   "nativeGpuTestsPassed": 23,
   "remainingCdiReview": [],
-  "authorityImage": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/storage-gpu-authority@sha256:96526455138ce4daf014ce5e78014ef6207f4165ed26c00dd2c8752288de29fd",
+  "authorityImage": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/storage-gpu-authority@sha256:3047df0fce43d7467d2d9746da768a29888c593974940be3a1b1e4f71e304165",
   "authorityImageSmokePassed": true,
-  "authorityTestsInsideImagePassed": 131,
+  "authorityTestsInsideImagePassed": 135,
   "storageKeysProvisioned": true,
   "dataFormatted": true,
   "gpuInferencePassed": false,
@@ -51,10 +51,10 @@
   "authorityStatePath": "/state/retained/authority.db",
   "authorityVaultPath": "secret/hub/storageGpuAuthority",
   "standardTrusteeTlsPinnedRcarChallengePassed": true,
-  "activeCandidate": "v14",
-  "activeCandidateInitrdSha256": "dcddf956cc9c413769497e43f4e7e3bb8b0af06258b9a01a00111cd625e8a435",
+  "activeCandidate": "v18",
+  "activeCandidateInitrdSha256": "69e5e15f89576d3a91c704e22dbe901f495308baf84131c54431dbb4c9d82a4d",
   "gpuCdiAdmissionPassed": true,
-  "storageActivation": "both volumes Ready and owned by new guest; application startup pending",
+  "storageActivation": "both retained volumes have fresh reopen ownership; application startup pending",
   "authorityRecords": 2,
   "authorityOperations": 4,
   "authorityIntegrity": "ok",
@@ -137,6 +137,15 @@
     "authorityImage": "sha256:d31c0c2a4dc4cae73ed074c4af30fd198998ad2f30f09e46a09325c010ad624b",
     "authorityTests": 134,
     "retainedVolumesPolicyUpdated": true,
-    "freshVmReopenPending": true
+    "freshVmReopenPending": true,
+    "supersededBy": "v18"
+  },
+  "activePodUid": "a519df38-0e2e-44d2-a4d1-adb3c4c8f602",
+  "retainedInitializationIdentity": {
+    "originalPolicySha256": "698d3b3d935937be235562ad1568ffc32c70093e8c859145e297eafef45c9572",
+    "activePolicySha256": "d49d2b941be3e59ac279da278bbafc60cb35c564146fee1fb2542862bae820bf",
+    "completedSteps": 4,
+    "keysAndManifestsUnchanged": true,
+    "guestClientTestsPassed": 8
   }
 }

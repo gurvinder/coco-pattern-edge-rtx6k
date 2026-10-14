@@ -164,6 +164,12 @@ class PreparationTests(unittest.TestCase):
         for old, new in zip(before["volumes"], after["volumes"]):
             new["expected"]["policy_sha256"] = old["expected"]["policy_sha256"]
             self.assertEqual(old, new)
+        old_env = prepare.read(state / "workload.json")["environment"]
+        new_env = prepare.read(self.root / "revision/workload.json")["environment"]
+        self.assertEqual(
+            [v for v in old_env if v.startswith("PATH=")],
+            [v for v in new_env if v.startswith("PATH=")],
+        )
         files = {p.name for p in (self.root / "revision").iterdir()}
         self.assertFalse(files.intersection({"tls.key", "receipt.key", "authority.db"}))
 

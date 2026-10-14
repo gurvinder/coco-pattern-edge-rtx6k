@@ -35,6 +35,23 @@ class PolicyUpdateTests(unittest.TestCase):
         with self.assertRaises(Denied):
             self.a.begin("scratch", new, "init-1", "reopen", 1)
 
+    def test_initialization_identity_is_preserved_and_corrupt_history_is_denied(self):
+        from initialization import approved_policy
+
+        original = self.a.inspect("scratch")["initialization_approval"]
+        first = self.update()[0]
+        self.assertEqual(first["initialization_policy_sha256"], "a" * 64)
+        second = self.update(old="f", new="9")[0]
+        self.assertEqual(second["initialization_approval"], original)
+        self.assertEqual(approved_policy(second), "a" * 64)
+        # Earlier deployment records can reconstruct this field only by matching
+        # the immutable plan hash against retained, explicitly retired policies.
+        del second["initialization_policy_sha256"]
+        self.assertEqual(approved_policy(second), "a" * 64)
+        second["retired_workload_policies"] = []
+        with self.assertRaises(Denied):
+            approved_policy(second)
+
     def test_owned_revoked_unready_and_stale_records_rejected(self):
         r = self.a.begin("scratch", self.peer, "open", "reopen", 1)
         with self.assertRaises(Denied):

@@ -1,0 +1,17 @@
+{
+  "scope": "independent planned GPU reference; live QEMU comparison pending",
+  "approvedForStorageKeys": false,
+  "calculator": "sev-snp-measure==0.0.13",
+  "launchMeasurement": "a9f7fe8da59beadad610fd3c21dfd30e0710a9f24daddc28f4be6e166c7032784df68ecdccbfd94dc8868e76c53e7056",
+  "files": {
+    "OVMF.amdsev.fd": "1aa196fe94e56809aa668fc4eabfc50923131288e018bcf0c6ab4dd3581bd850",
+    "vmlinuz": "0317da8a23853124ed4e4da6c56254f40a741ff4507e1afbbcb7f32e5c097206",
+    "candidate.initrd": "69e5e15f89576d3a91c704e22dbe901f495308baf84131c54431dbb4c9d82a4d"
+  },
+  "vcpus": 8,
+  "vcpuType": "EPYC-v4",
+  "guestFeatures": "0x1",
+  "kernelCommandLine": "tsc=reliable no_timer_check rcupdate.rcu_expedited=1 i8042.direct=1 i8042.dumbkbd=1 i8042.nopnp=1 i8042.noaux=1 noreplace-smp reboot=k cryptomgr.notests net.ifnames=0 pci=lastbus=0 console=hvc0 console=hvc1 quiet panic=1 nr_cpus=8 selinux=0 scsi_mod.scan=none agent.launch_process_timeout=15 agent.log=warn cgroup_no_v1=all pci=realloc pci=nocrs pci=assign-busses nvrc.smi.srs=1",
+  "baseRuntimeSha256": "0605f273d60d1b7e18aa5d37367740f073da2e84208b2082fcc02d8df0ac5898",
+  "candidateRuntimeSha256": "6fffea0a0c543003d0ab8601fb161a3cb5eef248aff192c526f20f64a8f60b26"
+}

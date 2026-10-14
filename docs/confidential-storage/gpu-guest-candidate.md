@@ -243,6 +243,28 @@ configuration, the measured guest, and the two scoped Trustee launch/InitData
 bindings. Verify the actual replacement Trustee pod and loaded configuration;
 rollout status alone does not prove that startup-only resources were reloaded.
 
+### Initialization identity across workload upgrades
+
+The original RW approval hashes the policy that authorized first formatting.
+It must not be recalculated using a later application's policy. The authority
+retains `initialization_policy_sha256` alongside the current `policy_sha256`.
+It reconstructs the original identity only when the immutable approval hash
+matches an entry in retained policy history. An inconsistent history is denied.
+
+The signed Ready response includes both identities. The guest independently
+checks the original approval digest and complete four-step journal, then requests
+an ordinary reopen grant under the current workload identity. A distinct initial
+identity is rejected for Uninitialized or Initializing records; it cannot authorize
+formatting. Header, layout, manifest, key and initialization journal stay unchanged.
+Regression tests exercise wrong initial/current identities, incomplete journals,
+corrupt history and racing ownership. The upgrade authority image passed 135 tests;
+the guest service and client suites passed 8 tests each.
+
+CRI-O was observed supplying both the exact image PATH and its default PATH.
+Environment revisions preserve these explicit alternatives. The candidate also
+sets the exact `INFERENCE_SERVICE_NAME=qwen-storage` that KServe injects, keeps its
+fixed hostname, and permits neither arbitrary environment values nor shell exec.
+
 ## Remaining acceptance work
 
 - Reopen the same RO and RW disks in a fresh VM, verify the persistent canary,

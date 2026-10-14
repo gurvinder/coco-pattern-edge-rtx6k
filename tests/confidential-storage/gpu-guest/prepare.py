@@ -231,6 +231,9 @@ def prepare(args):
     )
     compile(program, "<candidate-startup>", "exec")
     overrides = {
+        "PATH": dict(item.split("=", 1) for item in image["environment"])["PATH"],
+        "INFERENCE_SERVICE_NAME": "qwen-storage",
+        "PYTHONUNBUFFERED": "1",
         "NVIDIA_VISIBLE_DEVICES": "void",
         "NVIDIA_DRIVER_CAPABILITIES": "compute,utility",
         "CUDA_VISIBLE_DEVICES": "0",

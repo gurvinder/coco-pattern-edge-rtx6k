@@ -160,6 +160,7 @@ struct RecordData {
     volume_id: String,
     generation: u64,
     policy_sha256: String,
+    initialization_policy_sha256: Option<String>,
     profile_sha256: String,
     credential_uri: String,
     mount_binding: Binding,
@@ -241,7 +242,16 @@ impl RecordData {
         {
             return Err(Error::Binding);
         }
-        let intent = json!({"plan":p,"volume_id":self.volume_id,"generation":self.generation,"policy_sha256":self.policy_sha256,
+        // A completed disk retains its original formatting intent after an
+        // administrator upgrades the active workload. Both identities arrive
+        // in the signed, request-bound authority response. Never allow this
+        // distinction to authorize formatting an uninitialized disk.
+        let initialization_policy = match &self.initialization_policy_sha256 {
+            Some(policy) if self.state == State::Ready && digest(policy) => policy,
+            Some(_) => return Err(Error::Binding),
+            None => &self.policy_sha256,
+        };
+        let intent = json!({"plan":p,"volume_id":self.volume_id,"generation":self.generation,"policy_sha256":initialization_policy,
             "profile_sha256":self.profile_sha256,"credential_uri":self.credential_uri,"mount_binding":self.mount_binding});
         if sha(&canonical(&intent)?) != request.plan_sha256 {
             return Err(Error::Binding);
@@ -700,4 +710,65 @@ fn verify(token: &str, key: &[u8; 32], issuer: &str, kid: &str) -> Result<Claims
         return Err(Error::Binding);
     }
     Ok(c)
+}
+
+#[cfg(test)]
+mod policy_upgrade_tests {
+    use super::*;
+    fn fixture() -> (RecordData, Request) {
+        let record: RecordData =
+            serde_json::from_str(include_str!("../fixtures/ready-policy-upgrade.json")).unwrap();
+        let request = Request {
+            expected: Expected {
+                volume_id: record.volume_id.clone(),
+                generation: record.generation,
+                policy_sha256: record.policy_sha256.clone(),
+                profile_sha256: record.profile_sha256.clone(),
+                session_sha256: "1".repeat(64),
+                operation_id: "reopen-1".into(),
+                nonce: "2".repeat(64),
+                manifest_uri: record.mount_binding.manifest_uri.clone(),
+                container_name: record.mount_binding.container_name.clone(),
+                destination: record.mount_binding.destination.clone(),
+                access: "rw".into(),
+            },
+            plan_sha256: record.initialization_approval.plan_sha256.clone(),
+        };
+        (record, request)
+    }
+    #[test]
+    fn completed_journal_retains_original_approval_after_workload_upgrade() {
+        let (record, request) = fixture();
+        record
+            .check(&request, &"1".repeat(64), &"2".repeat(64))
+            .unwrap();
+    }
+    #[test]
+    fn original_policy_cannot_replace_active_policy_or_approve_new_format() {
+        let (mut record, mut request) = fixture();
+        request.expected.policy_sha256 = "a".repeat(64);
+        assert!(record
+            .check(&request, &"1".repeat(64), &"2".repeat(64))
+            .is_err());
+        request.expected.policy_sha256 = "f".repeat(64);
+        record.state = State::Uninitialized;
+        record.initialization_steps.clear();
+        record.manifest = None;
+        assert!(record
+            .check(&request, &"1".repeat(64), &"2".repeat(64))
+            .is_err());
+    }
+    #[test]
+    fn altered_initial_policy_or_incomplete_journal_is_rejected() {
+        let (mut record, request) = fixture();
+        record.initialization_policy_sha256 = Some("9".repeat(64));
+        assert!(record
+            .check(&request, &"1".repeat(64), &"2".repeat(64))
+            .is_err());
+        record.initialization_policy_sha256 = Some("a".repeat(64));
+        record.initialization_steps.pop();
+        assert!(record
+            .check(&request, &"1".repeat(64), &"2".repeat(64))
+            .is_err());
+    }
 }

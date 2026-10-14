@@ -35,6 +35,39 @@ def canonical(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"))
 
 
+def approved_policy(record):
+    """Recover the immutable initialization identity from retained policy history."""
+    approval = record["initialization_approval"]
+    intent = {
+        k: record[k]
+        for k in (
+            "volume_id",
+            "generation",
+            "policy_sha256",
+            "profile_sha256",
+            "credential_uri",
+            "mount_binding",
+        )
+    }
+    intent["plan"] = approval["plan"]
+    candidates = [record["policy_sha256"]] + record.get("retired_workload_policies", [])
+    matches = []
+    for policy in candidates:
+        digest(policy)
+        intent["policy_sha256"] = policy
+        if (
+            hashlib.sha256(canonical(intent).encode()).hexdigest()
+            == approval["plan_sha256"]
+        ):
+            matches.append(policy)
+    if len(set(matches)) != 1:
+        raise Denied("initialization identity does not match retained history")
+    policy = matches[0]
+    if record.get("initialization_policy_sha256", policy) != policy:
+        raise Denied("immutable initialization policy mismatch")
+    return policy
+
+
 def canonical_uuid(value):
     if not isinstance(value, str):
         raise Denied("expected canonical UUID")

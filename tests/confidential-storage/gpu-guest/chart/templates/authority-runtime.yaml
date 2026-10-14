@@ -109,6 +109,8 @@ spec:
       app.kubernetes.io/name: storage-gpu-authority
   template:
     metadata:
+      annotations:
+        checksum/authority-config: {{ .Values.authorityRuntime.serverJson | sha256sum | quote }}
       labels:
         app.kubernetes.io/name: storage-gpu-authority
         coco.io/skip-initdata: "true"

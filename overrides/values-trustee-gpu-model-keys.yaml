@@ -7,3 +7,11 @@ kbs:
       key: secret/data/hub/passphrase
     - name: model-keys
       key: secret/data/hub/modelKeys
+  resourcePolicy:
+    # Independently calculated from v14 boot artifacts and checked against live
+    # QEMU parameters. These two tags are unavailable to other approved guests.
+    modelKeyBindings:
+      qwen-gpu-model-v1: &storageGuestV14
+        launchMeasurement: "aa6fafd0cff30eb3a9b79b9f8821ef16cb90ba0e80183d87f8f00c1b47e3a232a98ae00bf6fb9e2fe191d6ee7640b197"
+        initData: "2d6ff046f6ec1b5cbde23719f0683e4676959620d16a05059e9bc9f9e77bd766"
+      qwen-gpu-data-v1: *storageGuestV14

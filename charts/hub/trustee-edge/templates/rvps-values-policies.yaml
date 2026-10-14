@@ -26,7 +26,13 @@ spec:
           {{`{{- $rawHashPadded := printf "%s00000000000000000000000000000000" $rawHash -}}`}}
           {{`{{- $debugRawHashPadded := printf "%s00000000000000000000000000000000" $debugRawHash -}}`}}
           {{`{{- $referenceValues := dict -}}`}}
-          {{`{{- $entry := dict "version" "0.1.0" "name" "init_data" "expiration" "2027-12-12T00:00:00Z" "value" (list $pcr8Hash $debugPcr8Hash $rawHash $debugRawHash $rawHashPadded $debugRawHashPadded) -}}`}}
+          {{`{{- $storageBindings := `}}{{ .Values.kbs.resourcePolicy.modelKeyBindings | default dict | toJson | quote }}{{` | fromJson -}}`}}
+          {{`{{- $initValues := list $pcr8Hash $debugPcr8Hash $rawHash $debugRawHash $rawHashPadded $debugRawHashPadded -}}`}}
+          {{`{{- range $_, $binding := $storageBindings -}}`}}
+          {{`{{- $initValues = append $initValues $binding.initData -}}`}}
+          {{`{{- end -}}`}}
+          {{`{{- $launchValues := list -}}`}}
+          {{`{{- $entry := dict "version" "0.1.0" "name" "init_data" "expiration" "2027-12-12T00:00:00Z" "value" (uniq $initValues) -}}`}}
           {{`{{- $referenceValues = set $referenceValues "init_data" (toJson $entry | base64enc | replace "+" "-" | replace "/" "_") -}}`}}
           {{`{{- $e := dict "version" "0.1.0" "name" "snp_pcr08" "expiration" "2027-12-12T00:00:00Z" "value" (list $pcr8Hash $debugPcr8Hash) -}}`}}
           {{`{{- $referenceValues = set $referenceValues "snp_pcr08" (toJson $e | base64enc | replace "+" "-" | replace "/" "_") -}}`}}
@@ -84,8 +90,7 @@ spec:
           {{`{{- $referenceValues = set $referenceValues "rtmr_2" (toJson $e | base64enc | replace "+" "-" | replace "/" "_") -}}`}}
           {{`{{- end -}}`}}
           {{`{{- if $firmwareData.snp_launch_measurement -}}`}}
-          {{`{{- $e := dict "version" "0.1.0" "name" "snp_launch_measurement" "expiration" "2027-12-12T00:00:00Z" "value" $firmwareData.snp_launch_measurement -}}`}}
-          {{`{{- $referenceValues = set $referenceValues "snp_launch_measurement" (toJson $e | base64enc | replace "+" "-" | replace "/" "_") -}}`}}
+          {{`{{- $launchValues = $firmwareData.snp_launch_measurement -}}`}}
           {{`{{- end -}}`}}
           {{`{{- if $firmwareData.snp_bootloader -}}`}}
           {{`{{- $e := dict "version" "0.1.0" "name" "snp_bootloader" "expiration" "2027-12-12T00:00:00Z" "value" $firmwareData.snp_bootloader -}}`}}
@@ -107,6 +112,13 @@ spec:
           {{`{{- $e := dict "version" "0.1.0" "name" "xfam" "expiration" "2027-12-12T00:00:00Z" "value" $firmwareData.xfam -}}`}}
           {{`{{- $referenceValues = set $referenceValues "xfam" (toJson $e | base64enc | replace "+" "-" | replace "/" "_") -}}`}}
           {{`{{- end -}}`}}
+          {{`{{- end -}}`}}
+          {{`{{- range $_, $binding := $storageBindings -}}`}}
+          {{`{{- $launchValues = append $launchValues $binding.launchMeasurement -}}`}}
+          {{`{{- end -}}`}}
+          {{`{{- if gt (len $launchValues) 0 -}}`}}
+          {{`{{- $e := dict "version" "0.1.0" "name" "snp_launch_measurement" "expiration" "2027-12-12T00:00:00Z" "value" (uniq $launchValues) -}}`}}
+          {{`{{- $referenceValues = set $referenceValues "snp_launch_measurement" (toJson $e | base64enc | replace "+" "-" | replace "/" "_") -}}`}}
           {{`{{- end -}}`}}
           {{- if .Values.kbs.azure }}
           {{- with .Values.kbs.azure }}

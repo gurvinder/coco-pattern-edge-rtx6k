@@ -1,0 +1,333 @@
+diff --git a/src/agent/src/main.rs b/src/agent/src/main.rs
+index 504644a..d0db9e1 100644
+--- a/src/agent/src/main.rs
++++ b/src/agent/src/main.rs
+@@ -56,6 +56,7 @@ pub mod random;
+ mod sandbox;
+ mod signal;
+ mod storage;
++mod storage_service;
+ mod uevent;
+ mod util;
+ mod version;
+@@ -488,10 +489,12 @@ async fn launch_guest_component_procs(
+     config: &AgentConfig,
+     initdata_return_value: &Option<InitdataReturnValue>,
+ ) -> Result<()> {
+-    if config.guest_components_procs == GuestComponentsProcs::None {
++    let private_storage = storage_service::lock().await?.enabled();
++    if !private_storage && config.guest_components_procs == GuestComponentsProcs::None {
+         return Ok(());
+     }
+-
++    // A storage guest always uses private AA + CDH. Host configuration cannot
++    // add the REST attestation/key API or disable the required private helpers.
+     debug!(logger, "spawning attestation-agent process {}", AA_PATH);
+     let mut aa_args = vec!["--attestation_sock", AA_ATTESTATION_URI];
+     if initdata_return_value.is_some() {
+@@ -512,7 +515,7 @@ async fn launch_guest_component_procs(
+     .map_err(|e| anyhow!("launch_process {} failed: {:?}", AA_PATH, e))?;
+ 
+     // skip launch of confidential-data-hub and api-server-rest
+-    if config.guest_components_procs == GuestComponentsProcs::AttestationAgent {
++    if !private_storage && config.guest_components_procs == GuestComponentsProcs::AttestationAgent {
+         return Ok(());
+     }
+ 
+@@ -534,6 +537,26 @@ async fn launch_guest_component_procs(
+     .map_err(|e| anyhow!("launch_process {} failed: {:?}", CDH_PATH, e))?;
+ 
+     // skip launch of api-server-rest
++    if private_storage {
++        storage_service::protect_guest_components()?;
++        // Complete private service startup before accepting container RPCs.
++        // Never replace a socket left by an earlier instance in this guest.
++        let socket = "/run/coco/storage-service/agent.sock";
++        if std::fs::symlink_metadata(socket).is_ok() {
++            bail!("private storage service already exists");
++        }
++        launch_process(
++            logger,
++            "/usr/bin/storage-service-start",
++            vec![],
++            None,
++            socket,
++            60,
++            &[],
++        )
++        .await?;
++        return Ok(());
++    }
+     if config.guest_components_procs == GuestComponentsProcs::ConfidentialDataHub {
+         return Ok(());
+     }
+diff --git a/src/agent/src/rpc.rs b/src/agent/src/rpc.rs
+index f9df3e1..7e4de3a 100644
+--- a/src/agent/src/rpc.rs
++++ b/src/agent/src/rpc.rs
+@@ -204,8 +204,9 @@ impl AgentService {
+     #[instrument]
+     async fn do_create_container(
+         &self,
+-        req: protocols::agent::CreateContainerRequest,
++        mut req: protocols::agent::CreateContainerRequest,
+     ) -> Result<()> {
++        let mut storage = crate::storage_service::lock().await?;
+         // create the proc_io first, in case there's some error occur below, thus we can make sure
+         // the io stream closed when error occur.
+         let proc_io = if AGENT_CONFIG.passfd_listener_port != 0 {
+@@ -220,7 +221,7 @@ impl AgentService {
+ 
+         let use_sandbox_pidns = req.sandbox_pidns();
+ 
+-        let mut oci = match req.OCI.into_option() {
++        let mut oci = match req.OCI.clone().into_option() {
+             Some(spec) => spec.into(),
+             None => {
+                 error!(sl(), "no oci spec in the create container request!");
+@@ -228,6 +229,7 @@ impl AgentService {
+             }
+         };
+ 
++        storage.prepare(&mut req, &mut oci, &self.sandbox).await?;
+         let container_name = k8s::container_name(&oci);
+ 
+         info!(sl(), "receive createcontainer, spec: {:?}", &oci);
+@@ -250,13 +252,15 @@ impl AgentService {
+         // or other entities for a specifc device.
+         // In Kata we only consider the directory "/var/run/cdi", "/etc" may be
+         // readonly
+-        dump_nvidia_cdi_yaml(&sl())?;
+-        handle_cdi_devices(&sl(), &mut oci, "/var/run/cdi", AGENT_CONFIG.cdi_timeout).await?;
++        if !storage.enabled() {
++            dump_nvidia_cdi_yaml(&sl())?;
++            handle_cdi_devices(&sl(), &mut oci, "/var/run/cdi", AGENT_CONFIG.cdi_timeout).await?;
+ 
+-        // Handle trusted storage configuration before mounting any storage
+-        cdh_handler_trusted_storage(&mut oci)
+-            .await
+-            .map_err(|e| anyhow!("failed to handle trusted storage: {}", e))?;
++            // Handle trusted storage configuration before mounting any storage
++            cdh_handler_trusted_storage(&mut oci)
++                .await
++                .map_err(|e| anyhow!("failed to handle trusted storage: {}", e))?;
++        }
+ 
+         // Both rootfs and volumes (invoked with --volume for instance) will
+         // be processed the same way. The idea is to always mount any provided
+@@ -274,9 +278,11 @@ impl AgentService {
+         .await?;
+ 
+         // Handle sealed secrets after storage is mounted
+-        cdh_handler_sealed_secrets(&mut oci)
+-            .await
+-            .map_err(|e| anyhow!("failed to handle sealed secrets: {}", e))?;
++        if !storage.enabled() {
++            cdh_handler_sealed_secrets(&mut oci)
++                .await
++                .map_err(|e| anyhow!("failed to handle sealed secrets: {}", e))?;
++        }
+ 
+         let mut s = self.sandbox.lock().await;
+         s.container_mounts.insert(cid.clone(), m);
+@@ -336,6 +342,7 @@ impl AgentService {
+         };
+ 
+         let new_p = confidential_data_hub::image::get_process(p, &oci, req.storages.clone())?;
++        storage.check_process(&cid, &new_p)?;
+         let p = Process::new(&sl(), &new_p, cid.as_str(), true, pipe_size, proc_io)?;
+ 
+         // if starting container failed, we will do some rollback work
+@@ -361,6 +368,8 @@ impl AgentService {
+ 
+     #[instrument]
+     async fn do_start_container(&self, req: protocols::agent::StartContainerRequest) -> Result<()> {
++        let storage = crate::storage_service::lock().await?;
++        storage.check_start(&req.container_id)?;
+         let mut s = self.sandbox.lock().await;
+         let sid = s.id.clone();
+         let cid = req.container_id.clone();
+@@ -389,6 +398,21 @@ impl AgentService {
+         &self,
+         req: protocols::agent::RemoveContainerRequest,
+     ) -> Result<()> {
++        let mut storage = crate::storage_service::lock().await?;
++        let managed = storage.begin_remove(&req.container_id)?;
++        if managed
++            && self
++                .sandbox
++                .lock()
++                .await
++                .get_container(&req.container_id)
++                .is_none()
++        {
++            // Failed create or previous successful destroy: private service
++            // still owns cleanup. Busy mappings prevent premature release.
++            storage.close().await?;
++            return Ok(());
++        }
+         let cid = req.container_id;
+ 
+         // Drop the host guest mapping for this container so we can reuse the
+@@ -403,6 +427,10 @@ impl AgentService {
+                 .destroy()
+                 .await?;
+             remove_container_resources(&mut sandbox, &cid).await?;
++            drop(sandbox);
++            if managed {
++                storage.close().await?;
++            }
+             return Ok(());
+         }
+ 
+@@ -424,11 +452,17 @@ impl AgentService {
+             .await
+             .map_err(|_| anyhow!(nix::Error::ETIME))???;
+ 
+-        remove_container_resources(&mut *self.sandbox.lock().await, &cid).await
++        remove_container_resources(&mut *self.sandbox.lock().await, &cid).await?;
++        if managed {
++            storage.close().await?;
++        }
++        Ok(())
+     }
+ 
+     #[instrument]
+     async fn do_exec_process(&self, req: protocols::agent::ExecProcessRequest) -> Result<()> {
++        let storage = crate::storage_service::lock().await?;
++        storage.deny_mutation()?;
+         let cid = req.container_id;
+         let exec_id = req.exec_id;
+ 
+@@ -707,6 +741,8 @@ impl AgentService {
+         &self,
+         req: protocols::agent::WriteStreamRequest,
+     ) -> Result<protocols::agent::WriteStreamResponse> {
++        let storage = crate::storage_service::lock().await?;
++        storage.deny_mutation()?;
+         let cid = req.container_id;
+         let eid = req.exec_id;
+ 
+@@ -940,6 +976,8 @@ impl agent_ttrpc::AgentService for AgentService {
+         req: protocols::agent::UpdateContainerRequest,
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "update_container", req);
++        let storage = crate::storage_service::lock().await.map_ttrpc_err(same)?;
++        storage.deny_mutation().map_ttrpc_err(same)?;
+         is_allowed(&req).await?;
+ 
+         let mut sandbox = self.sandbox.lock().await;
+@@ -1007,6 +1045,8 @@ impl agent_ttrpc::AgentService for AgentService {
+         req: protocols::agent::RemoveStaleVirtiofsShareMountsRequest,
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "remove_stale_virtiofs_share_mounts", req);
++        let storage = crate::storage_service::lock().await.map_ttrpc_err(same)?;
++        storage.deny_mutation().map_ttrpc_err(same)?;
+         is_allowed(&req).await?;
+         let mount_infos = parse_mount_table("/proc/self/mountinfo").map_ttrpc_err(same)?;
+         for m in &mount_infos {
+@@ -1201,6 +1241,8 @@ impl agent_ttrpc::AgentService for AgentService {
+         req: protocols::agent::UpdateEphemeralMountsRequest,
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "update_mounts", req);
++        let storage = crate::storage_service::lock().await.map_ttrpc_err(same)?;
++        storage.deny_mutation().map_ttrpc_err(same)?;
+         is_allowed(&req).await?;
+ 
+         update_ephemeral_mounts(sl(), &req.storages, &self.sandbox)
+@@ -1251,6 +1293,8 @@ impl agent_ttrpc::AgentService for AgentService {
+         req: SetIPTablesRequest,
+     ) -> ttrpc::Result<SetIPTablesResponse> {
+         trace_rpc_call!(ctx, "set_iptables", req);
++        let storage = crate::storage_service::lock().await.map_ttrpc_err(same)?;
++        storage.deny_mutation().map_ttrpc_err(same)?;
+         is_allowed(&req).await?;
+ 
+         info!(sl(), "set_ip_tables request received");
+@@ -1394,6 +1438,8 @@ impl agent_ttrpc::AgentService for AgentService {
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "create_sandbox", req);
+         is_allowed(&req).await?;
++        let mut storage = crate::storage_service::lock().await.map_ttrpc_err(same)?;
++        storage.admit_sandbox(&req).map_ttrpc_err(same)?;
+ 
+         {
+             let mut s = self.sandbox.lock().await;
+@@ -1452,10 +1498,14 @@ impl agent_ttrpc::AgentService for AgentService {
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "destroy_sandbox", req);
+         is_allowed(&req).await?;
++        let mut storage = crate::storage_service::lock().await.map_ttrpc_err(same)?;
+ 
+         let mut sandbox = self.sandbox.lock().await;
+         // destroy all containers, clean up, notify agent to exit etc.
+         sandbox.destroy().await.map_ttrpc_err(same)?;
++        if storage.enabled() {
++            storage.close().await.map_ttrpc_err(same)?;
++        }
+         // Close get_oom_event connection,
+         // otherwise it will block the shutdown of ttrpc.
+         drop(sandbox.event_tx.take());
+@@ -1521,6 +1571,8 @@ impl agent_ttrpc::AgentService for AgentService {
+         req: protocols::agent::ReseedRandomDevRequest,
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "reseed_random_dev", req);
++        let storage = crate::storage_service::lock().await.map_ttrpc_err(same)?;
++        storage.deny_mutation().map_ttrpc_err(same)?;
+         is_allowed(&req).await?;
+ 
+         random::reseed_rng(req.data.as_slice()).map_ttrpc_err(same)?;
+@@ -1576,6 +1628,8 @@ impl agent_ttrpc::AgentService for AgentService {
+         req: protocols::agent::SetGuestDateTimeRequest,
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "set_guest_date_time", req);
++        let storage = crate::storage_service::lock().await.map_ttrpc_err(same)?;
++        storage.deny_mutation().map_ttrpc_err(same)?;
+         is_allowed(&req).await?;
+ 
+         do_set_guest_date_time(req.Sec, req.Usec).map_ttrpc_err(same)?;
+@@ -1589,6 +1643,8 @@ impl agent_ttrpc::AgentService for AgentService {
+         req: protocols::agent::CopyFileRequest,
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "copy_file", req);
++        let storage = crate::storage_service::lock().await.map_ttrpc_err(same)?;
++        storage.deny_mutation().map_ttrpc_err(same)?;
+         #[cfg(feature = "agent-policy")]
+         {
+             let req_for_policy: PolicyCopyFileRequest = (&req)
+@@ -1683,6 +1739,8 @@ impl agent_ttrpc::AgentService for AgentService {
+         req: protocols::agent::AddSwapRequest,
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "add_swap", req);
++        let storage = crate::storage_service::lock().await.map_ttrpc_err(same)?;
++        storage.deny_mutation().map_ttrpc_err(same)?;
+         is_allowed(&req).await?;
+ 
+         do_add_swap(&self.sandbox, &req).await.map_ttrpc_err(same)?;
+@@ -1696,6 +1754,8 @@ impl agent_ttrpc::AgentService for AgentService {
+         req: protocols::agent::AddSwapPathRequest,
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "add_swap_path", req);
++        let storage = crate::storage_service::lock().await.map_ttrpc_err(same)?;
++        storage.deny_mutation().map_ttrpc_err(same)?;
+         is_allowed(&req).await?;
+ 
+         do_add_swap_path(&req).await.map_ttrpc_err(same)?;
+@@ -1710,6 +1770,8 @@ impl agent_ttrpc::AgentService for AgentService {
+         req: protocols::agent::SetPolicyRequest,
+     ) -> ttrpc::Result<Empty> {
+         trace_rpc_call!(ctx, "set_policy", req);
++        let storage = crate::storage_service::lock().await.map_ttrpc_err(same)?;
++        storage.deny_mutation().map_ttrpc_err(same)?;
+ 
+         do_set_policy(&req).await?;
+ 
+@@ -1722,6 +1784,8 @@ impl agent_ttrpc::AgentService for AgentService {
+         req: protocols::agent::GetDiagnosticDataRequest,
+     ) -> ttrpc::Result<protocols::agent::GetDiagnosticDataResponse> {
+         trace_rpc_call!(ctx, "get_diagnostic_data", req);
++        let storage = crate::storage_service::lock().await.map_ttrpc_err(same)?;
++        storage.deny_mutation().map_ttrpc_err(same)?;
+         is_allowed(&req).await?;
+ 
+         match req.log_type.as_str() {

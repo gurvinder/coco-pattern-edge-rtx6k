@@ -1,0 +1,90 @@
+package agent_policy
+import rego.v1
+
+# Workload-specific values are generated from the public publisher descriptor.
+workload := __WORKLOAD_JSON__
+default AllowRequestsFailingPolicy := false
+default CreateContainerRequest := false
+default CreateSandboxRequest := false
+default ExecProcessRequest := false
+default CopyFileRequest := false
+default SetPolicyRequest := false
+default WriteStreamRequest := false
+default AddSwapRequest := false
+default AddSwapPathRequest := false
+default SetGuestDateTimeRequest := false
+default ReseedRandomDevRequest := false
+default UpdateContainerRequest := false
+default UpdateEphemeralMountsRequest := false
+default GetDiagnosticDataRequest := false
+
+# These calls cannot introduce processes, files or storage. Native lifecycle
+# guards restrict start/remove to admitted container identities.
+default StartContainerRequest := true
+default RemoveContainerRequest := true
+default DestroySandboxRequest := true
+default SignalProcessRequest := true
+default WaitProcessRequest := true
+default ReadStreamRequest := true
+default CloseStdinRequest := true
+default StatsContainerRequest := true
+default GuestDetailsRequest := true
+default GetOOMEventRequest := true
+default GetMetricsRequest := true
+default UpdateInterfaceRequest := true
+default UpdateRoutesRequest := true
+default AddARPNeighborsRequest := true
+default ListInterfacesRequest := true
+default ListRoutesRequest := true
+default OnlineCPUMemRequest := true
+
+CreateSandboxRequest if {
+    input.guest_hook_path == ""
+    count(input.kernel_modules) == 0
+    regex.match("^[a-f0-9]{64}$", input.sandbox_id)
+}
+
+common if {
+    regex.match("^[a-f0-9]{64}$", input.container_id)
+    input.OCI.Root.Path == sprintf("/run/kata-containers/%s/rootfs", [input.container_id])
+    input.OCI.Root.Readonly == true
+    input.OCI.Hooks == null
+    input.OCI.Process.Terminal == false
+    count(input.shared_mounts) == 0
+    count(input.storages) == 1
+    input.storages[0].driver == "image_guest_pull"
+    input.storages[0].mount_point == input.OCI.Root.Path
+    input.storages[0].fstype == "overlay"
+    count(input.storages[0].options) == 0
+    input.storages[0].shared == false
+    input.OCI.Annotations["io.kubernetes.cri.sandbox-namespace"] == "confidential-storage-test"
+}
+
+# The native agent replaces this process with its measured in-image pause
+# configuration. It removes all host file bind mounts before native creation.
+CreateContainerRequest if {
+    common
+    input.OCI.Annotations["io.kubernetes.cri-o.ContainerName"] == "POD"
+    input.OCI.Annotations["io.katacontainers.pkg.oci.container_type"] == "pod_sandbox"
+    input.storages[0].source == "pause"
+    input.OCI.Process.Args == ["/usr/bin/pod"]
+    count(input.devices) == 0
+}
+
+CreateContainerRequest if {
+    common
+    input.OCI.Annotations["io.kubernetes.cri-o.ContainerName"] == "model"
+    input.OCI.Annotations["io.katacontainers.pkg.oci.container_type"] == "pod_container"
+    input.storages[0].source == workload.image
+    input.OCI.Process.Args == workload.args
+    input.OCI.Process.Cwd == "/"
+    input.OCI.Process.User.UID == 1000
+    input.OCI.Process.User.GID == 1000
+    input.OCI.Process.NoNewPrivileges == true
+    every environment in input.OCI.Process.Env {
+        environment in workload.environment
+    }
+    count(input.devices) == 1
+    input.devices[0].type_ == "scsi"
+    input.devices[0].container_path == "/dev/encrypted-data"
+}

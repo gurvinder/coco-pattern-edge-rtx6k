@@ -4,7 +4,74 @@ Checkpoint: 13 October 2026, branch `dev/confidential-storage-integration`, base
 on proposal/handoff commit `e4a3616`. Read the [report](compatibility-report.md)
 before making changes. The original six-phase handoff still defines completion.
 
-## Latest checkpoint: downstream kernel storage stack and agent source port
+## Latest checkpoint: native lifecycle and private key/mount service
+
+**14 October, 00:10 UTC:** built the private guest storage service and a separate
+native-agent integration against the pinned installed Kata source. Neither is
+installed yet. The live test handler still uses `initrd-kernel-v2`; no node or
+CRI-O changes occurred in this checkpoint. Production audit remains unchanged.
+
+The native path retains rustjail's pause/app, cgroup, process and teardown
+handling, resolves one SCSI attachment and replaces raw-device exposure with the
+private service's filesystem mount. Host file bind mounts are removed (fresh
+in-guest `/dev/shm` tmpfs), closing the shared-file symlink route to private guest
+state. Root-private AA/CDH and storage service start before app RPC admission;
+the REST helper is never started in this configured guest. Exec, host hooks,
+CDI/CDH privilege shortcuts, swap and mutation RPCs are denied. This is a new
+experiment, not the earlier activation-disabled custom runtime adapter patch.
+
+The service connects real authority + SNP KBS client + RO LUKS/dm-verity opener.
+It retains ownership across errors, verifies the sealed header before requesting
+the key and closes authority ownership only after kernel teardown. It currently
+rejects RW configuration: signed first-use journal wiring is still outstanding.
+See `components/confidential-storage-service/README.md` and the native-agent README.
+
+The isolated SNP-only Trustee KBS is running in `storage-agent-compiler`, port
+8444 with TLS 1.3, admin DenyAll, verified EAR signing chain, offline AMD cache
+and deny-all resource policy. Unauthorized GET/POST returned 401 and TLS 1.2 was
+rejected. **No storage key was provisioned.** No Service/Route was added.
+Private files are `/build/storage-kbs-private`, with local backup outside Git at
+`work/confidential-storage-private/kbs-native-20261014`. The restored AS state is
+`/build/private-as-state`; its loopback REST AS is not restarted yet.
+
+Build trees are `/build/kata-native` (native agent), `/build/storage-service`
+(private service), `/build/storage-kbs-server` (Trustee). Shared agent target is
+`/build/kata/target`. Compiler is still the 22:59 UTC pod, expiring approximately
+02:59 UTC; scratch was 18 GiB/32 GiB at the last check. Public release binaries are
+in `/build/native-outputs`; keep only the newest hash recorded in evidence.
+Local source staging is `/private/tmp/storage-native-agent-v1`.
+
+`tests/confidential-storage/native-guest` contains guest assembly/bootstrap,
+deny-all KBS preparation and strict RO file-verification InitData preparation.
+The policy pins UBI digest, exact hash-check command, UID/GID and environment;
+its generated files are `/private/tmp/storage-native-policy-v1`. This workload
+checks all published Qwen file hashes and read-only behavior; it is not yet a
+model inference server. Live policy/request compatibility remains to be checked.
+
+The candidate image is now assembled and reproduced byte-for-byte:
+`/private/tmp/storage-native-v1.initrd`, SHA-256
+`fde2f852f464c9a44f1fd6369eab0162e0841dd827bc30da172ff8761304cc3a`.
+Its overlay and measurement JSON are beside it and public build/measurement
+metadata are in evidence. The intended cmdline changes only `agent.log=debug`
+to `agent.log=warn`; actual handler/QEMU arguments must be verified before keys.
+Six native tests, three protocol tests and the strict actual-protobuf policy test
+pass. Source preparation is byte-identical to the tested tree.
+
+Fresh actual RO authority state/public guest config are private locally at
+`work/confidential-storage-private/authority-native-20261014`. They are not yet
+uploaded or started. They bind the real published manifest to
+`kbs:///storage-test/model-keys/qwen-luks-v1`, but no such KBS key exists. Reuse
+this state and config for the recorded candidate; regenerating signing/TLS data
+changes the guest measurement. TLS validity is eight hours from creation.
+
+**Next:** install/verify only the isolated candidate config/image, restore the
+loopback AS and start this authority, then run strict live no-key/negative checks.
+Only after those pass, authorize this exact measurement and InitData for the
+isolated model key and run actual RO PVC access/serving. Wire the RW signed
+initialization journal next and run blank-PVC format/persistence/reopen and
+negative/cleanup tests. Neither requested full E2E is complete.
+
+## Previous checkpoint: downstream kernel storage stack and agent source port
 
 **13 October, 23:25 UTC:** the [downstream guest diagnostic](downstream-guest.md)
 passed on the live SNP test runtime: matching dm-integrity modules, LUKS2/HMAC

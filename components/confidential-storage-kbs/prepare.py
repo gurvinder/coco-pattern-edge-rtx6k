@@ -20,7 +20,7 @@ UPSTREAM_LOCK = "88ba3f0378dbb6031b19ffe1a29172ebea42871c16c2ae7f8822c90b7865829
 HERE = Path(__file__).resolve().parent
 
 
-def prepare(source, destination, with_test_fixtures=False):
+def prepare(source, destination, with_test_fixtures=False, with_service=False):
     if destination.exists():
         raise ValueError("output must be a new directory")
     head = subprocess.check_output(
@@ -161,6 +161,12 @@ async fn bounded_text(response: reqwest::Response) -> anyhow::Result<String> {
             destination / "components" / name,
             ignore=shutil.ignore_patterns("target", "__pycache__", "._*", ".DS_Store"),
         )
+    if with_service:
+        shutil.copytree(
+            HERE.parent / "confidential-storage-service",
+            destination / "components/confidential-storage-service",
+            ignore=shutil.ignore_patterns("target", "__pycache__", "._*", ".DS_Store"),
+        )
     if with_test_fixtures:
         shutil.copytree(
             HERE.parent / "confidential-storage-authority",
@@ -182,5 +188,11 @@ if __name__ == "__main__":
     parser.add_argument("--upstream", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--with-test-fixtures", action="store_true")
+    parser.add_argument("--with-service", action="store_true")
     args = parser.parse_args()
-    prepare(args.upstream.resolve(), args.output.resolve(), args.with_test_fixtures)
+    prepare(
+        args.upstream.resolve(),
+        args.output.resolve(),
+        args.with_test_fixtures,
+        args.with_service,
+    )

@@ -1,0 +1,45 @@
+{
+  "scope": "isolated-native-agent-and-private-storage-service-development",
+  "completedConfidentialPvcE2E": false,
+  "agentInstalled": false,
+  "storageKeyProvisioned": false,
+  "sourcePreparationByteIdentical": true,
+  "nativeAgentTests": {
+    "passed": 6,
+    "failed": 0
+  },
+  "serviceProtocolTests": {
+    "passed": 3,
+    "failed": 0
+  },
+  "agentBinarySha256": "7e1c212aca1c1fcad859cc2f4bd1a7b7bd9160a483fef304a9b6faa17b2ea033",
+  "serviceBinarySha256": "b44202308e011b2939385c78580c04053a74d467122da05ca11a5a9b6de44563",
+  "kbsBinarySha256": "4fe5159d6c0ba5593a28d6fca66cf108accdd7e04cbfad36071fe8f62a1559f8",
+  "isolatedKbs": {
+    "tls13Verified": true,
+    "tls12Rejected": true,
+    "unauthenticatedResourceStatus": 401,
+    "unauthenticatedAdminStatus": 401,
+    "adminMode": "DenyAll",
+    "resourcePolicy": "deny-all",
+    "noKeysProvisioned": true,
+    "amdCertificateSource": "previously-approved-offline-cache"
+  },
+  "knownBuildWarnings": [
+    "two pre-existing downstream unused_unsafe warnings",
+    "upstream KBS crypto GenericArray deprecation warnings"
+  ],
+  "remaining": [
+    "validate strict policy and candidate boot on actual handler",
+    "live private service and native lifecycle validation",
+    "real RO key/PVC/model serving",
+    "signed RW journal integration and blank-PVC initialization/reopen",
+    "live negative and cleanup recovery tests"
+  ],
+  "strictPolicyActualProtobufTest": {
+    "passed": 1,
+    "negativeVariants": 14
+  },
+  "productionUnchanged": true,
+  "guestImageRebuildByteIdentical": true
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "status": "development-not-installed",
+  "sourceArchive": "kata-containers-3.31.0.tar.gz",
+  "sourceArchiveSha256": "ab8972dc026cfaad85705e93019506384c2af286f715bd364701062c88330891",
+  "hostRuntimeChanges": false,
+  "files": {
+    "native-lifecycle.patch": "89be2e3e905d117beac05e3202692268383011f8647dba01034fa24759a62b04",
+    "storage_service.rs": "7c2de534e73a25d2c7d6cf05c4db41956e638270a0a4f666dbc08a9de2f715b9"
+  }
+}

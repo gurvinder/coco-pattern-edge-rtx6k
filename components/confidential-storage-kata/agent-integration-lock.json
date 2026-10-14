@@ -59,8 +59,8 @@
     {
       "source": "components/confidential-storage-guest/src/lib.rs",
       "destination": "src/libs/confidential-storage-guest/src/lib.rs",
-      "sourceSha256": "022b9b27d094907331bcf36d0ba7d60b5e1477885ea5a93cfd5d3360d3fb27a5",
-      "outputSha256": "022b9b27d094907331bcf36d0ba7d60b5e1477885ea5a93cfd5d3360d3fb27a5"
+      "sourceSha256": "d6bf7559cec49981eb1161fa8e8119a2f4559a45b44df5f63c0f4445ab53fdbc",
+      "outputSha256": "d6bf7559cec49981eb1161fa8e8119a2f4559a45b44df5f63c0f4445ab53fdbc"
     },
     {
       "source": "components/confidential-storage-guest/src/lifecycle/tests.rs",
@@ -83,14 +83,14 @@
     {
       "source": "components/confidential-storage-guest/src/opener/tests.rs",
       "destination": "src/libs/confidential-storage-guest/src/opener/tests.rs",
-      "sourceSha256": "e44beecae5179848bf7625e3ddf6c906b03add597e7fc08bfb33a6c677ffb9d2",
-      "outputSha256": "e44beecae5179848bf7625e3ddf6c906b03add597e7fc08bfb33a6c677ffb9d2"
+      "sourceSha256": "52cb86abce3359a591d9ac272621ab4a50bfb0567ebcd851f240a49fac5d5f51",
+      "outputSha256": "52cb86abce3359a591d9ac272621ab4a50bfb0567ebcd851f240a49fac5d5f51"
     },
     {
       "source": "components/confidential-storage-guest/src/opener.rs",
       "destination": "src/libs/confidential-storage-guest/src/opener.rs",
-      "sourceSha256": "3520ee3a1b0faf169cf0120e67a48c71c85ea619ebcbc230a87c46ada1d2d38e",
-      "outputSha256": "3520ee3a1b0faf169cf0120e67a48c71c85ea619ebcbc230a87c46ada1d2d38e"
+      "sourceSha256": "b59a8f853d582ce693bdbb6d3004ae081cb259ef99e08e88e3b8c287fd752ffa",
+      "outputSha256": "b59a8f853d582ce693bdbb6d3004ae081cb259ef99e08e88e3b8c287fd752ffa"
     },
     {
       "source": "components/confidential-storage-guest/src/profile/tests.rs",
@@ -101,8 +101,8 @@
     {
       "source": "components/confidential-storage-guest/src/profile.rs",
       "destination": "src/libs/confidential-storage-guest/src/profile.rs",
-      "sourceSha256": "7defa567c7535b922e4dcee92cb94e8851278640a2cca150ab76ca0d555a4d92",
-      "outputSha256": "7defa567c7535b922e4dcee92cb94e8851278640a2cca150ab76ca0d555a4d92"
+      "sourceSha256": "f5a9aa3cbaeca98819a773833db48ef64d5e9517569ed79594b5fb504e891359",
+      "outputSha256": "f5a9aa3cbaeca98819a773833db48ef64d5e9517569ed79594b5fb504e891359"
     },
     {
       "source": "components/confidential-storage-guest/src/receipt.rs",
@@ -217,6 +217,12 @@
       "destination": "src/libs/confidential-storage-guest/examples/ro_kernel_lab.rs",
       "sourceSha256": "a136b7747d69a86d02eb8ab2446606fec90d239fc939753d90aebd510c37585a",
       "outputSha256": "a136b7747d69a86d02eb8ab2446606fec90d239fc939753d90aebd510c37585a"
+    },
+    {
+      "source": "components/confidential-storage-guest/src/initializer.rs",
+      "destination": "src/libs/confidential-storage-guest/src/initializer.rs",
+      "sourceSha256": "b9816c9ca45100480850de3e837675255b539b0ab9acf941f7f7ac8fda1c5e2e",
+      "outputSha256": "b9816c9ca45100480850de3e837675255b539b0ab9acf941f7f7ac8fda1c5e2e"
     }
   ],
   "build": {

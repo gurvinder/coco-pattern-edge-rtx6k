@@ -1,0 +1,4 @@
+apiVersion: v2
+name: private-storage-rw-probe
+version: 0.1.0
+description: Isolated native-agent encrypted RW PVC initialization and reopen

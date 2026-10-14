@@ -3,8 +3,9 @@
 On 14 October 2026, the isolated SNP guest retrieved the test key from Trustee,
 opened the OCI-populated Qwen PVC through dm-verity and read-only LUKS, and exposed
 only `/models` to an unprivileged container. All nine publisher file hashes passed.
-This verifies **confidential RO PVC access**, not model inference or RW storage.
-Those two final examples are still incomplete.
+This historical checkpoint verifies **confidential RO PVC access**. Subsequent
+[model inference](native-model-serving.md) and [RW initialization/reopen](native-rw-storage.md)
+completed both live examples.
 
 ## Actual workload and evidence
 

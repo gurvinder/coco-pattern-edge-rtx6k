@@ -49,9 +49,10 @@ The SNP attester pads it to report_data; do not hash it again. Collection has an
 and a private process group for timeout cleanup. No socket or executable path
 can be chosen by a request.
 
-**The collector is compiled, not hardware-validated.** It still needs the approved
-separate guest artifact and private-AA/Trustee interoperability test. The earlier
-no-secret diagnostic initrd is not an authorized key-bearing workload.
+The collector is now hardware-validated in the isolated
+[RO](../../docs/confidential-storage/native-model-serving.md) and
+[RW](../../docs/confidential-storage/native-rw-storage.md) SNP guests.
+Earlier no-secret diagnostic initrds remain ineligible for keys.
 
 ## Reproduce transport tests
 
@@ -74,9 +75,9 @@ The `transport_fixture` example is a test-only binary and must never be installe
 in a measured production guest. A missing fixture binary skips Python tests;
 that is not a passing interoperability run.
 
-Remaining integration: trusted disk execution of initialization decisions,
-production wiring of the private KBS provider, real device resolution and agent lifecycle
-callbacks. Neither requested confidential-storage E2E is complete yet.
+The isolated native integration now connects trusted disk execution, real KBS,
+device resolution and agent lifecycle callbacks. Both requested E2Es pass;
+production deployment and operational recovery remain separate work.
 
 ## Initialization journal
 

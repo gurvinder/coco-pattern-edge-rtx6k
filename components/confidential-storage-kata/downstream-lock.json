@@ -10,7 +10,7 @@
     "sha256": "bc88a58e263d8fe01c7e552fceb1612621cfcb8db046c96dc29d11ec69e5a8ad"
   },
   "overlayLock": "agent-integration-lock.json",
-  "overlayLockSha256": "163d302c8915e2d1c78a68367098d37d66ad0d8647219b30838991f0af8e2693",
+  "overlayLockSha256": "efbfffa13602f79cb46b42b92705bbb2ff6556f5d8d10f267dcef0b269a74c72",
   "hostRuntimeChanges": false,
   "agentInstalled": false
 }

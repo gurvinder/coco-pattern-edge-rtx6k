@@ -215,59 +215,73 @@ impl Opener {
         format!("{}_dif", self.name)
     }
     fn owned(&self, lower: bool) -> Result<Option<PathBuf>> {
-        let name = if lower {
-            self.lower_name()
-        } else {
-            self.name.clone()
-        };
-        let Some(path) = lookup(&name)? else {
-            return Ok(None);
-        };
-        let kind = if lower { "INTEGRITY" } else { "LUKS2" };
-        let expected = format!(
-            "CRYPT-{kind}-{}-{name}",
-            self.header.manifest().luks_uuid().replace('-', "")
-        );
-        if read(path.join("dm/uuid"))? != expected {
-            return Err(Error::Conflict);
-        }
-        Ok(Some(path))
+        owned_mapping(&self.name, self.header.manifest().luks_uuid(), lower)
     }
     fn verify_stack(&self) -> Result<()> {
-        let top = self.owned(false)?.ok_or(Error::Stack)?;
-        let lower = self.owned(true)?.ok_or(Error::Stack)?;
-        for (path, name) in [(&top, self.name.clone()), (&lower, self.lower_name())] {
-            if read(path.join("dm/suspended"))? != "0" {
-                return Err(Error::Stack);
-            }
-            let segments = run(
-                "/usr/sbin/dmsetup",
-                &["info", "-c", "--noheadings", "-o", "segments", &name],
-                &[],
-                None,
-            )?;
-            if segments.trim() != "1" {
-                return Err(Error::Stack);
-            }
-        }
-        if slaves(&top)? != BTreeSet::from([read(lower.join("dev"))?])
-            || slaves(&lower)? != BTreeSet::from([self.device.id.clone()])
-        {
+        verify_mapping_stack(
+            &self.name,
+            self.header.manifest().luks_uuid(),
+            &self.device.id,
+            self.device.bytes,
+        )
+    }
+}
+pub(crate) fn owned_mapping(base: &str, uuid: &str, lower: bool) -> Result<Option<PathBuf>> {
+    let name = if lower {
+        format!("{base}_dif")
+    } else {
+        base.to_owned()
+    };
+    let Some(path) = lookup(&name)? else {
+        return Ok(None);
+    };
+    let kind = if lower { "INTEGRITY" } else { "LUKS2" };
+    let expected = format!("CRYPT-{kind}-{}-{name}", uuid.replace('-', ""));
+    if read(path.join("dm/uuid"))? != expected {
+        return Err(Error::Conflict);
+    }
+    Ok(Some(path))
+}
+pub(crate) fn verify_mapping_stack(
+    name: &str,
+    uuid: &str,
+    device_id: &str,
+    device_bytes: u64,
+) -> Result<()> {
+    let top = owned_mapping(name, uuid, false)?.ok_or(Error::Stack)?;
+    let lower = owned_mapping(name, uuid, true)?.ok_or(Error::Stack)?;
+    for (path, name) in [(&top, name.to_owned()), (&lower, format!("{name}_dif"))] {
+        if read(path.join("dm/suspended"))? != "0" {
             return Err(Error::Stack);
         }
-        let table = run(
+        let segments = run(
             "/usr/sbin/dmsetup",
-            &["table", "--target", "integrity", &self.lower_name()],
+            &["info", "-c", "--noheadings", "-o", "segments", &name],
             &[],
             None,
         )?;
-        let sectors = integrity_table(&table, &self.device.id, self.device.bytes)?;
-        let status = run("/usr/sbin/cryptsetup", &["status", &self.name], &[], None)?;
-        crypt_status(&status, &self.name, sectors)?;
-        // Never query a dm-crypt table or use --showkeys.
-        Ok(())
+        if segments.trim() != "1" {
+            return Err(Error::Stack);
+        }
     }
+    if slaves(&top)? != BTreeSet::from([read(lower.join("dev"))?])
+        || slaves(&lower)? != BTreeSet::from([device_id.to_owned()])
+    {
+        return Err(Error::Stack);
+    }
+    let table = run(
+        "/usr/sbin/dmsetup",
+        &["table", "--target", "integrity", &format!("{name}_dif")],
+        &[],
+        None,
+    )?;
+    let sectors = integrity_table(&table, device_id, device_bytes)?;
+    let status = run("/usr/sbin/cryptsetup", &["status", name], &[], None)?;
+    crypt_status(&status, name, sectors, device_id.starts_with("7:"))?;
+    // Never query a dm-crypt table or use --showkeys.
+    Ok(())
 }
+
 pub(crate) fn now() -> Result<u64> {
     Ok(SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -309,6 +323,14 @@ pub(crate) fn slaves(path: &std::path::Path) -> Result<BTreeSet<String>> {
         .collect()
 }
 fn integrity_table(text: &str, device: &str, bytes: u64) -> Result<u64> {
+    // Fixed, kernel-validated geometries. The kernel chooses a larger default
+    // journal for the 1 GiB PVC than for the original 128 MiB loop fixture.
+    // Other sizes require explicit validation, not an arbitrary journal value.
+    let journal = match bytes {
+        134217728 => "journal_sectors:1848",
+        1073741824 => "journal_sectors:16368",
+        _ => return Err(Error::Stack),
+    };
     let v: Vec<_> = text.split_whitespace().collect();
     if v.len() != 15
         || v[0] != "0"
@@ -327,7 +349,7 @@ fn integrity_table(text: &str, device: &str, bytes: u64) -> Result<u64> {
     if options
         != BTreeSet::from([
             "block_size:4096",
-            "journal_sectors:1848",
+            journal,
             "interleave_sectors:32768",
             "buffer_sectors:128",
             "journal_watermark:50",
@@ -339,7 +361,7 @@ fn integrity_table(text: &str, device: &str, bytes: u64) -> Result<u64> {
     }
     Ok(sectors)
 }
-fn crypt_status(text: &str, name: &str, sectors: u64) -> Result<()> {
+fn crypt_status(text: &str, name: &str, sectors: u64, is_loop: bool) -> Result<()> {
     let mut lines = text.lines();
     if lines.next() != Some(format!("/dev/mapper/{name} is active.").as_str()) {
         return Err(Error::Stack);
@@ -350,6 +372,11 @@ fn crypt_status(text: &str, name: &str, sectors: u64) -> Result<()> {
         if fields.insert(key.trim(), value.trim()).is_some() {
             return Err(Error::Stack);
         }
+    }
+    // cryptsetup emits this informational path only for loop devices. Device
+    // identity is independently pinned by the retained fd and kernel slaves.
+    if is_loop && fields.remove("loop").is_none() {
+        return Err(Error::Stack);
     }
     let required = [
         ("type", "LUKS2"),
@@ -382,7 +409,7 @@ pub(crate) fn run(
 ) -> Result<String> {
     run_bounded(tool, args, inherited, key, Duration::from_secs(30))
 }
-fn run_bounded(
+pub(crate) fn run_bounded(
     tool: &str,
     args: &[&str],
     inherited: &[RawFd],

@@ -20,3 +20,6 @@ pub mod sealed_header;
 
 #[cfg(target_os = "linux")]
 pub mod ro_opener;
+
+#[cfg(target_os = "linux")]
+pub mod initializer;

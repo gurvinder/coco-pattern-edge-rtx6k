@@ -173,6 +173,17 @@ struct RecordData {
 /// It cannot be constructed or deserialized by a caller.
 pub struct Record(RecordData, u64);
 impl Record {
+    /// Manifest accepted only after the signed Ready journal was verified.
+    pub fn ready_manifest(&self) -> Result<Vec<u8>> {
+        if self.0.state != State::Ready {
+            return Err(Error::Binding);
+        }
+        self.0
+            .manifest
+            .as_ref()
+            .map(|s| s.as_bytes().to_vec())
+            .ok_or(Error::Binding)
+    }
     pub fn state(&self) -> &State {
         &self.0.state
     }
@@ -431,21 +442,33 @@ impl<E: Evidence> AuthorityClient<E> {
             &self.config.receipt_public_key,
             &self.config.receipt_issuer,
             &self.config.receipt_key_id,
-        )?;
+        )
+        .map_err(|e| {
+            eprintln!("STORAGE_INITIALIZATION receipt_rejected");
+            e
+        })?;
         if claims.session_sha256 != self.session
             || claims.policy_sha256 != self.config.policy_sha256
             || claims.action != action
             || claims.challenge != challenge.nonce
             || claims.request_sha256 != sha(&raw)
         {
+            eprintln!("STORAGE_INITIALIZATION request_binding_rejected");
             return Err(Error::Binding);
         }
-        let parse =
-            |raw: &str| serde_json::from_str::<RecordResult>(raw).map_err(|_| Error::Binding);
+        let parse = |raw: &str| {
+            serde_json::from_str::<RecordResult>(raw).map_err(|_| {
+                eprintln!("STORAGE_INITIALIZATION record_schema_rejected");
+                Error::Binding
+            })
+        };
         match operation {
             Operation::Plan => {
                 let r = parse(claims.result.get())?.record;
-                r.check(request, &self.session, &identity)?;
+                r.check(request, &self.session, &identity).map_err(|e| {
+                    eprintln!("STORAGE_INITIALIZATION record_binding_rejected");
+                    e
+                })?;
                 Ok(Decision::Plan(Record(r, claims.exp)))
             }
             Operation::Begin => {
@@ -644,21 +667,34 @@ fn verify(token: &str, key: &[u8; 32], issuer: &str, kid: &str) -> Result<Claims
         || header.typ != "confidential-storage-initialization+jwt"
         || header.kid != kid
     {
+        eprintln!("STORAGE_INITIALIZATION receipt_header_rejected");
         return Err(Error::Binding);
     }
     let signed = format!("{}.{}", parts[0], parts[1]);
     UnparsedPublicKey::new(&ED25519, key)
         .verify(signed.as_bytes(), &decode(parts[2])?)
-        .map_err(|_| Error::Binding)?;
+        .map_err(|_| {
+            eprintln!("STORAGE_INITIALIZATION receipt_signature_rejected");
+            Error::Binding
+        })?;
     let c: Claims = serde_json::from_slice(&decode(parts[1])?).map_err(|_| Error::Binding)?;
-    let now = now()?;
+    let mut clock = now()?;
+    // A fast local request may cross a whole-second boundary while the freshly
+    // booted guest clock trails the authority. Do not widen token validity:
+    // wait at most two seconds, then re-read the clock and apply strict checks.
+    if c.iat > clock && c.iat - clock <= 2 && c.exp > c.iat && c.exp - c.iat <= 60 {
+        eprintln!("STORAGE_INITIALIZATION receipt_clock_wait");
+        std::thread::sleep(std::time::Duration::from_secs(c.iat - clock));
+        clock = now()?;
+    }
     if c.schema_version != 1
         || c.iss != issuer
         || c.aud != "confidential-storage-guest/v1"
-        || c.iat > now
-        || c.exp <= now
+        || c.iat > clock
+        || c.exp <= clock
         || c.exp.saturating_sub(c.iat) > 60
     {
+        eprintln!("STORAGE_INITIALIZATION receipt_time_or_identity_rejected");
         return Err(Error::Binding);
     }
     Ok(c)

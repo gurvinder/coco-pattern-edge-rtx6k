@@ -28,7 +28,12 @@ def main():
     for name in ("base", "packages", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--overlay-output", type=Path)
+    parser.add_argument("--probe", type=Path)
+    parser.add_argument("--extra-binary", type=Path)
+    parser.add_argument("--extra-binary-sha256")
     args = parser.parse_args()
+    if bool(args.extra_binary) != bool(args.extra_binary_sha256):
+        parser.error("diagnostic ELF and digest must be supplied together")
     base = args.base.read_bytes()
     if builder.sha256(base) != builder.BASE_SHA256:
         raise ValueError("unexpected base")
@@ -79,8 +84,15 @@ def main():
     add(
         "usr/bin/storage-kernel-probe",
         stat.S_IFREG | 0o700,
-        (HERE / "probe.sh").read_bytes(),
+        (args.probe or HERE / "probe.sh").read_bytes(),
     )
+    if args.extra_binary:
+        raw = args.extra_binary.read_bytes()
+        if builder.sha256(raw) != args.extra_binary_sha256 or not raw.startswith(
+            b"\x7fELF"
+        ):
+            raise ValueError("unexpected diagnostic ELF")
+        add("usr/bin/storage-initializer-probe", stat.S_IFREG | 0o700, raw)
     unit = b"""[Unit]
 Description=Disposable RAM disk storage kernel compatibility probe
 DefaultDependencies=no
@@ -89,7 +101,7 @@ Requires=kata-agent.service
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/storage-kernel-probe
-TimeoutStartSec=160
+TimeoutStartSec=360
 UMask=0077
 LimitCORE=0
 StandardOutput=tty

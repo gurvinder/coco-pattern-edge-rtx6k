@@ -116,7 +116,7 @@ fn uuid(s: &str) -> bool {
 fn cstring(bytes: &[u8], expected: &[u8]) -> bool {
     bytes.starts_with(expected) && bytes[expected.len()..].iter().all(|b| *b == 0)
 }
-fn validate_header(bytes: &[u8], uuid: &str) -> Result<()> {
+pub(crate) fn validate_header(bytes: &[u8], uuid: &str) -> Result<()> {
     validate_header_as(bytes, uuid, false)
 }
 pub(crate) fn validate_ro_header(bytes: &[u8], uuid: &str) -> Result<()> {

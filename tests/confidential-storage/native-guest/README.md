@@ -3,7 +3,8 @@
 Development artifacts only. No image produced here is automatically approved for
 keys or installed. The separate test handler now runs this native integration.
 The [live RO PVC hash-verification checkpoint](../../../docs/confidential-storage/native-ro-pvc.md)
-passed; model inference and the RW example remain incomplete.
+passed, followed by [inference](../../../docs/confidential-storage/native-model-serving.md)
+and [RW initialization/reopen](../../../docs/confidential-storage/native-rw-storage.md).
 
 `build.py` produces a pinned base plus compressed newc overlay. It replaces only
 `/usr/bin/kata-agent`; all other additions must be new paths. Tools, modules and
@@ -16,7 +17,8 @@ Trustee may release a test key. There is no diagnostic console quote emitter.
 `start-service.sh` runs as trusted guest root before container RPC admission. It
 loads the matching guest storage modules, creates private tmpfs staging and starts
 the daemon. It refuses prior staging/service state and never formats a device.
-Read-only opening is owned by the service; RW initialization is not yet connected.
+The service owns RO opening and journaled RW initialization/reopen; the bootstrap
+script itself never formats storage.
 
 `prepare-kbs.py` creates private short-lived TLS/signing material outside Git.
 It configures TLS 1.3, `DenyAll` administration, verified certificate-backed EAR
@@ -129,4 +131,4 @@ inventory. The [live serving guide](../../../docs/confidential-storage/native-mo
 records the completed SNP/Trustee/OCI-populated PVC inference, actual responses,
 negative tests and reproduction. This uses Transformers on CPU; it does not take
 a GPU from production. The default `--mode verify` remains the small hash-check
-workload. Native RW initialization is still incomplete.
+workload. See `../native-rw/` for the completed native RW example.

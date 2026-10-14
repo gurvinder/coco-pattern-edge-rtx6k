@@ -39,7 +39,13 @@ async fn exact_image_command_environment_and_no_policy_bypass() {
     spec.Process = Some(process).into();
     for (k, v) in [
         ("io.kubernetes.pod.namespace", "confidential-storage-test"),
-        ("io.kubernetes.container.name", "model"),
+        (
+            "io.kubernetes.container.name",
+            workload
+                .get("container")
+                .and_then(Value::as_str)
+                .unwrap_or("model"),
+        ),
         ("io.katacontainers.pkg.oci.container_type", "pod_container"),
     ] {
         spec.Annotations.insert(k.into(), v.into());

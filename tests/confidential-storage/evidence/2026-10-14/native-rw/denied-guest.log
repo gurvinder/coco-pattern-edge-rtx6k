@@ -1,0 +1,4 @@
+STORAGE_SERVICE ready
+STORAGE_INITIALIZATION receipt_clock_wait
+STORAGE_SERVICE denied_state_retained stage=kbs-retrieve category=local-or-kbs
+STORAGE_SERVICE closed

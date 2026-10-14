@@ -1,0 +1,9 @@
+node: 9c-63-c0-dd-06-52
+initdata: ""
+claim: storage-audit-data
+workload:
+  image: ""
+  args: []
+deadlineSeconds: 600
+memoryRequest: 2Gi
+memoryLimit: 4Gi

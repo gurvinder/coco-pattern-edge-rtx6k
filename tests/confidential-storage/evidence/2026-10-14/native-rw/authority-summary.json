@@ -1,0 +1,31 @@
+{
+  "storage-rw-native-v1": {
+    "state": "Ready",
+    "ownerPresent": false,
+    "revoked": false,
+    "steps": [
+      {
+        "step": "luks-format",
+        "status": "Complete"
+      },
+      {
+        "step": "integrity-initialize",
+        "status": "Complete"
+      },
+      {
+        "step": "filesystem-create",
+        "status": "Complete"
+      },
+      {
+        "step": "durability-barrier",
+        "status": "Complete"
+      }
+    ]
+  },
+  "qwen-luks-serving-v2": {
+    "state": "Ready",
+    "ownerPresent": false,
+    "revoked": false,
+    "steps": []
+  }
+}

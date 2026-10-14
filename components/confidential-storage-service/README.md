@@ -1,14 +1,16 @@
 # Private guest storage service (development)
 
 This component connects the tested authority client, private SNP KBS client and
-read-only LUKS/dm-verity opener. It is **installed only in the isolated development guest** and
-has passed the [RO PVC hash-verification test](../../docs/confidential-storage/native-ro-pvc.md).
-Model inference and the full RW example are still incomplete. Its initial configuration rejects RW
-volumes: first-use formatting still needs integration with the signed journal.
+read-only LUKS/dm-verity opener and journaled RW initializer/opener. It is
+**installed only in the isolated development guest**. Both
+[model inference](../../docs/confidential-storage/native-model-serving.md) and
+[RW first-use/reopen](../../docs/confidential-storage/native-rw-storage.md) passed.
+RW configuration pins an immutable initialization-plan hash; Ready uses its signed
+manifest, while only explicitly approved Uninitialized state can format.
 
 The fixed, measured `/etc/confidential-storage/service.json` contains only public
 trust roots, receipt verification key, endpoint pins, mount binding and an
-approved manifest. It contains no storage key. Runtime session key, nonce and
+approved RO manifest or RW initialization-plan hash. It contains no storage key. Runtime session key, nonce and
 operation ID are generated inside the guest. A signed authority grant permits
 only the configured resource; the copied LUKS header and manifest are validated
 before the private client asks Trustee for a fresh attested, encrypted key reply.

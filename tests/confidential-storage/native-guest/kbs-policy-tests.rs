@@ -21,7 +21,10 @@ fn main() {
         .find(|s| s.starts_with("expected := "))
         .unwrap();
     let e: Value = serde_json::from_str(line.strip_prefix("expected := ").unwrap()).unwrap();
-    let data = json!({"plugin":"resource","resource-path":["storage-test","model-keys","qwen-luks-v1"],"query":{}});
+    let resource = std::env::args()
+        .nth(2)
+        .unwrap_or("storage-test/model-keys/qwen-luks-v1".into());
+    let data = json!({"plugin":"resource","resource-path":resource.split('/').collect::<Vec<_>>(),"query":{}});
     let input = json!({"iss":"storage-kbs-as","submods":{"cpu0":{
         "ear.status":"affirming","ear.appraisal-policy-id":"default",
         "ear.trustworthiness-vector":{"executables":3,"hardware":2,"configuration":2},

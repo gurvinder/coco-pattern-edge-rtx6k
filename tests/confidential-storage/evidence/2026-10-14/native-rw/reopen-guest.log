@@ -1,0 +1,4 @@
+STORAGE_SERVICE ready
+STORAGE_INITIALIZATION receipt_clock_wait
+STORAGE_SERVICE mounted_rw
+STORAGE_SERVICE closed

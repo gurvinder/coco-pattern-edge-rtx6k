@@ -164,6 +164,10 @@ fn initialize(client: &AuthorityClient<FixtureEvidence>, expected: Expected, v: 
             }
         )
         .is_err());
+    assert_eq!(
+        ready.ready_manifest().unwrap(),
+        ready.manifest(&"d".repeat(64)).unwrap()
+    );
     client.close_initialization(&ready).unwrap();
     let mut reopen = request.expected.clone();
     reopen.operation_id = "rust-after-init".into();

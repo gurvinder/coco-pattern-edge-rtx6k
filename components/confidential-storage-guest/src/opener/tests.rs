@@ -33,7 +33,7 @@ fn accepts_only_fixed_journaled_integrity_stack() {
 
 #[test]
 fn rejects_crypto_downgrades_duplicates_and_unknown_status_fields() {
-    crypt_status(STATUS, "test", 225728).unwrap();
+    crypt_status(STATUS, "test", 225728, false).unwrap();
     for (old, new) in [
         ("LUKS2", "PLAIN"),
         ("aes-xts-plain64", "aes-cbc-plain"),
@@ -46,15 +46,15 @@ fn rejects_crypto_downgrades_duplicates_and_unknown_status_fields() {
         ("0 sectors", "8 sectors"),
     ] {
         assert!(
-            crypt_status(&STATUS.replace(old, new), "test", 225728).is_err(),
+            crypt_status(&STATUS.replace(old, new), "test", 225728, false).is_err(),
             "{new}"
         );
     }
     for extra in ["mode: read/write\n", "flags: discards\n"] {
-        assert!(crypt_status(&format!("{STATUS}{extra}"), "test", 225728).is_err());
+        assert!(crypt_status(&format!("{STATUS}{extra}"), "test", 225728, false).is_err());
     }
-    assert!(crypt_status(STATUS, "other", 225728).is_err());
-    assert!(crypt_status(STATUS, "test", 1).is_err());
+    assert!(crypt_status(STATUS, "other", 225728, false).is_err());
+    assert!(crypt_status(STATUS, "test", 1, false).is_err());
 }
 
 #[test]
@@ -129,4 +129,27 @@ fn inherited_header_descriptor_remains_unwritable_in_child() {
         run("/bin/cat", &[&path], &[fd], None).unwrap(),
         "sealed fixture"
     );
+}
+
+#[test]
+fn one_gib_geometry_is_pinned_and_loop_status_is_explicit() {
+    let table = TABLE.replace("225728", "2031880").replace("1848", "16368");
+    assert_eq!(
+        integrity_table(&table, "254:0", 1073741824).unwrap(),
+        2031880
+    );
+    assert!(integrity_table(TABLE, "254:0", 1073741824).is_err());
+    assert!(integrity_table(&table, "254:0", 134217728).is_err());
+    assert!(integrity_table(&table, "254:0", 2147483648).is_err());
+    let status = format!("{STATUS} loop: /run/private/disk\n");
+    assert!(crypt_status(&status, "test", 225728, false).is_err());
+    crypt_status(&status, "test", 225728, true).unwrap();
+    assert!(crypt_status(STATUS, "test", 225728, true).is_err());
+    assert!(crypt_status(
+        &format!("{status} flags: allow_discards\n"),
+        "test",
+        225728,
+        true
+    )
+    .is_err());
 }

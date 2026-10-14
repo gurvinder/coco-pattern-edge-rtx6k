@@ -51,14 +51,18 @@ def build(args):
         or len(raw["config"]) > 256 * 1024
     ):
         raise ValueError("invalid public guest configuration")
-    if set(config) != {
+    required_fields = {
         "schema_version",
         "purpose",
         "authority",
         "kbs",
         "expected",
         "manifest",
-    }:
+    }
+    if set(config) not in (
+        required_fields,
+        required_fields | {"initialization_plan_sha256"},
+    ):
         raise ValueError("unexpected config fields; never put keys in guest image")
     _, names, inode = builder.read_archive(gzip.decompress(raw["base"]))
     records = []

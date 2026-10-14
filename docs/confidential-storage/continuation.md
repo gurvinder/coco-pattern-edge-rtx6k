@@ -4,7 +4,40 @@ Checkpoint: 13 October 2026, branch `dev/confidential-storage-integration`, base
 on proposal/handoff commit `e4a3616`. Read the [report](compatibility-report.md)
 before making changes. The original six-phase handoff still defines completion.
 
-## Latest checkpoint: encrypted model inference completed
+## Completed checkpoint: both live examples
+
+**14 October, 02:58 UTC:** both [OCI-populated encrypted model inference](native-model-serving.md)
+and [blank-PVC RW initialization/reopen](native-rw-storage.md) passed. The latter
+completed four signed initialization steps, unprivileged writes, fresh-VM
+persistence without formatting, administrator exec denial, and actual Trustee
+PolicyDeny/403. Both authority owners are closed. Production audit is unchanged.
+The full reproduction sequence and evidence are linked from those guides.
+
+The isolated handler now points to `initrd-native-rw-v3`, SHA-256
+`f102bbdf287027f7bc54d9e209e39a58c8350024a4b0f1aa1e35b94f1f62ad77`, with
+4096 MiB boot memory. CRI-O stayed PID 694089. No test consumer remains; both PVCs
+remain intact. The latest record is `storage-rw-native-v1`, Ready with all four
+initialization steps Complete and no owner. Do not reset it or format the PVC.
+
+The consistent private backup is now
+`work/confidential-storage-private/storage-rw-final-20261014.tar.gz`, SHA-256
+`d16a3686ae9853c2e2b1ac79c9f3471d738ddc63a10037403116173dd8263a6a`.
+It contains both volume keys, current authority history and private signing/TLS
+material; never commit or publish it. Authority and KBS were stopped after backup
+preparation, with effective KBS deny-all. The temporary compiler's main process
+was due to end ~02:59 UTC; do not depend on its old Pod IP for future demos.
+Restoring on another IP/trust root requires a fresh measured guest configuration
+and independently approved measurement. Older backups below are historical.
+
+The current source includes the native Rust formatter, RW service/agent binding,
+signed Ready manifest handling and fixed diagnostic labels. A bounded two-second
+wait handles future issue times without relaxing receipt validity checks. Tests
+and live evidence distinguish guest-RAM format checks, synthetic protocol/policy
+negatives and real SNP/Trustee/PVC behavior. Both E2Es are CPU-only; production
+GPU inference is preserved. Production packaging/CSI recovery and RW whole-disk
+rollback protection are future work, not demonstrated properties.
+
+## Historical checkpoint: encrypted model inference completed
 
 **14 October, 01:50 UTC:** [native model serving](native-model-serving.md) passed
 from the actual OCI-populated RO PVC inside the unprivileged SNP guest. Four HTTP

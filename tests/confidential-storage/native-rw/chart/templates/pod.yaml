@@ -1,0 +1,55 @@
+{{- if ne .Release.Namespace "confidential-storage-test" }}
+{{- fail "Use only confidential-storage-test" }}
+{{- end }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: storage-rw
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/part-of: confidential-storage-test
+  annotations:
+    io.katacontainers.config.hypervisor.cc_init_data: {{ required "Set measured InitData" .Values.initdata | quote }}
+spec:
+  runtimeClassName: kata-snp-storage-probe
+  nodeSelector:
+    kubernetes.io/hostname: {{ .Values.node | quote }}
+  automountServiceAccountToken: false
+  enableServiceLinks: false
+  restartPolicy: Never
+  activeDeadlineSeconds: {{ .Values.deadlineSeconds }}
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: app
+      image: {{ required "Set pinned workload image" .Values.workload.image | quote }}
+      command: {{ .Values.workload.args | toJson }}
+      workingDir: /
+      {{- with .Values.workload.podEnvironment }}
+      env: {{ . | toJson }}
+      {{- end }}
+      securityContext:
+        privileged: false
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      resources:
+        requests:
+          cpu: "1"
+          memory: {{ .Values.memoryRequest | quote }}
+        limits:
+          cpu: "1"
+          memory: {{ .Values.memoryLimit | quote }}
+      volumeDevices:
+        - name: encrypted-model
+          devicePath: /dev/encrypted-data
+  volumes:
+    - name: encrypted-model
+      persistentVolumeClaim:
+        claimName: {{ .Values.claim | quote }}
+        readOnly: false

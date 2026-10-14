@@ -1,8 +1,8 @@
 # Native agent lifecycle experiment
 
 This is a separate guest-only integration against the installed Kata 3.31.0
-source baseline. It is **development code, installed only in the isolated test handler and not
-authorized only for the exact recorded RO test image/policy**. It
+source baseline. It is **development code, installed only in the isolated test handler**.
+Only the explicitly measured RO/RW test images and strict policies are authorized. It
 keeps Kata's normal rustjail process, signal, cgroup and namespace lifecycle.
 It supersedes the earlier adapter assumptions for this live experiment; do not
 apply both patches. No Go shim, CRI-O or production runtime changes are included.
@@ -15,7 +15,7 @@ through the earlier custom process manager.
 Before normal device handling, the agent resolves the one SCSI attachment,
 contacts the private guest storage service, removes raw block devices and
 positive block/wildcard device grants, then inserts the service's read-only
-`/models` bind mount. The application must have a read-only rootfs, non-root UID,
+`/models` or read-write `/data` bind mount according to the measured binding. The application must have a read-only rootfs, non-root UID,
 NoNewPrivs and empty capability sets. Additional block storage, namespace paths,
 hooks, private-tree aliases and alternate CDI/CDH privileged helpers are denied.
 All host-provided file bind mounts are removed before native mounting, including
@@ -58,7 +58,7 @@ cargo +1.94.1 build --locked --release -p kata-agent --no-default-features \
   --features init-data,agent-policy
 ```
 
-Eight tests pass, covering the actual runtime shape, independent privilege escape
+Nine tests pass, covering the actual runtime shape, independent privilege escape
 attempts, mount/path aliases, sandbox hooks/modules/recreation and cleanup
 admission, discarded-copy bounds and exact Kubernetes label selection. The name
 check uses `io.kubernetes.container.name`, matching the strict policy; CRI-O
@@ -71,4 +71,6 @@ The [live RO PVC checkpoint](../../../docs/confidential-storage/native-ro-pvc.md
 passed actual key retrieval, hash verification, denied admin exec and cleanup.
 A completed service denial is closed before returning to the host, while guest
 networking is available; a transport error or failed cleanup retains ownership.
-Model inference and the RW service integration remain outstanding.
+[Model inference](../../../docs/confidential-storage/native-model-serving.md) and
+[RW service integration](../../../docs/confidential-storage/native-rw-storage.md) now pass.
+The additional RW test rejects application capabilities and overlapping mounts.

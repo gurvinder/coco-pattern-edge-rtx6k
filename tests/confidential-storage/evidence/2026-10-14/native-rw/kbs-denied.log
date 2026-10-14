@@ -1,0 +1,2 @@
+2026-10-14T02:56:12.447845Z ERROR kbs::error: PolicyDeny
+2026-10-14T02:56:12.447865Z  INFO actix_web::middleware::logger: 10.128.1.50 "GET /kbs/v0/resource/storage-test/volume-keys/storage-rw-native-v1 HTTP/1.1" 403 110 "-" "-" 0.000574

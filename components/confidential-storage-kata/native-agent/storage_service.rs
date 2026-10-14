@@ -103,8 +103,13 @@ fn load() -> Result<Option<Binding>> {
     ensure!(
         config.schema_version == 1
             && config.purpose == "isolated-confidential-storage/v1"
-            && config.expected.access == "ro"
-            && config.expected.destination == "/models"
+            && matches!(
+                (
+                    config.expected.access.as_str(),
+                    config.expected.destination.as_str()
+                ),
+                ("ro", "/models") | ("rw", "/data")
+            )
             && !config.expected.container_name.is_empty(),
         "unsupported storage binding"
     );
@@ -148,7 +153,7 @@ async fn call(request: Request) -> Result<Response> {
             "private service socket invalid"
         );
         let mut stream = UnixStream::connect(SOCKET)?;
-        stream.set_read_timeout(Some(Duration::from_secs(180)))?;
+        stream.set_read_timeout(Some(Duration::from_secs(600)))?;
         stream.set_write_timeout(Some(Duration::from_secs(5)))?;
         let bytes = serde_json::to_vec(&request)?;
         ensure!(bytes.len() <= MAX_FRAME, "private request too large");
@@ -375,7 +380,7 @@ impl State {
             bail!("private storage activation denied; cleanup completed");
         };
         ensure!(
-            destination == binding.destination && readonly,
+            destination == binding.destination && readonly == (binding.access == "ro"),
             "private service binding mismatch"
         );
         let suffix = source
@@ -409,7 +414,7 @@ impl State {
             .source(source)
             .options(vec![
                 "bind".to_owned(),
-                "ro".into(),
+                if readonly { "ro".into() } else { "rw".into() },
                 "nosuid".into(),
                 "nodev".into(),
                 "noexec".into(),
@@ -654,6 +659,32 @@ mod tests {
             .remove("io.kubernetes.container.name");
         value["annotations"]["io.kubernetes.cri-o.ContainerName"] = json!("consumer");
         assert!(!valid(&req, value));
+    }
+    #[test]
+    fn rw_binding_still_rejects_caps_and_overlapping_app_mounts() {
+        let (req, mut value) = fixture();
+        let mut binding = binding();
+        binding.access = "rw".into();
+        binding.destination = "/data".into();
+        assert!(validate(
+            &req,
+            &serde_json::from_value(value.clone()).unwrap(),
+            &binding
+        )
+        .is_ok());
+        value["process"]["capabilities"]["effective"] = json!(["CAP_SYS_ADMIN"]);
+        assert!(validate(
+            &req,
+            &serde_json::from_value(value.clone()).unwrap(),
+            &binding
+        )
+        .is_err());
+        value["process"]["capabilities"]["effective"] = json!([]);
+        value["mounts"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"destination":"/data","type":"tmpfs","source":"tmpfs"}));
+        assert!(validate(&req, &serde_json::from_value(value).unwrap(), &binding).is_err());
     }
     #[test]
     fn native_runtime_shape_keeps_systemd_cgroups_without_incoming_pid_namespace() {

@@ -13,5 +13,5 @@ kbs:
     modelKeyBindings:
       qwen-gpu-model-v1: &storageSidecarV1
         launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "e7b395df00d078715e8c770c5f9cd483aa6de77e39591b81f326bc477ca7418f"
+        initData: "521607af27de8db7f9a8b52c9aa075b48317bc0773bb90c9b64e55dbd4a9ba14"
       qwen-gpu-data-v1: *storageSidecarV1

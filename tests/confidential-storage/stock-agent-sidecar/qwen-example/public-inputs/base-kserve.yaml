@@ -1,0 +1,253 @@
+---
+# Source: confidential-gpu-storage-candidate/templates/kserve-identity.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: qwen-storage
+  namespace: "confidential-storage-test"
+automountServiceAccountToken: false
+
+---
+# Source: confidential-gpu-storage-candidate/templates/kserve-identity.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: qwen-storage-scc
+  namespace: "confidential-storage-test"
+rules:
+  - apiGroups: [security.openshift.io]
+    resources: [securitycontextconstraints]
+    resourceNames: [qwen-storage-confidential-storage-test]
+    verbs: [use]
+
+---
+# Source: confidential-gpu-storage-candidate/templates/kserve-identity.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: qwen-storage-scc
+  namespace: "confidential-storage-test"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: qwen-storage-scc
+subjects:
+  - kind: ServiceAccount
+    name: qwen-storage
+    namespace: "confidential-storage-test"
+
+---
+# Source: confidential-gpu-storage-candidate/templates/kserve.yaml
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: qwen-storage
+  namespace: "confidential-storage-test"
+  annotations:
+    serving.kserve.io/deploymentMode: Standard
+spec:
+  predictor:
+    serviceAccountName: qwen-storage
+    minReplicas: 1
+    maxReplicas: 1
+    deploymentStrategy:
+      type: Recreate
+    labels:
+      coco.io/skip-initdata: "true"
+    annotations:
+      io.katacontainers.config.hypervisor.cc_init_data: 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
+      storage.confidentialcontainers.org/bindings: '[{"confidentialVolume":"qwen-gpu-model","container":"kserve-container","mountPath":"/models/qwen","volume":"model"},{"confidentialVolume":"qwen-gpu-data","container":"kserve-container","mountPath":"/data","volume":"data"}]'
+    automountServiceAccountToken: false
+    containers:
+    - command:
+      - /usr/bin/python3
+      - -c
+      - |
+        """Measured startup for the isolated two-volume GPU candidate."""
+        import hashlib
+        import json
+        import os
+        from pathlib import Path
+
+        INVENTORY = [{'bytes': 11343, 'path': 'LICENSE', 'sha256': '832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e'}, {'bytes': 726, 'path': 'config.json', 'sha256': '660db3b73d788119c04535e48cf9be5f55bc3100841a718637ae695b442f27dd'}, {'bytes': 239, 'path': 'generation_config.json', 'sha256': '2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2'}, {'bytes': 1671853, 'path': 'merges.txt', 'sha256': '8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5'}, {'bytes': 1503300328, 'path': 'model.safetensors', 'sha256': 'f47f71177f32bcd101b7573ec9171e6a57f4f4d31148d38e382306f42996874b'}, {'bytes': 1079, 'path': 'publisher-source.json', 'sha256': 'd5945b210faf8c6c869fb72de03acd0e386507dae493107fed818ea9bb6948d8'}, {'bytes': 11422654, 'path': 'tokenizer.json', 'sha256': 'aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4'}, {'bytes': 9732, 'path': 'tokenizer_config.json', 'sha256': 'd5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101'}, {'bytes': 2776833, 'path': 'vocab.json', 'sha256': 'ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910'}]
+        MODEL = Path('/models/qwen')
+        DATA = Path('/data')
+
+
+        def require(condition, message):
+            if not condition:
+                raise RuntimeError(message)
+
+
+        require(os.getuid() == 1001 and os.getgid() == 1001, 'unexpected application owner')
+        status = dict(line.split(':', 1) for line in Path('/proc/self/status').read_text().splitlines() if ':' in line)
+        require(int(status['CapEff'].strip(), 16) == 0, 'application has capabilities')
+        require(status['NoNewPrivs'].strip() == '1', 'privilege escalation is enabled')
+        for private in ['/dev/coco-volume-0', '/dev/coco-volume-1', '/dev/mapper/control',
+                        '/run/confidential-containers/cdh.sock', '/run/coco/storage-service/agent.sock']:
+            require(not Path(private).exists(), 'guest control or raw disk visible to application')
+        require(os.statvfs(MODEL).f_flag & os.ST_RDONLY, 'model mount is writable')
+        require(not os.statvfs(DATA).f_flag & os.ST_RDONLY, 'data mount is read-only')
+        for item in INVENTORY:
+            path = MODEL / item['path']
+            require(path.is_file() and not path.is_symlink(), 'unexpected model file type')
+            require(path.stat().st_size == item['bytes'], 'model size mismatch')
+            with path.open('rb') as stream:
+                digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+            require(digest == item['sha256'], 'model file hash mismatch')
+        print('STORAGE_MODEL_RO_HASHES_PASS', flush=True)
+        # This is a disposable persistence probe, not a model freshness/anti-replay counter.
+        canary = DATA / 'gpu-storage-canary.json'
+        expected = {'purpose': 'confidential-gpu-storage-persistence/v1', 'model': 'Qwen3-0.6B'}
+        if canary.exists():
+            require(json.loads(canary.read_text()) == expected, 'persistent canary mismatch')
+            print('STORAGE_DATA_REOPEN_PASS', flush=True)
+        else:
+            with canary.open('x') as stream:
+                json.dump(expected, stream, sort_keys=True)
+                stream.flush()
+                os.fsync(stream.fileno())
+            fd = os.open(DATA, os.O_DIRECTORY)
+            os.fsync(fd)
+            os.close(fd)
+            print('STORAGE_DATA_FIRST_WRITE_PASS', flush=True)
+        for name in ['tmp', 'hf', 'vllm', 'triton', 'cache', 'home']:
+            (DATA / name).mkdir(exist_ok=True)
+        import torch
+        require(torch.cuda.is_available() and torch.cuda.device_count() == 1, 'exactly one CUDA GPU required')
+        a = torch.arange(4096, dtype=torch.int32, device='cuda')
+        require(torch.equal((a + a).cpu(), torch.arange(4096, dtype=torch.int32) * 2), 'CUDA vector addition failed')
+        print(json.dumps({'event': 'CUDA_GPU_PROBE_PASS', 'device': torch.cuda.get_device_name(0),
+                          'torch': torch.__version__, 'cuda': torch.version.cuda}), flush=True)
+        del a
+        # GPU confidentiality is gated by composite Trustee attestation before storage
+        # opens. Successful CUDA arithmetic alone is not proof of confidential mode.
+        os.execvp('vllm', ['vllm', 'serve', str(MODEL), '--served-model-name', 'qwen3-0.6b',
+                          '--host', '0.0.0.0', '--port', '8000', '--dtype', 'bfloat16',
+                          '--max-model-len', '2048', '--max-num-seqs', '4',
+                          '--gpu-memory-utilization', '0.25', '--enforce-eager',
+                          '--disable-log-requests', '--generation-config', 'vllm'])
+      env:
+      - name: NVIDIA_VISIBLE_DEVICES
+        value: void
+      - name: NVIDIA_DRIVER_CAPABILITIES
+        value: compute,utility
+      - name: CUDA_VISIBLE_DEVICES
+        value: "0"
+      - name: TMPDIR
+        value: /data/tmp
+      - name: HOME
+        value: /data/home
+      - name: PYTHONDONTWRITEBYTECODE
+        value: "1"
+      - name: HF_HOME
+        value: /data/hf
+      - name: HF_HUB_OFFLINE
+        value: "1"
+      - name: TRANSFORMERS_OFFLINE
+        value: "1"
+      - name: VLLM_CACHE_ROOT
+        value: /data/vllm
+      - name: VLLM_NO_USAGE_STATS
+        value: "1"
+      - name: DO_NOT_TRACK
+        value: "1"
+      - name: OMP_NUM_THREADS
+        value: "1"
+      - name: TRITON_CACHE_DIR
+        value: /data/triton
+      - name: XDG_CACHE_HOME
+        value: /data/cache
+      - name: TOKENIZERS_PARALLELISM
+        value: "false"
+      - name: LD_LIBRARY_PATH
+        value: /usr/lib64:/usr/local/lib/python3.12/dist-packages/torch/lib:/usr/local/lib/python3.12/dist-packages/torch_tensorrt/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64
+      - name: USER
+        value: qwen
+      - name: LOGNAME
+        value: qwen
+      - name: TORCHINDUCTOR_CACHE_DIR
+        value: /data/cache/torchinductor
+      - name: PATH
+        value: /usr/local/lib/python3.12/dist-packages/torch_tensorrt/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/mpi/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/ucx/bin:/opt/amazon/efa/bin:/opt/tensorrt/bin
+      - name: INFERENCE_SERVICE_NAME
+        value: qwen-storage
+      - name: PYTHONUNBUFFERED
+        value: "1"
+      - name: VLLM_USE_FLASHINFER_SAMPLER
+        value: "0"
+      image: nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab
+      name: kserve-container
+      ports:
+      - containerPort: 8000
+        name: http
+      resources:
+        limits:
+          cpu: "8"
+          memory: 48Gi
+          nvidia.com/pgpu: 1
+        requests:
+          cpu: "4"
+          memory: 16Gi
+          nvidia.com/pgpu: 1
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        privileged: false
+        readOnlyRootFilesystem: true
+        runAsGroup: 1001
+        runAsNonRoot: true
+        runAsUser: 1001
+      volumeDevices:
+      - devicePath: /dev/coco-volume-0
+        name: model
+      - devicePath: /dev/coco-volume-1
+        name: data
+      workingDir: /
+    enableServiceLinks: false
+    hostname: qwen-gpu-storage-candidate
+    runtimeClassName: kata-snp-nvidia-gpu-storage-candidate
+    volumes:
+    - name: model
+      persistentVolumeClaim:
+        claimName: qwen-luks-model-v1
+        readOnly: true
+    - name: data
+      persistentVolumeClaim:
+        claimName: qwen-gpu-data-v1
+        readOnly: false
+
+---
+# Source: confidential-gpu-storage-candidate/templates/kserve-identity.yaml
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: qwen-storage-confidential-storage-test
+allowPrivilegedContainer: false
+allowPrivilegeEscalation: false
+defaultAllowPrivilegeEscalation: false
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+readOnlyRootFilesystem: true
+allowedCapabilities: []
+requiredDropCapabilities: [ALL]
+runAsUser:
+  type: MustRunAs
+  uid: 1001
+seLinuxContext:
+  type: MustRunAs
+fsGroup:
+  type: MustRunAs
+  ranges: [{min: 1001, max: 1001}]
+supplementalGroups:
+  type: MustRunAs
+  ranges: [{min: 1001, max: 1001}]
+seccompProfiles: [runtime/default]
+volumes: [persistentVolumeClaim]
+users: []
+groups: []

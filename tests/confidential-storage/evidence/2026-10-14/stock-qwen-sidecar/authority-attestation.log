@@ -1,0 +1,12 @@
+STORAGE_EAR submod=cpu0 status=affirming hardware=2 configuration=3 executables=3
+STORAGE_EAR submod=gpu0 status=affirming hardware=2 configuration=3 executables=3
+STORAGE_EAR submod=cpu0 status=affirming hardware=2 configuration=3 executables=3
+STORAGE_EAR submod=gpu0 status=affirming hardware=2 configuration=3 executables=3
+STORAGE_EAR submod=cpu0 status=affirming hardware=2 configuration=3 executables=3
+STORAGE_EAR submod=gpu0 status=affirming hardware=2 configuration=3 executables=3
+STORAGE_EAR submod=cpu0 status=affirming hardware=2 configuration=3 executables=3
+STORAGE_EAR submod=gpu0 status=affirming hardware=2 configuration=3 executables=3
+STORAGE_EAR submod=cpu0 status=affirming hardware=2 configuration=3 executables=3
+STORAGE_EAR submod=gpu0 status=affirming hardware=2 configuration=3 executables=3
+STORAGE_EAR submod=cpu0 status=affirming hardware=2 configuration=3 executables=3
+STORAGE_EAR submod=gpu0 status=affirming hardware=2 configuration=3 executables=3

@@ -1,0 +1,10 @@
+{
+  "inputs": {
+    "Containerfile": "240d0300920c8d7758105a47b414f506507b9daa2bc26d9e96dae1c9b5c3f46c",
+    "runtime.py": "d1fd5e4dc709b46ef90ecdb214c7df3874ee3060bf7b92c2cd9f6e88450a18ba",
+    "confidential-storage-service": "5e4918bbfc28c8b588368e6b3e453c93925c567291235cd30f085bff67d801ab",
+    "payload.tar.gz": "8a09233c5a1e56dc35ca66024f3215009a273adae95ed2d5fa5c1c821a9c5bd8"
+  },
+  "archiveSha256": "715672f387e75546d530860adab201a35f96f037163920129bc68a7a7fee3185",
+  "stockInitrdSha256": "abd755287282a268578687137bf437caeda6139c1a654f18d13f8a72a68892ca"
+}

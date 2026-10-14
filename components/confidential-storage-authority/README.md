@@ -174,3 +174,22 @@ No resource request, policy mutation or AS private signing key is involved.
 See [configuration, security checks and evidence](../../docs/confidential-storage/standard-trustee-adapter.md).
 The authority suite now passes 121 tests. Live verified TLS `/auth` passed;
 composite hardware `/attest` acceptance still needs the candidate guest.
+
+
+## Explicit recovery after a stopped Ready-volume owner
+
+`recover_fenced_reopen.py` is an offline administrator tool, not a network route.
+It requires independently established fencing of the old VM/storage access and
+SHA-256 digests of the exact current records. It releases only unchanged,
+non-revoked **Ready / reopen** owners, permanently retires their sessions using
+the existing authority session-denial list, and records the old owner and evidence
+hash in a transaction. Keys, headers, manifests, generation and initialization
+history remain unchanged. It refuses uninitialized/initializing records and never
+issues a formatting permit. Default operation is a dry run; applying requires
+`--apply-after-external-fencing`.
+
+An evidence hash is an audit reference, not proof that a hostile host destroyed a
+VM. The lab exercised explicit administrator recovery after proving no old sandbox
+or sidecar VM remained. Production use requires independent fencing; timeouts and
+host statements alone are insufficient. See the
+[sidecar shutdown result](../../docs/confidential-storage/stock-kata-qwen-storage-addon.md).

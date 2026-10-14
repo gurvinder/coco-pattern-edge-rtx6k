@@ -8,10 +8,10 @@ kbs:
     - name: model-keys
       key: secret/data/hub/modelKeys
   resourcePolicy:
-    # Independently calculated from v19 boot artifacts with exact
+    # Independently calculated from unchanged stock GPU boot artifacts with exact
     # boot parameters; live launch comparison is recorded separately. These two tags are unavailable to other approved guests.
     modelKeyBindings:
-      qwen-gpu-model-v1: &storageGuestV19
-        launchMeasurement: "dfbf0c30962c1fa38ab2acfdb91f4cb66d65da67a73331c080bfff2a48a1bfef27c548fdf550b5bdcc2220604f6b3b4f"
-        initData: "497984d7e0d1864a31150080ecc735ddde3124a75589d409bb9b7529c67d6c0b"
-      qwen-gpu-data-v1: *storageGuestV19
+      qwen-gpu-model-v1: &storageSidecarV1
+        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
+        initData: "521607af27de8db7f9a8b52c9aa075b48317bc0773bb90c9b64e55dbd4a9ba14"
+      qwen-gpu-data-v1: *storageSidecarV1

@@ -1,0 +1,51 @@
+{
+  "checkedAt": "2026-10-14T17:21:03.061759+00:00",
+  "url": "http://10.14.202.14:30081",
+  "backend": "http://qwen-storage-predictor.confidential-storage-test.svc:80",
+  "model": "qwen3-0.6b",
+  "chatPod": "qwen-chat-777b4d7f44-tzch7",
+  "chatUid": "ee6a4a4b-2e67-4eea-b537-9dbd3b96804c",
+  "modelPod": "qwen-storage-predictor-84f94f974-8whz5",
+  "modelUid": "ca5d2b03-e2ca-42f7-bcd0-40e56b1051df",
+  "inferenceServiceUid": "eef4c2b1-4c4e-4d87-9695-7c24d7985661",
+  "runtimeClass": "kata-cc-nvidia-gpu",
+  "scc": "confidential-storage-sidecar",
+  "initDataSha256": "e7b395df00d078715e8c770c5f9cd483aa6de77e39591b81f326bc477ca7418f",
+  "chatSourceSha256": "062f1675059cb1fe0ff3e7921124d7e050ecba86b5ce87abe28ba0ba1b1401e2",
+  "applicationSecurityContext": {
+    "allowPrivilegeEscalation": false,
+    "capabilities": {
+      "drop": [
+        "ALL"
+      ]
+    },
+    "privileged": false,
+    "readOnlyRootFilesystem": true,
+    "runAsGroup": 1001,
+    "runAsNonRoot": true,
+    "runAsUser": 1001
+  },
+  "storageIntegration": "stock-kata-sidecar",
+  "applicationImage": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+  "syntheticRequest": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly this text and nothing else: STORAGE-GPU-64f555d60325"
+      }
+    ]
+  },
+  "reply": {
+    "message": "STORAGE-GPU-64f555d60325",
+    "finish_reason": "stop",
+    "usage": {
+      "prompt_tokens": 37,
+      "total_tokens": 55,
+      "completion_tokens": 18,
+      "prompt_tokens_details": null
+    }
+  },
+  "vllmSuccessBefore": 0.0,
+  "vllmSuccessAfter": 1.0,
+  "note": "Endpoint/UID trace and live inference; use with separate CPU/GPU attestation and QEMU evidence."
+}

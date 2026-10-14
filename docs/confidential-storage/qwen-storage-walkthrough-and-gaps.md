@@ -1,5 +1,7 @@
 # Qwen confidential storage: implementation, workflow and integration gaps
 
+**Current deployment update:** `qwen-storage` has moved to the [stock-Kata sidecar add-on](stock-kata-qwen-storage-addon.md). The v19 walkthrough below documents the earlier agent-integrated implementation and its controller contract; its custom-runtime/no-sidecar statements describe that earlier snapshot. Storage declarations and the OCI population path are retained.
+
 **Implementation snapshot: 14 October 2026, validated workload revision v19.**
 This describes the workload validated at `eb07abd` and the subsequently deployed
 ConfidentialVolume controller at `018ae67`.

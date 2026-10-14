@@ -1,0 +1,5 @@
+{
+  "baseImage": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/confidential-storage-sidecar@sha256:860a2c0973427f1da52a94cba0b0cfd609d842fdd84ee1ee924317d9d34624b5",
+  "Containerfile": "FROM image-registry.openshift-image-registry.svc:5000/confidential-storage-test/confidential-storage-sidecar@sha256:860a2c0973427f1da52a94cba0b0cfd609d842fdd84ee1ee924317d9d34624b5\nUSER 0\nCOPY runtime.py /opt/storage-sidecar/runtime.py\nRUN chmod 0644 /opt/storage-sidecar/runtime.py\n",
+  "runtimeSha256": "35ab9acb1985f3e23b60c80e9d61519caba7387f6c5b88de96a8043286f5ce37"
+}

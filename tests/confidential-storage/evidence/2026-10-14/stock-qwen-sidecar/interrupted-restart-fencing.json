@@ -1,0 +1,40 @@
+{
+  "checkedAt": "2026-10-14T17:32:38.413574+00:00",
+  "scope": "isolated qwen-storage lab workload only",
+  "failedPodUid": "ca5d2b03-e2ca-42f7-bcd0-40e56b1051df",
+  "node": "9c-63-c0-dd-06-52",
+  "oldSandboxes": [],
+  "liveVms": [
+    {
+      "pid": "132232",
+      "initrd": "/usr/share/kata-containers/osbuilder-images/6.12.0-211.16.1.el10_2.x86_64/kata-cc.initrd",
+      "sidecar": false
+    },
+    {
+      "pid": "132235",
+      "initrd": "/usr/share/kata-containers/osbuilder-images/6.12.0-211.16.1.el10_2.x86_64/kata-cc.initrd",
+      "sidecar": false
+    },
+    {
+      "pid": "163330",
+      "initrd": "/usr/share/kata-containers/osbuilder-images/6.12.0-211.16.1.el10_2.x86_64/kata-cc.initrd",
+      "sidecar": false
+    },
+    {
+      "pid": "163334",
+      "initrd": "/usr/share/kata-containers/osbuilder-images/6.12.0-211.16.1.el10_2.x86_64/kata-cc.initrd",
+      "sidecar": false
+    },
+    {
+      "pid": "1230008",
+      "initrd": "/usr/share/kata-containers/osbuilder-images/6.12.0-211.16.1.el10_2.x86_64/kata-cc-nvidia-gpu-595.58.03.initrd",
+      "sidecar": false
+    }
+  ],
+  "expectedRecordDigests": {
+    "qwen-gpu-data-v1": "d143aaad4a80a5c7a843e9113263faf0621ce8c79ee177e73dfc20c3c52ee7ac",
+    "qwen-gpu-model-v1": "0cdffb8080aa1b6e6a543785c21f29b510e6f5448c3badb3aa998e1bfb99a691"
+  },
+  "action": "retire exactly the two Ready reopen owners after lab administrator verified guest destruction; preserve all disk identities, initialization history and keys",
+  "trustLimit": "Read-only host inventory is administrator evidence, not cryptographic fencing against a malicious host. No automated production takeover."
+}

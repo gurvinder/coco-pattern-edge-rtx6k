@@ -1,0 +1,15 @@
+{
+  "launchMeasurement": "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818",
+  "kernelCommandLine": "tsc=reliable no_timer_check rcupdate.rcu_expedited=1 i8042.direct=1 i8042.dumbkbd=1 i8042.nopnp=1 i8042.noaux=1 noreplace-smp reboot=k cryptomgr.notests net.ifnames=0 pci=lastbus=0 console=hvc0 console=hvc1 debug panic=1 nr_cpus=8 selinux=0 scsi_mod.scan=none agent.launch_process_timeout=15 cgroup_no_v1=all pci=realloc pci=nocrs pci=assign-busses nvrc.smi.srs=1 agent.log=warn agent.guest_components_procs=confidential-data-hub",
+  "files": {
+    "-initrd": "abd755287282a268578687137bf437caeda6139c1a654f18d13f8a72a68892ca",
+    "-kernel": "0317da8a23853124ed4e4da6c56254f40a741ff4507e1afbbcb7f32e5c097206",
+    "-bios": "1aa196fe94e56809aa668fc4eabfc50923131288e018bcf0c6ab4dd3581bd850"
+  },
+  "vcpus": 8,
+  "calculator": "sev-snp-measure==0.0.13",
+  "stockArtifactsUnchanged": true,
+  "liveCommandLineCompared": true,
+  "annotationOverrides": "agent.log=warn replaces the runtime default; guest_components_procs disables REST",
+  "keysApproved": false
+}

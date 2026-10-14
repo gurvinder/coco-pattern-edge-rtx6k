@@ -772,7 +772,7 @@ impl Services {
     }
 }
 
-fn check_peer(stream: &UnixStream, agent: &File) -> Result<()> {
+fn check_peer(stream: &UnixStream, agent: &File, parent: Option<libc::pid_t>) -> Result<()> {
     let mut cred: libc::ucred = unsafe { std::mem::zeroed() };
     let mut n = std::mem::size_of::<libc::ucred>() as libc::socklen_t;
     if unsafe {
@@ -787,6 +787,7 @@ fn check_peer(stream: &UnixStream, agent: &File) -> Result<()> {
         || n as usize != std::mem::size_of::<libc::ucred>()
         || cred.uid != 0
         || cred.pid <= 1
+        || parent.is_some_and(|pid| cred.pid != pid || unsafe { libc::getppid() } != pid)
     {
         return Err(invalid().into());
     }
@@ -801,6 +802,21 @@ fn check_peer(stream: &UnixStream, agent: &File) -> Result<()> {
     Ok(())
 }
 fn main() -> Result<()> {
+    // The optional add-on runs this service as a child of its trusted mount
+    // supervisor. It never impersonates or replaces kata-agent. Pin the parent
+    // PID AND executable inode; the ordinary agent integration is unchanged.
+    let arguments: Vec<_> = std::env::args().skip(1).collect();
+    let parent = match arguments.as_slice() {
+        [] => None,
+        [mode] if mode == "--sidecar-parent" => {
+            let pid = unsafe { libc::getppid() };
+            if pid <= 1 {
+                return Err(invalid().into());
+            }
+            Some(pid)
+        }
+        _ => return Err(invalid().into()),
+    };
     let (config, initdata) = bootstrap()?;
     let mut service = Services::new(config, initdata)?;
     let directory = Path::new(SOCKET).parent().unwrap();
@@ -811,10 +827,15 @@ fn main() -> Result<()> {
     // Never unlink/adopt an existing socket or restart over retained VM state.
     let listener = UnixListener::bind(SOCKET)?;
     fs::set_permissions(SOCKET, fs::Permissions::from_mode(0o600))?;
-    let agent = OpenOptions::new()
-        .read(true)
-        .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
-        .open("/usr/bin/kata-agent")?;
+    let agent = if let Some(pid) = parent {
+        // /proc/<pid>/exe is intentionally followed; no caller supplies a path.
+        File::open(format!("/proc/{pid}/exe"))?
+    } else {
+        OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+            .open("/usr/bin/kata-agent")?
+    };
     let metadata = agent.metadata()?;
     if !metadata.is_file() || metadata.uid() != 0 || metadata.mode() & 0o022 != 0 {
         return Err(invalid().into());
@@ -824,7 +845,7 @@ fn main() -> Result<()> {
         let mut stream = stream?;
         stream.set_read_timeout(Some(Duration::from_secs(5)))?;
         stream.set_write_timeout(Some(Duration::from_secs(5)))?;
-        if check_peer(&stream, &agent).is_err() {
+        if check_peer(&stream, &agent, parent).is_err() {
             continue;
         }
         let response = (|| -> Result<Response> {

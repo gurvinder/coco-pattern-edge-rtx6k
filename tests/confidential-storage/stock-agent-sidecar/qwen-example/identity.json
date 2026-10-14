@@ -1,0 +1,7 @@
+{
+  "policy_sha256": "fb8978bf57733e9936b9c878388ed0b07a17f148ea11797b9a9cf8bfd7e162a1",
+  "init_data": "521607af27de8db7f9a8b52c9aa075b48317bc0773bb90c9b64e55dbd4a9ba14",
+  "sidecar_image": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/confidential-storage-sidecar@sha256:aff5a4874e7edf39cd67bf03b7f5c31df70a4a2191bb24e7423e4f65bb798aba",
+  "application_image": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+  "status": "rendered-only-not-approved-or-deployed"
+}

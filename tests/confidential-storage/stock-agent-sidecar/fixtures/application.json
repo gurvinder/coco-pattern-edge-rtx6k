@@ -1,0 +1,526 @@
+{
+  "OCI": {
+    "Annotations": {
+      "io.kubernetes.pod.namespace": "confidential-storage-test",
+      "io.kubernetes.container.name": "kserve-container",
+      "io.katacontainers.pkg.oci.container_type": "pod_container"
+    },
+    "Hooks": null,
+    "Hostname": "qwen-storage-sidecar",
+    "Linux": {
+      "CgroupsPath": "",
+      "Devices": [],
+      "GIDMappings": [],
+      "IntelRdt": null,
+      "MaskedPaths": [
+        "/proc/acpi",
+        "/proc/asound",
+        "/proc/interrupts",
+        "/proc/kcore",
+        "/proc/keys",
+        "/proc/latency_stats",
+        "/proc/sched_debug",
+        "/proc/scsi",
+        "/proc/timer_list",
+        "/proc/timer_stats",
+        "/sys/devices/virtual/powercap",
+        "/sys/firmware",
+        "/sys/fs/selinux"
+      ],
+      "MountLabel": "",
+      "Namespaces": [
+        {
+          "Path": "",
+          "Type": "ipc"
+        },
+        {
+          "Path": "",
+          "Type": "uts"
+        },
+        {
+          "Path": "",
+          "Type": "mount"
+        }
+      ],
+      "ReadonlyPaths": [
+        "/proc/bus",
+        "/proc/fs",
+        "/proc/irq",
+        "/proc/sys",
+        "/proc/sysrq-trigger"
+      ],
+      "Resources": {
+        "BlockIO": null,
+        "CPU": {
+          "Cpus": "",
+          "Mems": "",
+          "Period": 100000,
+          "Quota": 800000,
+          "RealtimePeriod": 0,
+          "RealtimeRuntime": 0,
+          "Shares": 3072
+        },
+        "Devices": [],
+        "HugepageLimits": [
+          {
+            "Limit": 0,
+            "Pagesize": "2MB"
+          },
+          {
+            "Limit": 0,
+            "Pagesize": "1GB"
+          }
+        ],
+        "Memory": {
+          "DisableOOMKiller": false,
+          "Kernel": 0,
+          "KernelTCP": 0,
+          "Limit": 70866960384,
+          "Reservation": 0,
+          "Swap": 70866960384,
+          "Swappiness": 0
+        },
+        "Network": null,
+        "Pids": null
+      },
+      "RootfsPropagation": "",
+      "Seccomp": null,
+      "Sysctl": {},
+      "UIDMappings": []
+    },
+    "Mounts": [
+      {
+        "destination": "/proc",
+        "options": [
+          "nosuid",
+          "noexec",
+          "nodev"
+        ],
+        "source": "proc",
+        "type_": "proc"
+      },
+      {
+        "destination": "/dev",
+        "options": [
+          "nosuid",
+          "strictatime",
+          "mode=755",
+          "size=65536k"
+        ],
+        "source": "tmpfs",
+        "type_": "tmpfs"
+      },
+      {
+        "destination": "/dev/pts",
+        "options": [
+          "nosuid",
+          "noexec",
+          "newinstance",
+          "ptmxmode=0666",
+          "mode=0620",
+          "gid=5"
+        ],
+        "source": "devpts",
+        "type_": "devpts"
+      },
+      {
+        "destination": "/dev/mqueue",
+        "options": [
+          "nosuid",
+          "noexec",
+          "nodev"
+        ],
+        "source": "mqueue",
+        "type_": "mqueue"
+      },
+      {
+        "destination": "/sys",
+        "options": [
+          "nosuid",
+          "noexec",
+          "nodev",
+          "ro"
+        ],
+        "source": "sysfs",
+        "type_": "sysfs"
+      },
+      {
+        "destination": "/sys/fs/cgroup",
+        "options": [
+          "nosuid",
+          "noexec",
+          "nodev",
+          "relatime",
+          "ro"
+        ],
+        "source": "cgroup",
+        "type_": "cgroup"
+      },
+      {
+        "destination": "/etc/resolv.conf",
+        "options": [
+          "ro",
+          "bind",
+          "nodev",
+          "nosuid",
+          "noexec"
+        ],
+        "source": "/run/kata-containers/shared/containers/e609b912899e1750aa4ec8155a16834e956a5b2bfdd71ae4a6f4980fb8c11267-8d5aa7a50c7b0095-resolv.conf",
+        "type_": "bind"
+      },
+      {
+        "destination": "/etc/hostname",
+        "options": [
+          "ro",
+          "bind"
+        ],
+        "source": "/run/kata-containers/shared/containers/e609b912899e1750aa4ec8155a16834e956a5b2bfdd71ae4a6f4980fb8c11267-bdaaab5ce7c735cc-hostname",
+        "type_": "bind"
+      },
+      {
+        "destination": "/run/.containerenv",
+        "options": [
+          "ro",
+          "bind"
+        ],
+        "source": "/run/kata-containers/shared/containers/e609b912899e1750aa4ec8155a16834e956a5b2bfdd71ae4a6f4980fb8c11267-4ec171ce695826c3-.containerenv",
+        "type_": "bind"
+      },
+      {
+        "destination": "/etc/passwd",
+        "options": [
+          "rw",
+          "bind",
+          "nodev",
+          "nosuid",
+          "noexec"
+        ],
+        "source": "/run/kata-containers/shared/containers/e609b912899e1750aa4ec8155a16834e956a5b2bfdd71ae4a6f4980fb8c11267-ced8e0ed19f55085-passwd",
+        "type_": "bind"
+      },
+      {
+        "destination": "/etc/group",
+        "options": [
+          "rw",
+          "bind",
+          "nodev",
+          "nosuid",
+          "noexec"
+        ],
+        "source": "/run/kata-containers/shared/containers/e609b912899e1750aa4ec8155a16834e956a5b2bfdd71ae4a6f4980fb8c11267-0037dabbbef5ad30-group",
+        "type_": "bind"
+      },
+      {
+        "destination": "/rendezvous",
+        "options": [
+          "rbind",
+          "rprivate",
+          "rw",
+          "bind"
+        ],
+        "source": "/run/kata-containers/sandbox/ephemeral/rendezvous",
+        "type_": "bind"
+      },
+      {
+        "destination": "/data",
+        "options": [
+          "rbind",
+          "rprivate",
+          "rw",
+          "bind"
+        ],
+        "source": "/run/kata-containers/sandbox/ephemeral/data-target",
+        "type_": "bind"
+      },
+      {
+        "destination": "/models/qwen",
+        "options": [
+          "rbind",
+          "rprivate",
+          "rw",
+          "bind"
+        ],
+        "source": "/run/kata-containers/sandbox/ephemeral/model-target",
+        "type_": "bind"
+      },
+      {
+        "destination": "/dev/shm",
+        "options": [
+          "rbind",
+          "rprivate",
+          "rw",
+          "bind"
+        ],
+        "source": "/run/kata-containers/sandbox/ephemeral/shm",
+        "type_": "bind"
+      },
+      {
+        "destination": "/etc/hosts",
+        "options": [
+          "rbind",
+          "rprivate",
+          "rw",
+          "bind"
+        ],
+        "source": "/run/kata-containers/shared/containers/e609b912899e1750aa4ec8155a16834e956a5b2bfdd71ae4a6f4980fb8c11267-48a4ca5c741ff30d-hosts",
+        "type_": "bind"
+      },
+      {
+        "destination": "/dev/termination-log",
+        "options": [
+          "rbind",
+          "rprivate",
+          "rw",
+          "bind"
+        ],
+        "source": "/run/kata-containers/shared/containers/e609b912899e1750aa4ec8155a16834e956a5b2bfdd71ae4a6f4980fb8c11267-2cc6b0b9f892e809-termination-log",
+        "type_": "bind"
+      },
+      {
+        "destination": "/run/secrets",
+        "options": [
+          "bind",
+          "rprivate",
+          "bind"
+        ],
+        "source": "/run/kata-containers/shared/containers/e609b912899e1750aa4ec8155a16834e956a5b2bfdd71ae4a6f4980fb8c11267-d4e374232d9f67e1-secrets",
+        "type_": "bind"
+      }
+    ],
+    "Process": {
+      "ApparmorProfile": "",
+      "Args": [
+        "/usr/bin/python3",
+        "-c",
+        "\"\"\"Measured startup for the isolated two-volume GPU candidate.\"\"\"\nimport hashlib\nimport json\nimport os\nfrom pathlib import Path\n\nINVENTORY = [{'bytes': 11343, 'path': 'LICENSE', 'sha256': '832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e'}, {'bytes': 726, 'path': 'config.json', 'sha256': '660db3b73d788119c04535e48cf9be5f55bc3100841a718637ae695b442f27dd'}, {'bytes': 239, 'path': 'generation_config.json', 'sha256': '2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2'}, {'bytes': 1671853, 'path': 'merges.txt', 'sha256': '8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5'}, {'bytes': 1503300328, 'path': 'model.safetensors', 'sha256': 'f47f71177f32bcd101b7573ec9171e6a57f4f4d31148d38e382306f42996874b'}, {'bytes': 1079, 'path': 'publisher-source.json', 'sha256': 'd5945b210faf8c6c869fb72de03acd0e386507dae493107fed818ea9bb6948d8'}, {'bytes': 11422654, 'path': 'tokenizer.json', 'sha256': 'aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4'}, {'bytes': 9732, 'path': 'tokenizer_config.json', 'sha256': 'd5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101'}, {'bytes': 2776833, 'path': 'vocab.json', 'sha256': 'ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910'}]\nMODEL = Path('/models/qwen')\nDATA = Path('/data')\n\n\ndef require(condition, message):\n    if not condition:\n        raise RuntimeError(message)\n\n\nrequire(os.getuid() == 1001 and os.getgid() == 1001, 'unexpected application owner')\nstatus = dict(line.split(':', 1) for line in Path('/proc/self/status').read_text().splitlines() if ':' in line)\nrequire(int(status['CapEff'].strip(), 16) == 0, 'application has capabilities')\nrequire(status['NoNewPrivs'].strip() == '1', 'privilege escalation is enabled')\nfor private in ['/dev/coco-volume-0', '/dev/coco-volume-1', '/dev/mapper/control',\n                '/run/confidential-containers/cdh.sock', '/run/coco/storage-service/agent.sock']:\n    require(not Path(private).exists(), 'guest control or raw disk visible to application')\nrequire(os.statvfs(MODEL).f_flag & os.ST_RDONLY, 'model mount is writable')\nrequire(not os.statvfs(DATA).f_flag & os.ST_RDONLY, 'data mount is read-only')\nfor item in INVENTORY:\n    path = MODEL / item['path']\n    require(path.is_file() and not path.is_symlink(), 'unexpected model file type')\n    require(path.stat().st_size == item['bytes'], 'model size mismatch')\n    with path.open('rb') as stream:\n        digest = hashlib.file_digest(stream, 'sha256').hexdigest()\n    require(digest == item['sha256'], 'model file hash mismatch')\nprint('STORAGE_MODEL_RO_HASHES_PASS', flush=True)\n# This is a disposable persistence probe, not a model freshness/anti-replay counter.\ncanary = DATA / 'gpu-storage-canary.json'\nexpected = {'purpose': 'confidential-gpu-storage-persistence/v1', 'model': 'Qwen3-0.6B'}\nif canary.exists():\n    require(json.loads(canary.read_text()) == expected, 'persistent canary mismatch')\n    print('STORAGE_DATA_REOPEN_PASS', flush=True)\nelse:\n    with canary.open('x') as stream:\n        json.dump(expected, stream, sort_keys=True)\n        stream.flush()\n        os.fsync(stream.fileno())\n    fd = os.open(DATA, os.O_DIRECTORY)\n    os.fsync(fd)\n    os.close(fd)\n    print('STORAGE_DATA_FIRST_WRITE_PASS', flush=True)\nfor name in ['tmp', 'hf', 'vllm', 'triton', 'cache', 'home']:\n    (DATA / name).mkdir(exist_ok=True)\nimport torch\nrequire(torch.cuda.is_available() and torch.cuda.device_count() == 1, 'exactly one CUDA GPU required')\na = torch.arange(4096, dtype=torch.int32, device='cuda')\nrequire(torch.equal((a + a).cpu(), torch.arange(4096, dtype=torch.int32) * 2), 'CUDA vector addition failed')\nprint(json.dumps({'event': 'CUDA_GPU_PROBE_PASS', 'device': torch.cuda.get_device_name(0),\n                  'torch': torch.__version__, 'cuda': torch.version.cuda}), flush=True)\ndel a\n# GPU confidentiality is gated by composite Trustee attestation before storage\n# opens. Successful CUDA arithmetic alone is not proof of confidential mode.\nos.execvp('vllm', ['vllm', 'serve', str(MODEL), '--served-model-name', 'qwen3-0.6b',\n                  '--host', '0.0.0.0', '--port', '8000', '--dtype', 'bfloat16',\n                  '--max-model-len', '2048', '--max-num-seqs', '4',\n                  '--gpu-memory-utilization', '0.25', '--enforce-eager',\n                  '--disable-log-requests', '--generation-config', 'vllm'])\n"
+      ],
+      "Capabilities": {
+        "Ambient": [],
+        "Bounding": [],
+        "Effective": [],
+        "Inheritable": [],
+        "Permitted": []
+      },
+      "ConsoleSize": null,
+      "Cwd": "/",
+      "Env": [
+        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "TERM=xterm",
+        "HOSTNAME=qwen-storage-sidecar",
+        "NSS_SDB_USE_CACHE=no",
+        "TORCHINDUCTOR_CACHE_DIR=/data/cache/torchinductor",
+        "NVIDIA_DRIVER_CAPABILITIES=compute,utility",
+        "TRITON_CACHE_DIR=/data/triton",
+        "LD_LIBRARY_PATH=/usr/lib64:/usr/local/lib/python3.12/dist-packages/torch/lib:/usr/local/lib/python3.12/dist-packages/torch_tensorrt/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64",
+        "INFERENCE_SERVICE_NAME=qwen-storage",
+        "VLLM_USE_FLASHINFER_SAMPLER=0",
+        "NVIDIA_VISIBLE_DEVICES=void",
+        "HOME=/data/home",
+        "PYTHONDONTWRITEBYTECODE=1",
+        "HF_HUB_OFFLINE=1",
+        "VLLM_CACHE_ROOT=/data/vllm",
+        "VLLM_NO_USAGE_STATS=1",
+        "LOGNAME=qwen",
+        "PYTHONUNBUFFERED=1",
+        "HF_HOME=/data/hf",
+        "TRANSFORMERS_OFFLINE=1",
+        "DO_NOT_TRACK=1",
+        "OMP_NUM_THREADS=1",
+        "TOKENIZERS_PARALLELISM=false",
+        "USER=qwen",
+        "PATH=/usr/local/lib/python3.12/dist-packages/torch_tensorrt/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/mpi/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/ucx/bin:/opt/amazon/efa/bin:/opt/tensorrt/bin",
+        "CUDA_VISIBLE_DEVICES=0",
+        "TMPDIR=/data/tmp",
+        "XDG_CACHE_HOME=/data/cache",
+        "KUBERNETES_PORT_443_TCP_ADDR=172.30.0.1",
+        "KUBERNETES_SERVICE_HOST=172.30.0.1",
+        "KUBERNETES_SERVICE_PORT=443",
+        "KUBERNETES_SERVICE_PORT_HTTPS=443",
+        "KUBERNETES_PORT=tcp://172.30.0.1:443",
+        "KUBERNETES_PORT_443_TCP=tcp://172.30.0.1:443",
+        "KUBERNETES_PORT_443_TCP_PROTO=tcp",
+        "KUBERNETES_PORT_443_TCP_PORT=443",
+        "NVIDIA_REQUIRE_JETPACK_HOST_MOUNTS=",
+        "GDRCOPY_VERSION=2.5",
+        "HPCX_VERSION=2.24.1",
+        "MOFED_VERSION=5.4-rdmacore56.0",
+        "OPENUCX_VERSION=1.19.0",
+        "OPENMPI_VERSION=4.1.7",
+        "RDMACORE_VERSION=56.0",
+        "EFA_VERSION=1.38.1",
+        "AWS_OFI_NCCL_VERSION=1.14.0",
+        "OPAL_PREFIX=/opt/hpcx/ompi",
+        "OMPI_MCA_coll_hcoll_enable=0",
+        "CUDA_VERSION=13.0.1.012",
+        "CUDA_DRIVER_VERSION=580.82.07",
+        "NVVM_VERSION=13.0.88",
+        "DOCA_VERSION=3.1.0",
+        "_CUDA_COMPAT_PATH=/usr/local/cuda/compat",
+        "ENV=/etc/shinit_v2",
+        "BASH_ENV=/etc/bash.bashrc",
+        "SHELL=/bin/bash",
+        "NVIDIA_REQUIRE_CUDA=cuda>=9.0",
+        "NCCL_VERSION=2.27.7",
+        "CUBLAS_VERSION=13.0.2.14",
+        "CUFFT_VERSION=12.0.0.61",
+        "CURAND_VERSION=10.4.0.35",
+        "CUSPARSE_VERSION=12.6.3.3",
+        "CUSPARSELT_VERSION=0.8.1.1",
+        "CUSOLVER_VERSION=12.0.4.66",
+        "NPP_VERSION=13.0.1.2",
+        "NVJPEG_VERSION=13.0.1.86",
+        "CUFILE_VERSION=1.15.1.6",
+        "NVJITLINK_VERSION=13.0.88",
+        "NVFATBIN_VERSION=13.0.85",
+        "CUBLASMP_VERSION=0.5.1.65",
+        "NVSHMEM_VERSION=3.4.5",
+        "CUDLA_VERSION=13.0.1.012",
+        "NVPTXCOMPILER_VERSION=13.0.88",
+        "CUDNN_VERSION=9.13.0.50",
+        "CUDNN_FRONTEND_VERSION=1.14.0",
+        "TRT_VERSION=10.13.3.9",
+        "TRTOSS_VERSION=",
+        "NSIGHT_SYSTEMS_VERSION=2025.5.1.121",
+        "NSIGHT_COMPUTE_VERSION=2025.3.1.4",
+        "DALI_VERSION=1.51.2",
+        "DALI_BUILD=",
+        "DALI_URL_SUFFIX=130",
+        "POLYGRAPHY_VERSION=0.49.26",
+        "TRANSFORMER_ENGINE_VERSION=2.7",
+        "MODEL_OPT_VERSION=0.33.0",
+        "CUDA_ARCH_LIST=7.5 8.0 8.6 9.0 10.0 12.0",
+        "MAXSMVER=",
+        "NVRX_VERSION=0.4.1+cuda13",
+        "NVIDIA_PRODUCT_NAME=vLLM",
+        "LIBRARY_PATH=/usr/local/cuda/lib64/stubs:",
+        "PYTORCH_BUILD_VERSION=2.9.0a0+50eac81",
+        "PYTORCH_VERSION=2.9.0a0+50eac81",
+        "PYTORCH_BUILD_NUMBER=0",
+        "NVIDIA_PYTORCH_VERSION=25.09",
+        "NVFUSER_BUILD_VERSION=a71c674",
+        "NVFUSER_VERSION=a71c674",
+        "PIP_BREAK_SYSTEM_PACKAGES=1",
+        "PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python",
+        "PIP_CONSTRAINT=/etc/pip/constraint.txt",
+        "NVPL_LAPACK_MATH_MODE=PEDANTIC",
+        "PYTHONIOENCODING=utf-8",
+        "LC_ALL=C.UTF-8",
+        "PIP_DEFAULT_TIMEOUT=100",
+        "JUPYTER_PORT=8888",
+        "TENSORBOARD_PORT=6006",
+        "UCC_CL_BASIC_TLS=^sharp",
+        "UCC_EC_CUDA_EXEC_NUM_THREADS=256",
+        "TORCH_CUDA_ARCH_LIST=7.5 8.0 8.6 9.0 10.0 12.0+PTX",
+        "PYTORCH_HOME=/opt/pytorch/pytorch",
+        "CUDA_HOME=/usr/local/cuda",
+        "TORCH_ALLOW_TF32_CUBLAS_OVERRIDE=1",
+        "TRITON_PTXAS_PATH=/usr/local/cuda/bin/ptxas",
+        "TRITON_CUOBJDUMP_PATH=/usr/local/cuda/bin/cuobjdump",
+        "TRITON_NVDISASM_PATH=/usr/local/cuda/bin/nvdisasm",
+        "TRITON_CUDACRT_PATH=/usr/local/cuda/include",
+        "TRITON_CUDART_PATH=/usr/local/cuda/include",
+        "TRITON_CUPTI_PATH=/usr/local/cuda/include",
+        "COCOAPI_VERSION=2.0+nv0.8.1",
+        "CUDA_MODULE_LOADING=LAZY",
+        "TORCH_NCCL_USE_COMM_NONBLOCKING=0",
+        "NVIDIA_BUILD_ID=214638689",
+        "VLLM_VERSION=0.10.1.1+381074ae",
+        "MAX_JOBS=12",
+        "PIP_NO_BUILD_ISOLATION=1",
+        "PYTORCH_TRITON_VERSION=3.4.0+gitc817b9b6",
+        "NVIDIA_VLLM_VERSION=25.09"
+      ],
+      "NoNewPrivileges": true,
+      "OOMScoreAdj": 918,
+      "Rlimits": [],
+      "SelinuxLabel": "",
+      "Terminal": false,
+      "User": {
+        "AdditionalGids": [
+          1001
+        ],
+        "GID": 1001,
+        "UID": 1001,
+        "Username": ""
+      }
+    },
+    "Root": {
+      "Path": "/run/kata-containers/e609b912899e1750aa4ec8155a16834e956a5b2bfdd71ae4a6f4980fb8c11267/rootfs",
+      "Readonly": true
+    },
+    "Solaris": null,
+    "Version": "1.3.0",
+    "Windows": null
+  },
+  "container_id": "e609b912899e1750aa4ec8155a16834e956a5b2bfdd71ae4a6f4980fb8c11267",
+  "devices": [],
+  "exec_id": "e609b912899e1750aa4ec8155a16834e956a5b2bfdd71ae4a6f4980fb8c11267",
+  "sandbox_pidns": true,
+  "shared_mounts": [],
+  "stderr_port": 0,
+  "stdin_port": 0,
+  "stdout_port": 0,
+  "storages": [
+    {
+      "driver": "image_guest_pull",
+      "driver_options": [
+        "image_guest_pull={\"metadata\": {\"io.katacontainers.pkg.oci.container_type\": \"pod_container\"}}"
+      ],
+      "fs_group": null,
+      "fstype": "overlay",
+      "mount_point": "/run/kata-containers/e609b912899e1750aa4ec8155a16834e956a5b2bfdd71ae4a6f4980fb8c11267/rootfs",
+      "options": [],
+      "shared": false,
+      "source": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab"
+    },
+    {
+      "driver": "ephemeral",
+      "driver_options": [],
+      "fs_group": null,
+      "fstype": "tmpfs",
+      "mount_point": "/run/kata-containers/sandbox/ephemeral/rendezvous",
+      "options": [
+        "fsgid=1001"
+      ],
+      "shared": false,
+      "source": "tmpfs"
+    },
+    {
+      "driver": "ephemeral",
+      "driver_options": [],
+      "fs_group": null,
+      "fstype": "tmpfs",
+      "mount_point": "/run/kata-containers/sandbox/ephemeral/data-target",
+      "options": [
+        "fsgid=1001"
+      ],
+      "shared": false,
+      "source": "tmpfs"
+    },
+    {
+      "driver": "ephemeral",
+      "driver_options": [],
+      "fs_group": null,
+      "fstype": "tmpfs",
+      "mount_point": "/run/kata-containers/sandbox/ephemeral/model-target",
+      "options": [
+        "fsgid=1001"
+      ],
+      "shared": false,
+      "source": "tmpfs"
+    },
+    {
+      "driver": "ephemeral",
+      "driver_options": [],
+      "fs_group": null,
+      "fstype": "tmpfs",
+      "mount_point": "/run/kata-containers/sandbox/ephemeral/shm",
+      "options": [
+        "fsgid=1001"
+      ],
+      "shared": false,
+      "source": "tmpfs"
+    }
+  ],
+  "string_user": null
+}

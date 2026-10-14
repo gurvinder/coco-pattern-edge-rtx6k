@@ -1,0 +1,41 @@
+{
+  "checkedAt": "2026-10-14T17:46:15.711243+00:00",
+  "result": "pass",
+  "workload": "confidential-storage-test/qwen-storage",
+  "chatUrl": "http://10.14.202.14:30081",
+  "runtimeClass": "kata-cc-nvidia-gpu",
+  "image": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/confidential-storage-sidecar@sha256:aff5a4874e7edf39cd67bf03b7f5c31df70a4a2191bb24e7423e4f65bb798aba",
+  "applicationImage": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+  "initDataSha256": "521607af27de8db7f9a8b52c9aa075b48317bc0773bb90c9b64e55dbd4a9ba14",
+  "policySha256": "fb8978bf57733e9936b9c878388ed0b07a17f148ea11797b9a9cf8bfd7e162a1",
+  "beforePodUid": "bda581c2-a043-4824-a7be-9fa3c3d797dc",
+  "afterPodUid": "c5f17a5c-aee4-479d-b5ef-3610582c1a2c",
+  "unchangedChatUid": "ee6a4a4b-2e67-4eea-b537-9dbd3b96804c",
+  "stockArtifactsVerified": true,
+  "cpuGpuAppraisalsAffirming": true,
+  "samePvcReopenAcrossFreshVm": true,
+  "cleanCloseAndNewOwnership": true,
+  "initializationAndFormatEventCountsUnchanged": true,
+  "realChatInferenceBeforeAndAfter": true,
+  "administratorExecDeniedBothContainers": true,
+  "applicationUid": 1001,
+  "applicationCapabilities": [],
+  "tests": {
+    "stockRegorusPolicyCases": 33,
+    "trusteeReleasePolicyCases": 84,
+    "authorityUnitTests": 138,
+    "linuxChildSignalRegression": 1,
+    "storageServiceTestsWithRcar": 8
+  },
+  "limits": [
+    "The helper is privileged inside the confidential VM.",
+    "Current run reopens existing initialized RW storage; it does not newly initialize a blank PVC.",
+    "The earlier v10 restart failed and required explicit trusted-lab fenced-session retirement; v11 restart closed and reopened without recovery.",
+    "ConfidentialVolume automatic sidecar reconciliation and production crash fencing remain gaps.",
+    "Chatbot endpoint remains VPN HTTP."
+  ],
+  "patternChecks": {
+    "preview-all": "failed: target absent in framework Makefile",
+    "validate-schema": "failed: existing clustergroup hardware.profile missing"
+  }
+}

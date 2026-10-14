@@ -1,5 +1,7 @@
 # Stock Kata agent with a privileged storage sidecar
 
+**Follow-up:** the actual GPU Qwen workload now has a [stock-Kata storage add-on](stock-kata-qwen-storage-addon.md). The historical CPU/RAM-disk experiment below remains separate evidence.
+
 **14 October 2026: isolated feasibility experiment.** The existing Qwen services
 were preserved. This tests an alternative to the patched-agent path; it does not
 replace that deployment or inherit its attestation/storage validation results.

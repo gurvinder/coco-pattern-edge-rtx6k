@@ -23,6 +23,7 @@ def main():
     parser.add_argument("--kubeconfig", type=Path, required=True)
     parser.add_argument("--url", default="http://10.14.202.14:30081")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--stock-sidecar", action="store_true")
     args = parser.parse_args()
     namespace = "confidential-storage-test"
     oc = ["oc", "--kubeconfig", str(args.kubeconfig), "--request-timeout=30s"]
@@ -81,9 +82,24 @@ def main():
         c["type"] == "Ready" and c["status"] == "True"
         for c in isvc["status"]["conditions"]
     )
-    assert model["spec"]["runtimeClassName"] == "kata-snp-nvidia-gpu-storage-candidate"
-    assert len(model["spec"]["containers"]) == 1
-    sc = model["spec"]["containers"][0]["securityContext"]
+    containers = model["spec"]["containers"]
+    application = next(c for c in containers if c["name"] == "kserve-container")
+    if args.stock_sidecar:
+        assert model["spec"]["runtimeClassName"] == "kata-cc-nvidia-gpu"
+        assert len(containers) == 2 and model["spec"]["shareProcessNamespace"]
+        helper = next(c for c in containers if c["name"] == "storage-sidecar")
+        assert helper["securityContext"]["privileged"]
+        assert helper["securityContext"]["runAsUser"] == 0
+        assert len(helper["volumeDevices"]) == 2
+        assert not application.get("volumeDevices")
+        mounts = {m["mountPath"] for m in application["volumeMounts"]}
+        assert {"/models/qwen", "/data"} <= mounts
+    else:
+        assert (
+            model["spec"]["runtimeClassName"] == "kata-snp-nvidia-gpu-storage-candidate"
+        )
+        assert len(containers) == 1
+    sc = application["securityContext"]
     assert sc["runAsUser"] == sc["runAsGroup"] == 1001
     assert sc["capabilities"]["drop"] == ["ALL"] and not sc["allowPrivilegeEscalation"]
     assert sc["readOnlyRootFilesystem"] and not sc.get("privileged", False)
@@ -154,6 +170,10 @@ def main():
         "initDataSha256": hashlib.sha256(initdata).hexdigest(),
         "chatSourceSha256": hashlib.sha256(source.encode()).hexdigest(),
         "applicationSecurityContext": sc,
+        "storageIntegration": (
+            "stock-kata-sidecar" if args.stock_sidecar else "agent-integrated"
+        ),
+        "applicationImage": application["image"],
         "syntheticRequest": prompt,
         "reply": result,
         "vllmSuccessBefore": before,

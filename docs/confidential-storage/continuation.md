@@ -52,8 +52,12 @@ The candidate image is now assembled and reproduced byte-for-byte:
 `/private/tmp/storage-native-v1.initrd`, SHA-256
 `fde2f852f464c9a44f1fd6369eab0162e0841dd827bc30da172ff8761304cc3a`.
 Its overlay and measurement JSON are beside it and public build/measurement
-metadata are in evidence. The intended cmdline changes only `agent.log=debug`
-to `agent.log=warn`; actual handler/QEMU arguments must be verified before keys.
+metadata are in evidence. The intended config disables `[agent.kata].enable_debug`
+and prepends `agent.log=warn` to the existing hypervisor `kernel_params`. Runtime
+source emits `agent.launch_process_timeout=6` before those user parameters, so
+measurement uses that exact ordering. Actual QEMU arguments must match before
+keys. Current handler still has agent/runtime debug enabled, hypervisor debug
+false, no debug console and no tracing; nothing was switched.
 Six native tests, three protocol tests and the strict actual-protobuf policy test
 pass. Source preparation is byte-identical to the tested tree.
 

@@ -10,8 +10,8 @@
   "vcpus": 1,
   "vcpuType": "EPYC-v4",
   "guestFeatures": "0x1",
-  "kernelCommandLine": "tsc=reliable no_timer_check rcupdate.rcu_expedited=1 i8042.direct=1 i8042.dumbkbd=1 i8042.nopnp=1 i8042.noaux=1 noreplace-smp reboot=k cryptomgr.notests net.ifnames=0 pci=lastbus=0 console=hvc0 console=hvc1 quiet panic=1 nr_cpus=1 selinux=0 scsi_mod.scan=none agent.log=warn agent.launch_process_timeout=6 cgroup_no_v1=all systemd.unified_cgroup_hierarchy=1",
-  "launchMeasurement": "20c0d4891aff2d9718892562cdd7ce88ececbb9cf1c9005769a3a89b67814bad01d6b8e022507a3e6cd01335c57d7832",
+  "kernelCommandLine": "tsc=reliable no_timer_check rcupdate.rcu_expedited=1 i8042.direct=1 i8042.dumbkbd=1 i8042.nopnp=1 i8042.noaux=1 noreplace-smp reboot=k cryptomgr.notests net.ifnames=0 pci=lastbus=0 console=hvc0 console=hvc1 quiet panic=1 nr_cpus=1 selinux=0 scsi_mod.scan=none agent.launch_process_timeout=6 agent.log=warn cgroup_no_v1=all systemd.unified_cgroup_hierarchy=1",
+  "launchMeasurement": "655a8136cb8cc77e68ab04b4a7b5fa4bbe0bc75b47b4e259b4f157e3062cabe62b4fb58dce7b812fd134e2020359d07a",
   "reportedTcb": {
     "bootloader": 3,
     "tee": 2,

@@ -34,7 +34,11 @@ def calculate(args):
         raise ValueError("candidate image build digest mismatch")
     paths["initrd"] = str(args.initrd)
     digests[args.initrd.name] = digest
-    command = probe.CMDLINE.replace("agent.log=debug", "agent.log=warn")
+    # Runtime generates launch_process_timeout before user kernel_params. Disable
+    # [agent.kata].enable_debug and prepend agent.log=warn to kernel_params.
+    command = probe.CMDLINE.replace("agent.log=debug ", "").replace(
+        "cgroup_no_v1=all", "agent.log=warn cgroup_no_v1=all"
+    )
     measurement = probe.snp_calc_launch_digest(
         vcpus=1,
         vcpu_sig=probe.CPU_SIGS["EPYC-v4"],

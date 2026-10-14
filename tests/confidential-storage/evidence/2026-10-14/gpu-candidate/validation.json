@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-14",
+  "baseCommit": "26f2876",
+  "scope": "GPU guest source and deterministic packaging only; no hardware boot or storage key approval",
+  "sourceArchiveSha256": "ab8972dc026cfaad85705e93019506384c2af286f715bd364701062c88330891",
+  "rustToolchain": "1.94.1",
+  "results": {
+    "nativeAgent": {
+      "passed": 17,
+      "filter": "storage_",
+      "features": [
+        "init-data",
+        "agent-policy"
+      ]
+    },
+    "packagingAdmission": {
+      "passed": 4
+    },
+    "agentReleaseBuild": "passed",
+    "serviceRcarReleaseBuild": "passed",
+    "hashLockedCleanPreparation": "passed",
+    "gpuImageReproducibility": "byte-identical",
+    "legacyCpuV12Regression": "byte-identical",
+    "requiredElfLibraries": "present in original GPU initrd; hardware loading not tested",
+    "previewAll": "missing Make target (existing baseline)",
+    "validateSchema": "missing global.hardware.profile in bare-metal values (existing baseline)"
+  },
+  "liveChanges": {
+    "productionRuntime": false,
+    "kserve": false,
+    "trusteeConfiguration": false,
+    "storageDisksOrKeys": false,
+    "gpuAllocation": false
+  },
+  "qwenHealth": {
+    "podUid": "d5cc3080-ae0b-4490-b145-56a216732566",
+    "phase": "Running",
+    "readyContainers": 2,
+    "restarts": 0
+  },
+  "chatbotHealth": {
+    "podUid": "839d51fc-94fe-491b-9e77-cec5a4c1ae48",
+    "phase": "Running",
+    "readyContainers": 1,
+    "restarts": 0
+  },
+  "sourceSha256": {
+    "components/confidential-storage-kata/native-agent/native-lifecycle.patch": "8257445ea4404f2e21fa2a53e3314e5b8076b5112f4a6fbe0eae125c7baa3718",
+    "components/confidential-storage-kata/native-agent/storage_service.rs": "2d591078415a86e53f1a602ba0837c9e6798fed5911476166a5a96193fe2ac6d",
+    "components/confidential-storage-kata/native-agent/storage_gpu.rs": "a89fa74bf4f1c5bbc5608e0e4644994aee3d3e6e4e5827e5be85ea6541c1b29d",
+    "scripts/confidential-storage/prepare-native-agent.py": "ddc5b98bdd7a1013c86a55dd8e511bd6a32136b599eab9dae19dc8b6fed7aebb",
+    "tests/confidential-storage/native-guest/build.py": "99050d723c4d4d1c88302d89601e350bcd7006099f08f20bb0bede002d83e097",
+    "tests/confidential-storage/gpu-guest/packaging-fixture.json": "e89baecd0d3e285c498bd44bac5ccdee77035dddb9d046b3395c521dc54d48c6"
+  },
+  "limitations": [
+    "Packaging fixture cannot authenticate or authorize keys",
+    "Actual guest CDI output compatibility not yet checked",
+    "Real standard Trustee CPU+GPU /attest and CDH retrieval pending",
+    "No Qwen from LUKS or RW data workload launched with this candidate"
+  ]
+}

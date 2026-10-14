@@ -20,7 +20,8 @@ positive block/wildcard device grants, then inserts the service's read-only
 `/models` or read-write `/data` bind mount (version 1), or up to eight explicitly
 bound mounts (version 2). The application must have a read-only rootfs, non-root UID,
 NoNewPrivs and empty capability sets. Unlisted block storage, namespace paths,
-hooks, private-tree aliases and alternate CDI/CDH privileged helpers are denied.
+host hooks, private-tree aliases and alternate privileged helpers are denied.
+The opt-in GPU profile permits only bounded guest-generated NVIDIA CDI edits.
 All host-provided file bind mounts are removed before native mounting, including
 `/etc/hosts`, passwd/group injection and termination-log mounts. `/dev/shm` is
 a fresh guest tmpfs. This narrow test intentionally has no host-file consumption;
@@ -56,12 +57,12 @@ cd /scratch/native-agent/kata-containers-3.31.0
 RUSTUP_TOOLCHAIN=1.94.1 make -C src/agent src/version.rs
 cargo +1.94.1 fmt -p kata-agent -- --check
 cargo +1.94.1 test --locked -p kata-agent --no-default-features \
-  --features init-data,agent-policy storage_service::tests
+  --features init-data,agent-policy storage_
 cargo +1.94.1 build --locked --release -p kata-agent --no-default-features \
   --features init-data,agent-policy
 ```
 
-Twelve tests pass, covering the actual runtime shape, independent privilege escape
+Seventeen tests pass, covering the actual runtime shape, independent privilege escape
 attempts, mount/path aliases, sandbox hooks/modules/recreation and cleanup
 admission, discarded-copy bounds and exact Kubernetes label selection. The name
 check uses `io.kubernetes.container.name`, matching the strict policy; CRI-O
@@ -84,7 +85,11 @@ swapped service responses and duplicate activation sources. It publishes no app
 mount until the complete response validates. Mount targets are restricted to
 approved paths under `/models`, `/data` and `/checkpoints`.
 
-**GPU integration remains disabled:** the overlay still rejects non-storage
-devices and hooks, and the lifecycle patch still skips NVIDIA CDI processing in
-storage guests. Preserve and validate the measured GPU provisioning path before
-using this build for Qwen. Compiling these tests is not GPU E2E validation.
+**GPU candidate, not installed:** an explicit measured profile now enables bounded
+NVIDIA CDI processing before storage key retrieval. Host hooks, raw block-device
+access and application capabilities remain prohibited. See the
+[GPU candidate guide](../../../docs/confidential-storage/gpu-guest-candidate.md)
+for its exact trust boundary, tested scope, packaging and remaining hardware gates.
+The NVIDIA-generated CDI file and hooks are trusted guest infrastructure; this is
+not permission to inject arbitrary host-selected CDI edits. GPU hardware and
+combined RO/RW inference have not yet been validated with this build.

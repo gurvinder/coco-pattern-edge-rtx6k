@@ -34,9 +34,11 @@ Keep cryptographic storage code outside the agent in the private daemon for this
 iteration. Moving it into CDH could be an upstream architectural follow-up, but
 patching both large components now is not the minimum integration path.
 
-The present native adapter removes all devices and host binds, and rejects hooks.
-Its GPU adaptation must preserve only the required validated GPU provisioning.
-Allowing all devices or restoring arbitrary host mounts would defeat this design.
+The planning baseline removed all devices and host binds and rejected hooks.
+The [GPU candidate](gpu-guest-candidate.md) now preserves bounded guest-generated
+NVIDIA CDI while still rejecting host hooks and raw storage exposure. Hardware
+validation is pending. Allowing all devices or restoring arbitrary host mounts
+would defeat this design.
 
 ## What is installed or configured outside the guest
 

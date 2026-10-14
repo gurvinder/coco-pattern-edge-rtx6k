@@ -140,7 +140,9 @@ The public signer certificate uses P-256. Source inspection used Trustee commit
 `0ab1fb1be6e46293f29600085f929ae035ca3739` and the pinned KBS types. This inspection
 is not a claim that the inspected Trustee checkout exactly matches the image.
 
-Next: package the GPU-compatible candidate, approve its measurements and run the
+The [GPU candidate packaging checkpoint](gpu-guest-candidate.md) now provides the
+opt-in agent path and build tooling. Next: resolve its real approved configuration,
+approve its measurements and run the
 full `/attest`/proof/receipt path with genuine CPU+GPU evidence. Verify exact EAR
 claim shape and ES256 signing-key interoperability, then denied GPU appraisal and
 replay cases. Keep the running Qwen workload unchanged until that candidate is

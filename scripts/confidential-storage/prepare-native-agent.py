@@ -39,9 +39,10 @@ def main():
     patch = component / "native-lifecycle.patch"
     subprocess.run(["git", "apply", "--check", str(patch)], cwd=source, check=True)
     subprocess.run(["git", "apply", str(patch)], cwd=source, check=True)
-    destination = source / "src/agent/src/storage_service.rs"
-    with destination.open("xb") as stream:
-        stream.write((component / "storage_service.rs").read_bytes())
+    for name in ("storage_service.rs", "storage_gpu.rs"):
+        destination = source / "src/agent/src" / name
+        with destination.open("xb") as stream:
+            stream.write((component / name).read_bytes())
     print(f"Prepared {source}; not installed, host runtime unchanged")
 
 

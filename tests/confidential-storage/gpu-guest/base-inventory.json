@@ -1,0 +1,108 @@
+{
+  "date": "2026-10-14",
+  "scope": "offline inventory of exact installed public GPU initrd; no boot or attestation claim",
+  "node": "9c-63-c0-dd-06-52",
+  "baseInitrdSha256": "abd755287282a268578687137bf437caeda6139c1a654f18d13f8a72a68892ca",
+  "baseInitrdBytes": 194242395,
+  "kernelRelease": "6.12.0-211.16.1.el10_2.x86_64",
+  "kernelSha256": "0317da8a23853124ed4e4da6c56254f40a741ff4507e1afbbcb7f32e5c097206",
+  "nvidiaDriverVersion": "595.58.03",
+  "runtimeMode": {
+    "vfio": "guest-kernel",
+    "coldPlugVfio": "root-port"
+  },
+  "dmIntegrityPresent": false,
+  "addedModules": [
+    "xor",
+    "async_tx",
+    "async_xor",
+    "dm-integrity"
+  ],
+  "files": {
+    "usr/bin/nvidia-cdi-hook": {
+      "bytes": 6731432,
+      "mode": "0o100755",
+      "sha256": "ecbd958f33640d9b5ee76bc3173ad40902df8f36c49c00f387db02318857d27b"
+    },
+    "usr/bin/nvidia-ctk": {
+      "bytes": 12943912,
+      "mode": "0o100755",
+      "sha256": "881281da93dccfcb20b52ab3dad6f4857b8db0b21432d301856f7b4b6d111fc1"
+    },
+    "usr/bin/nvidia-smi": {
+      "bytes": 1259328,
+      "mode": "0o100755",
+      "sha256": "b15405edaf2d3cd571540bab17f9758afc27ac7b56e3675bff468164a6923839"
+    },
+    "usr/bin/kata-agent": {
+      "bytes": 21222696,
+      "mode": "0o100755",
+      "sha256": "7592b09b0a8e57837f47c46f03d4844d1a010d30d469dcd11df99fdd22b2e6d4"
+    },
+    "usr/lib/modules/6.12.0-211.16.1.el10_2.x86_64/extra/drivers/video/nvidia": {
+      "bytes": 0,
+      "mode": "0o40755",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "usr/lib/modules/6.12.0-211.16.1.el10_2.x86_64/extra/drivers/video/nvidia/nvidia-drm.ko": {
+      "bytes": 5367272,
+      "mode": "0o100644",
+      "sha256": "2ffc5cf01e350006ca95b07fbcb9dda55464db9a2fb2f9e8e2be51b7e514aac1"
+    },
+    "usr/lib/modules/6.12.0-211.16.1.el10_2.x86_64/extra/drivers/video/nvidia/nvidia-modeset.ko": {
+      "bytes": 4985584,
+      "mode": "0o100644",
+      "sha256": "bd861b5e6bf9d5b4602a7d9bd0b3c7253b01246857decc57bd7c1c2dd8f18d5c"
+    },
+    "usr/lib/modules/6.12.0-211.16.1.el10_2.x86_64/extra/drivers/video/nvidia/nvidia-uvm.ko": {
+      "bytes": 56315480,
+      "mode": "0o100644",
+      "sha256": "83238845c3664a36dbaf06c9c9ac1285f4628d634cbec71eab3407114e66ea6e"
+    },
+    "usr/lib/modules/6.12.0-211.16.1.el10_2.x86_64/extra/drivers/video/nvidia/nvidia.ko": {
+      "bytes": 40316248,
+      "mode": "0o100644",
+      "sha256": "933dce8903c59b00e48365f55f91a9bb3b88f2f63bf5103fad0446ce7bb81b28"
+    },
+    "usr/lib/modules/6.12.0-211.16.1.el10_2.x86_64/kernel/drivers/md/dm-bufio.ko.xz": {
+      "bytes": 22568,
+      "mode": "0o100644",
+      "sha256": "2f0b8ad0a2cf02fc83f9d61c3ccfe4f4c7ae925f8076293321f631d8910b2fdf"
+    },
+    "usr/lib/modules/6.12.0-211.16.1.el10_2.x86_64/kernel/drivers/md/dm-crypt.ko.xz": {
+      "bytes": 31568,
+      "mode": "0o100644",
+      "sha256": "450485b1923928e66d5c9066b3059a2783e2c8c747b264271ff93b8013b7b289"
+    },
+    "usr/lib/modules/6.12.0-211.16.1.el10_2.x86_64/kernel/drivers/md/dm-mod.ko.xz": {
+      "bytes": 97472,
+      "mode": "0o100644",
+      "sha256": "a44de61be9c2217bbe650ce0fc6eb897fdfae85c87fa21b5c72511a11b995df4"
+    },
+    "usr/lib/modules/6.12.0-211.16.1.el10_2.x86_64/kernel/drivers/md/dm-verity.ko.xz": {
+      "bytes": 24788,
+      "mode": "0o100644",
+      "sha256": "ea0380f9022b5b79aad793826f773395b827a2e3ee631fad627fd60d40121724"
+    },
+    "usr/lib/systemd/system/nvidia-cdi.service": {
+      "bytes": 196,
+      "mode": "0o100644",
+      "sha256": "cbdef46cefa3f95275d422ad94f64dc2f3f692f658ba63c3827343c98b0becd8"
+    },
+    "usr/lib/systemd/systemd-nvidia-cdi.sh": {
+      "bytes": 344,
+      "mode": "0o100755",
+      "sha256": "042655c6a62badba964fe996dea72b91f0490812c928717bfd49a01d2977b510"
+    },
+    "usr/local/bin/attestation-agent": {
+      "bytes": 11458840,
+      "mode": "0o100755",
+      "sha256": "c5399dade034fb894fd364d4be6eae566255a81f28015611a788d9f73bb50aa7"
+    },
+    "usr/local/bin/confidential-data-hub": {
+      "bytes": 26795072,
+      "mode": "0o100755",
+      "sha256": "30446030a67e4603641e4a5c31800df8d2d4124ae250a6bcd20832fa13201603"
+    }
+  }
+}

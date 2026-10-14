@@ -64,6 +64,7 @@ fn legacy_device() -> String {
 }
 #[derive(Clone)]
 struct Bindings {
+    gpu: bool,
     legacy: bool,
     volumes: Vec<Binding>,
 }
@@ -123,7 +124,13 @@ fn load() -> Result<Option<Bindings>> {
     (&mut file).take(256 * 1024 + 1).read_to_end(&mut bytes)?;
     ensure!(bytes.len() <= 256 * 1024, "storage config too large");
     let config: Config = serde_json::from_slice(&bytes)?;
-    Ok(Some(parse_bindings(config)?))
+    let mut bindings = parse_bindings(config)?;
+    bindings.gpu = crate::storage_gpu::enabled()?;
+    ensure!(
+        !bindings.gpu || !bindings.legacy,
+        "GPU mode requires multi-volume schema"
+    );
+    Ok(Some(bindings))
 }
 fn safe_destination(value: &str) -> bool {
     if value.len() > 256 || !value.starts_with('/') {
@@ -202,7 +209,11 @@ fn parse_bindings(config: Config) -> Result<Bindings> {
             "invalid or overlapping storage binding"
         );
     }
-    Ok(Bindings { legacy, volumes })
+    Ok(Bindings {
+        gpu: false,
+        legacy,
+        volumes,
+    })
 }
 #[derive(Serialize)]
 struct Attachment {
@@ -455,7 +466,7 @@ impl State {
             self.pause.as_deref() == Some(&sid) && self.consumer.is_none(),
             "only one measured consumer per guest"
         );
-        validate_many(req, spec, &bindings.volumes)?;
+        validate_admission(req, spec, &bindings)?;
         // Reserve before any asynchronous/device/network effect. Never admit a
         // replacement consumer after cancellation or uncertain create failure.
         self.consumer = Some(req.container_id.clone());
@@ -484,6 +495,19 @@ impl State {
                 major: libc::major(info.rdev()),
                 minor: libc::minor(info.rdev()),
             });
+        }
+        if bindings.gpu {
+            // Raw disks remain owned by the private service. Only guest-created
+            // NVIDIA character nodes may enter the consumer OCI specification.
+            let linux = spec.linux_mut().as_mut().context("missing linux spec")?;
+            linux.set_devices(Some(vec![]));
+            if let Some(resources) = linux.resources_mut() {
+                if let Some(rules) = resources.devices_mut() {
+                    rules.retain(|r| !r.allow());
+                }
+            }
+            crate::storage_gpu::configure(req, spec, sandbox).await?;
+            validate_process(spec.process().as_ref().context("missing process")?)?;
         }
         let request = if bindings.legacy {
             let d = devices.pop().unwrap();
@@ -518,11 +542,12 @@ impl State {
             }
         };
         validate_mounts(&mounts, &bindings.volumes)?;
-        // This adapter still admits only storage devices. GPU admission will be
-        // added against the actual measured GPU runtime shape, not a wildcard.
+        // Both SCSI resolution and optional guest-kernel GPU setup are complete.
         req.devices.clear();
         let linux = spec.linux_mut().as_mut().context("missing linux spec")?;
-        linux.set_devices(Some(vec![]));
+        if !bindings.gpu {
+            linux.set_devices(Some(vec![]));
+        }
         if let Some(resources) = linux.resources_mut() {
             if let Some(devices) = resources.devices_mut() {
                 devices.retain(|d| {
@@ -637,6 +662,29 @@ fn measured_container_name(spec: &oci::Spec) -> &str {
 fn validate(req: &CreateContainerRequest, spec: &oci::Spec, binding: &Binding) -> Result<()> {
     validate_many(req, spec, std::slice::from_ref(binding))
 }
+fn validate_admission(
+    req: &CreateContainerRequest,
+    spec: &oci::Spec,
+    bindings: &Bindings,
+) -> Result<()> {
+    if bindings.gpu {
+        crate::storage_gpu::validate_request(req, spec)?;
+        let mut storage_request = req.clone();
+        storage_request.devices.retain(|d| d.type_ == "scsi");
+        validate_many(&storage_request, spec, &bindings.volumes)?;
+    } else {
+        ensure!(
+            !spec
+                .annotations()
+                .as_ref()
+                .is_some_and(|a| a.keys().any(|k| k.starts_with("cdi.k8s.io/"))),
+            "GPU request requires measured GPU profile"
+        );
+        validate_many(req, spec, &bindings.volumes)?;
+    }
+    Ok(())
+}
+
 fn validate_many(
     req: &CreateContainerRequest,
     spec: &oci::Spec,
@@ -812,6 +860,7 @@ mod tests {
     fn state() -> State {
         State {
             config: Some(Some(Bindings {
+                gpu: false,
                 legacy: true,
                 volumes: vec![binding()],
             })),
@@ -849,6 +898,32 @@ mod tests {
                 {"binding_id":"model","transport_path":"/dev/coco-volume-0","expected":{"container_name":"consumer","destination":"/models/qwen","access":"ro"}},
                 {"binding_id":"data","transport_path":"/dev/coco-volume-1","expected":{"container_name":"consumer","destination":"/data/results","access":"rw"}}
             ]})).unwrap()).unwrap()
+    }
+    #[test]
+    fn gpu_admission_preserves_exact_storage_validation_and_is_opt_in() {
+        let mut bindings = multiple();
+        let (mut req, mut value) = fixture();
+        req.devices[0].container_path = bindings.volumes[0].transport_path.clone();
+        let mut second = req.devices[0].clone();
+        second.container_path = bindings.volumes[1].transport_path.clone();
+        second.id = "0:2".into();
+        req.devices.push(second);
+        value["linux"]["devices"] = json!([
+            {"path":"/dev/coco-volume-0","type":"b","major":8,"minor":0},
+            {"path":"/dev/coco-volume-1","type":"b","major":8,"minor":16}
+        ]);
+        value["annotations"]["cdi.k8s.io/vfio2"] = json!("nvidia.com/gpu=0");
+        let spec: oci::Spec = serde_json::from_value(value.clone()).unwrap();
+        assert!(validate_admission(&req, &spec, &bindings).is_err());
+        bindings.gpu = true;
+        validate_admission(&req, &spec, &bindings).unwrap();
+        req.devices[1].id = req.devices[0].id.clone();
+        assert!(validate_admission(&req, &spec, &bindings).is_err());
+        req.devices[1].id = "0:2".into();
+        value["linux"]["devices"][0]["type"] = json!("c");
+        assert!(
+            validate_admission(&req, &serde_json::from_value(value).unwrap(), &bindings).is_err()
+        );
     }
     #[test]
     fn multiple_bindings_resolve_by_transport_path_and_reject_extra_devices() {

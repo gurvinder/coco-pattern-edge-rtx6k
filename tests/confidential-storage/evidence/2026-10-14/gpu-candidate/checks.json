@@ -1,0 +1,11 @@
+{
+  "gpuAssemblyReproducible": true,
+  "onlyReplacedBasePath": [
+    "usr/bin/kata-agent"
+  ],
+  "gpuBaseUnchanged": true,
+  "requiredDynamicLibrariesPresent": true,
+  "legacyCpuV12ByteIdentical": true,
+  "hardwareBootTested": false,
+  "approvedForStorageKeys": false
+}

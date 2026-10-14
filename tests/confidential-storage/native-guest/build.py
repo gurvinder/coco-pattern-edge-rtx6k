@@ -15,6 +15,7 @@ import tarfile
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
+GPU_BASE_SHA256 = "abd755287282a268578687137bf437caeda6139c1a654f18d13f8a72a68892ca"
 
 
 def module(name, path):
@@ -30,13 +31,57 @@ builder = module(
 kernel = module("kernel", HERE.parent / "downstream-guest/build.py")
 
 
+def validate_config(config, size, gpu):
+    common = {"schema_version", "purpose", "authority", "kbs"}
+    if not isinstance(config, dict) or size > 256 * 1024:
+        raise ValueError("invalid public guest configuration")
+    if config.get("schema_version") == 1:
+        fields = common | {"expected", "manifest"}
+        if (
+            gpu
+            or config.get("purpose") != "isolated-confidential-storage/v1"
+            or set(config) not in (fields, fields | {"initialization_plan_sha256"})
+        ):
+            raise ValueError("invalid legacy configuration")
+    elif config.get("schema_version") == 2:
+        if (
+            config.get("purpose") != "confidential-storage-guest/v2"
+            or set(config) != common | {"volumes"}
+            or not isinstance(config["volumes"], list)
+            or not 1 <= len(config["volumes"]) <= 8
+        ):
+            raise ValueError("invalid multi-volume configuration")
+        fields = {"binding_id", "transport_path", "expected", "manifest"}
+        for volume in config["volumes"]:
+            if not isinstance(volume, dict) or set(volume) not in (
+                fields,
+                fields | {"initialization_plan_sha256"},
+            ):
+                raise ValueError("unexpected volume fields")
+    else:
+        raise ValueError("unsupported guest configuration schema")
+    if gpu and (
+        config.get("authority", {}).get("trustee_rcar") is not True
+        or set(config.get("kbs", {})) != {"provider", "resources"}
+        or config["kbs"]["provider"] != "private-cdh"
+        or not isinstance(config["kbs"]["resources"], dict)
+        or not config["kbs"]["resources"]
+        or any(
+            v not in ("raw32", "lower-hex64")
+            for v in config["kbs"]["resources"].values()
+        )
+    ):
+        raise ValueError("GPU guest requires RCAR and explicit private-CDH credentials")
+
+
 def build(args):
     raw = {
         name: getattr(args, name).read_bytes()
         for name in ("base", "agent", "service", "client", "config")
     }
     if (
-        builder.sha256(raw["base"]) != builder.BASE_SHA256
+        builder.sha256(raw["base"])
+        != (GPU_BASE_SHA256 if getattr(args, "gpu", False) else builder.BASE_SHA256)
         or builder.sha256(raw["client"]) != builder.CLIENT_SHA256
     ):
         raise ValueError("unexpected base/private AA client")
@@ -46,24 +91,8 @@ def build(args):
         ].startswith(b"\x7fELF"):
             raise ValueError("unexpected reviewed ELF input")
     config = json.loads(raw["config"])
-    if (
-        config.get("purpose") != "isolated-confidential-storage/v1"
-        or len(raw["config"]) > 256 * 1024
-    ):
-        raise ValueError("invalid public guest configuration")
-    required_fields = {
-        "schema_version",
-        "purpose",
-        "authority",
-        "kbs",
-        "expected",
-        "manifest",
-    }
-    if set(config) not in (
-        required_fields,
-        required_fields | {"initialization_plan_sha256"},
-    ):
-        raise ValueError("unexpected config fields; never put keys in guest image")
+    gpu = getattr(args, "gpu", False)
+    validate_config(config, len(raw["config"]), gpu)
     _, names, inode = builder.read_archive(gzip.decompress(raw["base"]))
     records = []
     replaced = set()
@@ -122,6 +151,12 @@ def build(args):
         (HERE / "start-service.sh").read_bytes(),
     )
     add("etc/confidential-storage/service.json", stat.S_IFREG | 0o600, raw["config"])
+    if gpu:
+        add(
+            "etc/confidential-storage/gpu-profile",
+            stat.S_IFREG | 0o600,
+            b"nvidia-single-gpu-guest-cdi/v1\n",
+        )
     stream = b""
     for name, mode, data in records:
         stream += builder.entry(name, mode, data, inode)
@@ -137,6 +172,7 @@ def build(args):
     return {
         "purpose": "native-private-storage-guest",
         "approvedForStorageKeys": False,
+        "gpuProfile": "nvidia-single-gpu-guest-cdi/v1" if gpu else None,
         "inputsSha256": {name: builder.sha256(data) for name, data in raw.items()},
         "initrdSha256": builder.sha256(result),
         "overlaySha256": builder.sha256(overlay),
@@ -158,6 +194,11 @@ if __name__ == "__main__":
         "output",
     ):
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument(
+        "--gpu",
+        action="store_true",
+        help="Require pinned NVIDIA base and RCAR/private-CDH configuration",
+    )
     for name in ("agent", "service"):
         parser.add_argument("--" + name + "-sha256", required=True)
     print(json.dumps(build(parser.parse_args()), indent=2))

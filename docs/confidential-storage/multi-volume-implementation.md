@@ -65,10 +65,10 @@ outside this initial implementation.
    TLS `/auth` passed; genuine CPU+GPU `/attest` and exact claim compatibility
    remain required. CDH key retrieval alone does not authenticate authority
    operations.
-3. **GPU-compatible agent path.** The tested overlay still rejects GPU devices/hooks
-   and skips NVIDIA CDI in storage guests. Review the actual GPU agent build and
-   provisioning order, preserve only its required trusted operations and add
-   exact admission tests. Do not deploy this storage-only overlay over Qwen.
+3. **GPU-compatible agent path.** The subsequent
+   [GPU candidate](gpu-guest-candidate.md) adds opt-in guest-generated NVIDIA CDI
+   and preserves the storage admission boundary. Structural tests passed; actual
+   guest CDI compatibility, driver boot and CUDA remain hardware acceptance gates.
 4. **Combined guest packaging.** Reuse the working GPU AA/CDH/NVIDIA stack; inventory
    matching kernel modules and storage tools, package the new service/agent and
    configure root-private interfaces. Generate new measurements and scoped Trustee

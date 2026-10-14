@@ -1,0 +1,97 @@
+{
+  "schema_version": 2,
+  "purpose": "confidential-storage-guest/v2",
+  "authority": {
+    "trustee_rcar": true,
+    "audience": "https://authority.invalid",
+    "certificate_der": [],
+    "address": null,
+    "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "init_data": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "receipt_public_key": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "receipt_issuer": "packaging-fixture",
+    "receipt_key_id": "not-a-real-key"
+  },
+  "kbs": {
+    "provider": "private-cdh",
+    "resources": {
+      "kbs:///default/packaging-fixture/model": "raw32",
+      "kbs:///default/packaging-fixture/data": "raw32"
+    }
+  },
+  "volumes": [
+    {
+      "binding_id": "model",
+      "transport_path": "/dev/coco-volume-0",
+      "expected": {
+        "volume_id": "model",
+        "generation": 1,
+        "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "profile_sha256": "20c3e80353de4a73e3a1ff9b7abcecc667d17dbc07e38466c9128a035778dda3",
+        "session_sha256": "",
+        "operation_id": "",
+        "nonce": "",
+        "manifest_uri": "model/model",
+        "container_name": "kserve-container",
+        "destination": "/models/qwen",
+        "access": "ro"
+      },
+      "manifest": [
+        123,
+        125
+      ]
+    },
+    {
+      "binding_id": "data",
+      "transport_path": "/dev/coco-volume-1",
+      "expected": {
+        "volume_id": "data",
+        "generation": 1,
+        "policy_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "profile_sha256": "684391928604912700f09aec62de6ba2c2f83e08dbbc2573e2b15a7e247a443a",
+        "session_sha256": "",
+        "operation_id": "",
+        "nonce": "",
+        "manifest_uri": "model/data",
+        "container_name": "kserve-container",
+        "destination": "/data",
+        "access": "rw"
+      },
+      "manifest": [],
+      "initialization_plan_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ]
+}

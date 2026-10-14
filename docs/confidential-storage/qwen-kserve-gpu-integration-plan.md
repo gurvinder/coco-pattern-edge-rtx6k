@@ -2,7 +2,8 @@
 
 Implementation update (14 October): the [standard Trustee RCAR adapter](standard-trustee-adapter.md)
 is implemented and unit-tested; live TLS `/auth` passed. P1's genuine composite
-attestation acceptance gate remains open. The running Qwen deployment is unchanged.
+attestation acceptance gate remains open. The [GPU guest candidate](gpu-guest-candidate.md)
+adds bounded CDI admission and packaging. The running Qwen deployment is unchanged.
 
 Implementation progress is tracked in the [14 October checkpoint](multi-volume-implementation.md);
 planning tables below describe the target and original baseline.

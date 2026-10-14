@@ -1,11 +1,12 @@
 {
   "schemaVersion": 1,
-  "status": "development-multi-volume-unit-tested-not-gpu-integrated",
+  "status": "development-opt-in-gpu-cdi-unit-tested-not-hardware-validated",
   "sourceArchive": "kata-containers-3.31.0.tar.gz",
   "sourceArchiveSha256": "ab8972dc026cfaad85705e93019506384c2af286f715bd364701062c88330891",
   "hostRuntimeChanges": false,
   "files": {
-    "native-lifecycle.patch": "77133a0ca0a89a88e582d1366d7ad8dd6f2bc27be09074645506078683b6be61",
-    "storage_service.rs": "6109766ebf459692cdf2e24421bfc1ba999d7767b65587e2e57b9471e3a420af"
+    "native-lifecycle.patch": "8257445ea4404f2e21fa2a53e3314e5b8076b5112f4a6fbe0eae125c7baa3718",
+    "storage_service.rs": "2d591078415a86e53f1a602ba0837c9e6798fed5911476166a5a96193fe2ac6d",
+    "storage_gpu.rs": "a89fa74bf4f1c5bbc5608e0e4644994aee3d3e6e4e5827e5be85ea6541c1b29d"
   }
 }

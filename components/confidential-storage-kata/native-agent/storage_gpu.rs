@@ -176,7 +176,8 @@ fn validate_edits(before: &oci::Spec, after: &oci::Spec) -> Result<()> {
                 && options
                     .iter()
                     .all(|o| ["ro", "bind", "nosuid", "nodev", "noexec"].contains(&o.as_str())),
-            "unsupported NVIDIA library mount"
+            "unsupported NVIDIA library mount: source={source:?} destination={target:?} type={:?} options={options:?}",
+            mount.typ()
         );
     }
     let linux = after.linux().as_ref().context("missing CDI linux")?;
@@ -193,7 +194,7 @@ fn validate_edits(before: &oci::Spec, after: &oci::Spec) -> Result<()> {
                 && nodes.insert(device.path().clone())
                 && device.major() > 0
                 && device.minor() >= 0,
-            "non-NVIDIA or raw CDI device"
+            "non-NVIDIA or raw CDI device: {device:?}"
         );
     }
     ensure!(
@@ -228,7 +229,8 @@ fn validate_edits(before: &oci::Spec, after: &oci::Spec) -> Result<()> {
         after_env.starts_with(&before_env)
             && after_env[before_env.len()..]
                 .iter()
-                .all(|v| v == "NVIDIA_VISIBLE_DEVICES=void"),
+                .all(|v| v == "NVIDIA_VISIBLE_DEVICES=void"
+                    || v == "NVIDIA_CTK_LIBCUDA_DIR=/usr/lib64"),
         "unexpected CDI environment edit"
     );
     for value in [&mut a, &mut b] {
@@ -254,6 +256,95 @@ fn validate_edits(before: &oci::Spec, after: &oci::Spec) -> Result<()> {
         }
     }
     ensure!(a == b, "CDI changed a field outside the GPU edit contract");
+    Ok(())
+}
+
+/// CDI injection edits the in-memory OCI spec; no mount/hook runs here. Keep the
+/// persistence daemon and pinned driver firmware private to the guest; normalize readonly library
+/// file binds. Resolved source type/path checks still run before container start.
+fn restrict_compute_edits(before: &oci::Spec, after: &mut oci::Spec) -> Result<()> {
+    let original = before
+        .mounts()
+        .as_ref()
+        .context("missing original mounts")?;
+    let edits = after.mounts().as_ref().context("missing CDI mounts")?;
+    ensure!(edits.starts_with(original), "CDI changed existing mounts");
+    let mut mounts = original.clone();
+    for edit in &edits[original.len()..] {
+        let source = edit
+            .source()
+            .as_ref()
+            .and_then(|p| p.to_str())
+            .unwrap_or("");
+        let target = edit.destination().to_str().unwrap_or("");
+        // These exact entries belong to guest infrastructure, not CUDA clients.
+        // Unknown firmware paths still fail validation rather than becoming mounts.
+        if target == source
+            && matches!(
+                source,
+                "/run/nvidia-persistenced/socket"
+                    | "/usr/bin/nvidia-persistenced"
+                    | "/lib/firmware/nvidia/595.58.03/gsp_ga10x.bin"
+                    | "/lib/firmware/nvidia/595.58.03/gsp_tu10x.bin"
+            )
+        {
+            continue;
+        }
+        let mut mount = edit.clone();
+        if let Some(options) = edit.options() {
+            if safe_library_path(source)
+                && safe_library_path(target)
+                && matches!(edit.typ().as_deref(), None | Some("bind"))
+                && options.iter().any(|o| o == "ro")
+                && options.iter().any(|o| o == "rbind" || o == "bind")
+                && options.iter().all(|o| {
+                    [
+                        "ro", "bind", "rbind", "rprivate", "nosuid", "nodev", "noexec",
+                    ]
+                    .contains(&o.as_str())
+                })
+            {
+                mount.set_typ(Some("bind".into()));
+                mount.set_options(Some(
+                    options
+                        .iter()
+                        .filter(|o| o.as_str() != "rprivate")
+                        .map(|o| {
+                            if o == "rbind" {
+                                "bind".into()
+                            } else {
+                                o.clone()
+                            }
+                        })
+                        .collect(),
+                ));
+            }
+        }
+        mounts.push(mount);
+    }
+    after.set_mounts(Some(mounts));
+    // CUDA/NVML do not need display modesetting. Remove only the observed
+    // guest driver node and its exact rule; unknown/broad grants still fail.
+    if let Some(linux) = after.linux_mut() {
+        if let Some(devices) = linux.devices_mut() {
+            devices.retain(|d| {
+                !(d.path() == Path::new("/dev/nvidia-modeset")
+                    && d.typ() == oci::LinuxDeviceType::C
+                    && d.major() == 195
+                    && d.minor() == 254)
+            });
+        }
+        if let Some(resources) = linux.resources_mut() {
+            if let Some(rules) = resources.devices_mut() {
+                rules.retain(|r| {
+                    !(r.allow()
+                        && r.typ() == Some(oci::LinuxDeviceType::C)
+                        && r.major() == Some(195)
+                        && r.minor() == Some(254))
+                });
+            }
+        }
+    }
     Ok(())
 }
 
@@ -293,6 +384,7 @@ pub async fn configure(
     let before = spec.clone();
     crate::device::handle_cdi_devices(&sl!(), spec, CACHE, std::time::Duration::from_secs(0))
         .await?;
+    restrict_compute_edits(&before, spec)?;
     validate_edits(&before, spec)?;
     // Only guest regular files may be passed to the application; never sockets,
     // host-shared trees, private AA/CDH paths or entire library directories.
@@ -328,6 +420,113 @@ mod tests {
     fn accepts_bounded_guest_gpu_edits() {
         let (a, b) = specs();
         validate_edits(&a, &b).unwrap();
+    }
+    #[test]
+    fn accepts_only_fixed_guest_libcuda_environment_addition() {
+        let (a, b) = specs();
+        let mut value = serde_json::to_value(b).unwrap();
+        value["process"]["env"] = json!([
+            "NVIDIA_CTK_LIBCUDA_DIR=/usr/lib64",
+            "NVIDIA_VISIBLE_DEVICES=void"
+        ]);
+        validate_edits(&a, &serde_json::from_value(value.clone()).unwrap()).unwrap();
+        for bad in [
+            "NVIDIA_CTK_LIBCUDA_DIR=/tmp",
+            "NVIDIA_VISIBLE_DEVICES=all",
+            "LD_LIBRARY_PATH=/tmp",
+        ] {
+            value["process"]["env"][0] = json!(bad);
+            assert!(validate_edits(&a, &serde_json::from_value(value.clone()).unwrap()).is_err());
+        }
+    }
+    #[test]
+    fn private_daemon_socket_removed_and_readonly_file_bind_normalized() {
+        let (a, b) = specs();
+        let mut value = serde_json::to_value(b).unwrap();
+        value["mounts"][0].as_object_mut().unwrap().remove("type");
+        value["mounts"][0]["options"] = json!(["ro", "rbind", "rprivate", "nosuid", "nodev"]);
+        value["mounts"].as_array_mut().unwrap().push(json!({
+            "source":"/run/nvidia-persistenced/socket", "destination":"/run/nvidia-persistenced/socket",
+            "options":["nosuid","nodev","rbind","rprivate","noexec"]
+        }));
+        let mut result = serde_json::from_value(value).unwrap();
+        restrict_compute_edits(&a, &mut result).unwrap();
+        validate_edits(&a, &result).unwrap();
+        assert_eq!(result.mounts().as_ref().unwrap().len(), 1);
+        assert_eq!(
+            result.mounts().as_ref().unwrap()[0].typ().as_deref(),
+            Some("bind")
+        );
+    }
+    #[test]
+    fn guest_firmware_and_daemon_binary_are_not_exposed() {
+        let (a, b) = specs();
+        let mut value = serde_json::to_value(b).unwrap();
+        for path in [
+            "/usr/bin/nvidia-persistenced",
+            "/lib/firmware/nvidia/595.58.03/gsp_ga10x.bin",
+            "/lib/firmware/nvidia/595.58.03/gsp_tu10x.bin",
+        ] {
+            value["mounts"].as_array_mut().unwrap().push(json!({
+                "source":path, "destination":path,
+                "options":["ro","rbind","rprivate","nosuid","nodev"]
+            }));
+        }
+        let mut result = serde_json::from_value(value).unwrap();
+        restrict_compute_edits(&a, &mut result).unwrap();
+        validate_edits(&a, &result).unwrap();
+        assert_eq!(result.mounts().as_ref().unwrap().len(), 1);
+    }
+    #[test]
+    fn modeset_node_and_exact_rule_removed_but_block_node_rejected() {
+        let (a, b) = specs();
+        for kind in ["c", "b"] {
+            let mut value = serde_json::to_value(&b).unwrap();
+            value["linux"]["devices"]
+                .as_array_mut()
+                .unwrap()
+                .push(json!({
+                    "path":"/dev/nvidia-modeset", "type":kind,"major":195,"minor":254
+                }));
+            value["linux"]["resources"]["devices"]
+                .as_array_mut()
+                .unwrap()
+                .push(json!({
+                    "allow":true,"type":kind,"major":195,"minor":254,"access":"rwm"
+                }));
+            let mut result = serde_json::from_value(value).unwrap();
+            restrict_compute_edits(&a, &mut result).unwrap();
+            assert_eq!(validate_edits(&a, &result).is_ok(), kind == "c");
+            if kind == "c" {
+                assert_eq!(
+                    result
+                        .linux()
+                        .as_ref()
+                        .unwrap()
+                        .devices()
+                        .as_ref()
+                        .unwrap()
+                        .len(),
+                    2
+                );
+            }
+        }
+    }
+    #[test]
+    fn normalization_does_not_admit_writable_files_or_other_sockets() {
+        let (a, b) = specs();
+        for change in [
+            json!({"source":"/lib/firmware/nvidia/595.58.03/other.bin", "destination":"/lib/firmware/nvidia/595.58.03/other.bin", "options":["ro","rbind"]}),
+            json!({"source":"/usr/lib64/libcuda.so.1", "destination":"/usr/lib64/libcuda.so.1", "options":["rw","rbind"]}),
+            json!({"source":"/run/confidential-containers/cdh.sock", "destination":"/run/nvidia-persistenced/socket", "options":["ro","rbind"]}),
+            json!({"source":"/run/nvidia-persistenced/socket", "destination":"/run/other.sock", "options":["ro","rbind"]}),
+        ] {
+            let mut value = serde_json::to_value(&b).unwrap();
+            value["mounts"] = json!([change]);
+            let mut result = serde_json::from_value(value).unwrap();
+            restrict_compute_edits(&a, &mut result).unwrap();
+            assert!(validate_edits(&a, &result).is_err());
+        }
     }
     #[test]
     fn rejects_raw_nodes_wildcards_private_mounts_and_privilege() {

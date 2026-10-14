@@ -1,0 +1,171 @@
+{{- if .Values.authorityRuntime.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: storage-gpu-authority-state
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  accessModes: [ReadWriteOncePod]
+  volumeMode: Filesystem
+  storageClassName: {{ .Values.storageClass | quote }}
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: storage-gpu-authority
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  refreshInterval: 15s
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: storage-gpu-authority
+  dataFrom:
+    - extract:
+        key: secret/data/hub/storageGpuAuthority
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: storage-gpu-authority
+  namespace: {{ .Release.Namespace | quote }}
+data:
+  server.json: {{ required "Supply relocated public authority server config" .Values.authorityRuntime.serverJson | quote }}
+  start.py: |
+    import json, os, pathlib, shutil, tempfile
+    os.umask(0o077)
+    state = pathlib.Path('/state/retained/authority.db')
+    if not state.is_file() or state.is_symlink() or state.parent.is_symlink():
+        raise SystemExit('Retained authority database missing; refusing fresh state')
+    if state.stat().st_uid != os.getuid() or state.parent.stat().st_uid != os.getuid():
+        raise SystemExit('Unexpected retained authority state owner')
+    # Kubernetes fsGroup may add group bits on reattachment. Restore private
+    # permissions on these exact owned paths before opening the retained DB.
+    state.parent.chmod(0o700)
+    state.chmod(0o600)
+    private = pathlib.Path(tempfile.mkdtemp(prefix='authority-', dir='/tmp'))
+    for name in ('tls.pem', 'tls.key', 'receipt.key', 'as-signer.pem', 'trustee-ca.pem', 'initdata.toml'):
+        with open('/credentials/' + name, 'rb') as source, (private / name).open('xb') as target:
+            shutil.copyfileobj(source, target)
+    config = json.loads(pathlib.Path('/configuration/server.json').read_text())
+    for name in ('tls_certificate', 'tls_key', 'as_signer', 'receipt_key'):
+        config[name] = str(private / pathlib.Path(config[name]).name)
+    config['trustee_rcar']['ca_file'] = str(private / 'trustee-ca.pem')
+    config['trustee_rcar']['init_data_file'] = str(private / 'initdata.toml')
+    path = private / 'server.json'
+    path.write_text(json.dumps(config))
+    os.execvp('python3', ['python3', 'serve.py', '--config', str(path)])
+---
+{{- if .Values.authorityRuntime.seedOnly }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: storage-gpu-authority-seed
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    coco.io/skip-initdata: "true"
+spec:
+  restartPolicy: Never
+  activeDeadlineSeconds: 1800
+  automountServiceAccountToken: false
+  enableServiceLinks: false
+  securityContext:
+    runAsUser: {{ required "Use a UID from the namespace SCC range" .Values.authorityRuntime.uid }}
+    runAsGroup: {{ .Values.authorityRuntime.uid }}
+    fsGroup: {{ .Values.authorityRuntime.uid }}
+  containers:
+    - name: seed
+      image: {{ required "Pin authority image" .Values.authorityRuntime.image | quote }}
+      command: [python3, -c, "import time; time.sleep(1800)"]
+      securityContext:
+        runAsNonRoot: true
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      volumeMounts:
+        - name: state
+          mountPath: /state
+  volumes:
+    - name: state
+      persistentVolumeClaim:
+        claimName: storage-gpu-authority-state
+{{- else }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storage-gpu-authority
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: storage-gpu-authority
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: storage-gpu-authority
+        coco.io/skip-initdata: "true"
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: {{ required "Use a UID from the namespace SCC range" .Values.authorityRuntime.uid }}
+        runAsGroup: {{ .Values.authorityRuntime.uid }}
+        fsGroup: {{ .Values.authorityRuntime.uid }}
+      containers:
+        - name: authority
+          image: {{ required "Pin authority image" .Values.authorityRuntime.image | quote }}
+          command: [python3, /configuration/start.py]
+          ports:
+            - name: https
+              containerPort: 8443
+          readinessProbe:
+            tcpSocket:
+              port: https
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          volumeMounts:
+            - name: state
+              mountPath: /state
+            - name: credentials
+              mountPath: /credentials
+              readOnly: true
+            - name: configuration
+              mountPath: /configuration
+              readOnly: true
+            - name: scratch
+              mountPath: /tmp
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: storage-gpu-authority-state
+        - name: credentials
+          secret:
+            secretName: storage-gpu-authority
+            defaultMode: 0440
+        - name: configuration
+          configMap:
+            name: storage-gpu-authority
+        - name: scratch
+          emptyDir:
+            medium: Memory
+{{- end }}
+{{- end }}

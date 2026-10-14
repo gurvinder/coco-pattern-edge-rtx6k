@@ -1,0 +1,37 @@
+{{- if .Values.authorityBuild.enabled }}
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: storage-gpu-authority
+  namespace: {{ .Release.Namespace | quote }}
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: storage-gpu-authority
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    coco.io/skip-initdata: "true"
+spec:
+  runPolicy: Serial
+  source:
+    type: Binary
+    binary: {}
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Containerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: storage-gpu-authority:candidate
+  resources:
+    requests:
+      cpu: "500m"
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  successfulBuildsHistoryLimit: 2
+  failedBuildsHistoryLimit: 2
+{{- end }}

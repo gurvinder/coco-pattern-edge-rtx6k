@@ -1,0 +1,61 @@
+{{- if .Values.authorityTests.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: storage-gpu-authority-tests
+  namespace: {{ .Release.Namespace | quote }}
+data:
+{{ required "Supply public test files" .Values.authorityTests.files | toYaml | indent 2 }}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: storage-gpu-authority-tests
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    coco.io/skip-initdata: "true"
+spec:
+  restartPolicy: Never
+  activeDeadlineSeconds: 300
+  automountServiceAccountToken: false
+  enableServiceLinks: false
+  containers:
+    - name: tests
+      image: {{ required "Pin the built authority image" .Values.authorityTests.image | quote }}
+      command:
+        - /bin/sh
+        - -ec
+        - |
+          mkdir -p /tmp/repo/components /tmp/repo/tests/confidential-storage/evidence/2026-10-13/model-populator
+          cp -R /opt/app-root/src/components/* /tmp/repo/components/
+          cp /test-source/test_*.py /tmp/repo/components/confidential-storage-authority/
+          cp /test-source/guest-manifest.unsigned.json /test-source/source.json /tmp/repo/tests/confidential-storage/evidence/2026-10-13/model-populator/
+          cd /tmp/repo/components/confidential-storage-authority
+          exec python3 -m unittest discover -v
+      securityContext:
+        runAsNonRoot: true
+        privileged: false
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: "1"
+          memory: 512Mi
+      volumeMounts:
+        - name: tests
+          mountPath: /test-source
+          readOnly: true
+        - name: scratch
+          mountPath: /tmp
+  volumes:
+    - name: tests
+      configMap:
+        name: storage-gpu-authority-tests
+    - name: scratch
+      emptyDir: {}
+{{- end }}

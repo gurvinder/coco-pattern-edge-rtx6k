@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-14",
+  "status": "in progress; not serving model",
+  "gpuAssignment": "User permanently allocated former encrypted-file GPU to second Qwen/KServe and separate chatbot",
+  "retirementCommit": "da6e4a9e6b250d18db30062217b5651b399ba86e",
+  "retiredResources": [
+    "gpu-workload/Deployment/gpu-encrypted-file",
+    "gpu-workload/Service/gpu-encrypted-file",
+    "gpu-workload/ConfigMap/encrypted-gpu-test"
+  ],
+  "isolatedHandler": "kata-snp-storage-probe",
+  "candidateRuntimeClass": "kata-snp-nvidia-gpu-storage-candidate",
+  "productionRuntimeSha256": "0605f273d60d1b7e18aa5d37367740f073da2e84208b2082fcc02d8df0ac5898",
+  "crioPidAndStartTime": "694089:56622402",
+  "crioRestartedOrReloaded": false,
+  "firstBoot": {
+    "vmStarted": true,
+    "bothBlockPvcsAttached": true,
+    "policyRejected": true,
+    "applicationStarted": false
+  },
+  "policyCompatibility": {
+    "ownSupplementaryGid": 1001,
+    "injectedEnvironmentNames": [
+      "NSS_SDB_USE_CACHE",
+      "KUBERNETES_SERVICE_HOST",
+      "KUBERNETES_SERVICE_PORT",
+      "KUBERNETES_SERVICE_PORT_HTTPS",
+      "KUBERNETES_PORT",
+      "KUBERNETES_PORT_443_TCP",
+      "KUBERNETES_PORT_443_TCP_PROTO",
+      "KUBERNETES_PORT_443_TCP_PORT",
+      "KUBERNETES_PORT_443_TCP_ADDR"
+    ],
+    "boundedFixTested": true
+  },
+  "nativeGpuTestsPassed": 22,
+  "remainingCdiReview": [],
+  "authorityImage": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/storage-gpu-authority@sha256:2114e9afcd357fdb6fd7db6f6b7d46206387ce4e5faeb7f7a60d9a424fe3fc09",
+  "authorityImageSmokePassed": true,
+  "authorityTestsInsideImagePassed": 121,
+  "storageKeysProvisioned": false,
+  "dataFormatted": false,
+  "gpuInferencePassed": false,
+  "originalQwenUid": "d5cc3080-ae0b-4490-b145-56a216732566",
+  "originalChatUid": "839d51fc-94fe-491b-9e77-cec5a4c1ae48",
+  "originalQwenAndChatReadyWithZeroRestarts": true,
+  "authorityReady": true,
+  "authorityScc": "restricted-v2",
+  "authorityStatePvc": "storage-gpu-authority-state",
+  "authorityStatePath": "/state/retained/authority.db",
+  "authorityVaultPath": "secret/hub/storageGpuAuthority",
+  "standardTrusteeTlsPinnedRcarChallengePassed": true,
+  "activeCandidate": "v12",
+  "activeCandidateInitrdSha256": "853167d3e8c0b916404d135189c9f737160154c8ee2f6befd887b8a7e947d48e",
+  "gpuCdiAdmissionPassed": true,
+  "storageActivation": "denied; cleanup completed; no application started",
+  "authorityRecords": 2,
+  "authorityOperations": 0,
+  "authorityIntegrity": "ok",
+  "authorityVaultIdempotencyPassed": true,
+  "measuredPolicyTestPassed": true
+}

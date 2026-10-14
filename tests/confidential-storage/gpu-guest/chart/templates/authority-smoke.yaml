@@ -1,0 +1,46 @@
+{{- if .Values.authoritySmoke.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: storage-gpu-authority-smoke
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    coco.io/skip-initdata: "true"
+spec:
+  restartPolicy: Never
+  activeDeadlineSeconds: 180
+  automountServiceAccountToken: false
+  enableServiceLinks: false
+  containers:
+    - name: check
+      image: {{ required "Pin the built authority image" .Values.authoritySmoke.image | quote }}
+      command:
+        - python3
+        - -c
+        - |
+          import cryptography, json
+          from serve import require_storage_profiles
+          from kbs_rcar import KbsRcar
+          from storage_profiles import profile_digest
+          require_storage_profiles()
+          assert cryptography.__version__ == "46.0.3"
+          print(json.dumps({"profilesPresent": True,
+                            "standardTrusteeAdapterImport": True,
+                            "cryptography": cryptography.__version__,
+                            "rwProfile": profile_digest("rw-luks2-v2"),
+                            "roProfile": profile_digest("ro-luks2-verity-v2")}))
+      securityContext:
+        runAsNonRoot: true
+        privileged: false
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: "1"
+          memory: 256Mi
+{{- end }}

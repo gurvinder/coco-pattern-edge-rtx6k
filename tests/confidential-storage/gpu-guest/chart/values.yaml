@@ -6,3 +6,18 @@ workloadEnabled: false
 createAuthorityService: false
 # Set with --set-file only after independent measurement and resource approval.
 candidatePodJson: ""
+authorityBuild:
+  enabled: false
+authoritySmoke:
+  enabled: false
+  image: ""
+authorityTests:
+  enabled: false
+  image: ""
+  files: {}
+authorityRuntime:
+  enabled: false
+  seedOnly: true
+  image: ""
+  serverJson: ""
+  uid: null

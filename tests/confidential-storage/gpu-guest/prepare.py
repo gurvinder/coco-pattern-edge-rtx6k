@@ -95,7 +95,7 @@ def bundle_for(claims, workload, new_uid):
                     "owner": {"uid": 1001, "gid": 1001},
                 }
             ),
-            "keyResource": f"kbs:///default/volume-keys/qwen-gpu-{name}-v1",
+            "keyResource": f"kbs:///default/model-keys/qwen-gpu-{name}-v1",
         }
         if ro:
             spec["content"] = {"approvedManifestRef": "qwen-luks-e2e-v1"}
@@ -241,6 +241,9 @@ def prepare(args):
         "HF_HUB_OFFLINE": "1",
         "TRANSFORMERS_OFFLINE": "1",
         "VLLM_CACHE_ROOT": "/data/vllm",
+        "VLLM_NO_USAGE_STATS": "1",
+        "DO_NOT_TRACK": "1",
+        "OMP_NUM_THREADS": "1",
         "TRITON_CACHE_DIR": "/data/triton",
         "XDG_CACHE_HOME": "/data/cache",
         "TOKENIZERS_PARALLELISM": "false",
@@ -251,6 +254,21 @@ def prepare(args):
     env = dict(item.split("=", 1) for item in image["environment"])
     env.update(overrides)
     env.update(HOSTNAME="qwen-gpu-storage-candidate", TERM="xterm", container="oci")
+    # CRI-O injects the Kubernetes service even with enableServiceLinks=false.
+    # These are exact cluster values, never an arbitrary environment prefix.
+    env.update(
+        {
+            "NSS_SDB_USE_CACHE": "no",
+            "KUBERNETES_SERVICE_HOST": "172.30.0.1",
+            "KUBERNETES_SERVICE_PORT": "443",
+            "KUBERNETES_SERVICE_PORT_HTTPS": "443",
+            "KUBERNETES_PORT": "tcp://172.30.0.1:443",
+            "KUBERNETES_PORT_443_TCP": "tcp://172.30.0.1:443",
+            "KUBERNETES_PORT_443_TCP_PROTO": "tcp",
+            "KUBERNETES_PORT_443_TCP_PORT": "443",
+            "KUBERNETES_PORT_443_TCP_ADDR": "172.30.0.1",
+        }
+    )
     workload = {
         "container": "kserve-container",
         "image": image["image"],
@@ -380,7 +398,7 @@ def prepare(args):
             )
             volume["initialization_plan_sha256"] = approval["plan_sha256"]
         volumes.append(volume)
-        resources[item["keyResource"]] = "raw32"
+        resources[item["keyResource"]] = "lower-hex64"
     audience = "https://" + HOST + ":8443/v1"
     pinned = {
         "audience": audience,

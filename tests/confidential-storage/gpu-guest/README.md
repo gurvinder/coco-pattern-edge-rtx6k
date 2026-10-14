@@ -60,8 +60,9 @@ or starts an authority. An existing directory is never overwritten.
 
 The authority database has one immutable published RO record and one Uninitialized
 RW record with a journaled initialization intent bound to the exact new PVC UID.
-The two new resource names are `default/volume-keys/qwen-gpu-model-v1` and
-`default/volume-keys/qwen-gpu-data-v1`. Both expect raw 32-byte credentials. Before
+The two new resource names are `default/model-keys/qwen-gpu-model-v1` and
+`default/model-keys/qwen-gpu-data-v1`. Both expect lowercase hex text encoding exactly 32 key bytes, matching the existing
+Vault/ESO model-keys secret mount. Before
 activation, the RO resource must contain the retained credential for the existing
 LUKS disk; a new random key cannot open that disk. The RW credential must be new
 and durably retained. Provision through the standard pattern secret backend/ESO,
@@ -112,7 +113,7 @@ helm template gpu-storage tests/confidential-storage/gpu-guest/chart \
 ```
 
 Do not apply until runtime, authority persistence, exact launch references and
-resource policies are ready. The named candidate RuntimeClass is not installed.
+resource policies are ready. The candidate RuntimeClass now aliases the isolated storage test handler.
 The direct InitData annotation uses the hypervisor prefix. The candidate sets
 `coco.io/skip-initdata: "true"` to use the existing webhook exclusion: this avoids
 its unconditional ConfigMap lookup and preserves the directly supplied measured
@@ -141,12 +142,12 @@ Regorus, including negative command/image/environment/capability/device cases.
 
 Current evidence is under `evidence/2026-10-14/gpu-candidate-prepared`. Next:
 
-1. Retire the separate encrypted-file demo through its GitOps source; dedicate
-   that GPU to this second Qwen instance. The original Qwen must remain intact.
+1. Completed: retire the separate encrypted-file demo through its GitOps source;
+   its GPU is now dedicated to this second instance. Preserve the original Qwen.
 2. Install the isolated guest/runtime and independently calculate its launch
    reference using the exact GPU CPU-count, command line, kernel and firmware.
    Do not reuse the one-vCPU CPU-prototype measurement.
-3. Deploy the authority with persistent retained state; complete a genuine
+3. The authority is deployed with persistent retained state; complete a genuine
    standard Trustee RCAR round trip and denial cases before enabling storage keys.
 4. Provision the two scoped credentials and exact release policy; exercise first
    initialization, all model hashes, CUDA inference, and reopen in a fresh VM.
@@ -155,3 +156,30 @@ Current evidence is under `evidence/2026-10-14/gpu-candidate-prepared`. Next:
 
 No successful GPU storage boot, fresh-VM persistence, inference or second chatbot
 is claimed by these preparation results.
+
+## Authority deployment checkpoint
+
+`prepare-authority-build.py` packages only public source, profiles and hash-locked
+wheels. The disabled-by-default Helm `authorityRuntime` option creates a dedicated
+state PVC, Vault-backed ExternalSecret, public configuration and either a seed pod
+or the authority Deployment. Set `authorityRuntime.uid` to the namespace's admitted
+SCC range; this deployment does not need anyuid or privileged SCC grants.
+
+`provision-authority.py` writes only the prepared authority credentials to the new
+Vault path with CAS=0. An existing different value is an error, never rotation. The
+model decryption keys are not included. Seed the private database once using an
+exclusive create, verify its digest and integrity, then remove the seed pod and
+start the Deployment. Preserve the database, TLS pin and receipt signer together.
+Do not rerun preparation/seed to recover a used RW volume.
+
+The running state directory is `/state/retained`, mode 0700, with database mode
+0600. On attachment the launcher restores these permissions on the exact owned
+paths because Kubernetes fsGroup can add group permission bits. Private key copies
+are in a per-process directory on memory-backed `/tmp`. Missing state is fatal.
+The initial unused `/state/private` copy was made before choosing the restricted
+SCC UID; it has zero operations and is not the running database.
+
+This same-cluster lab deployment trusts the control plane and authority storage
+administrators, as it trusts the colocated Trustee. A retained PVC alone does not
+provide protection against rollback of authority history. Production deployment
+must place that history outside the adversary's rollback domain.

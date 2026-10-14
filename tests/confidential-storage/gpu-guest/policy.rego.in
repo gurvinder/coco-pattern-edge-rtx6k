@@ -84,7 +84,7 @@ CreateContainerRequest if {
     input.OCI.Process.Cwd == "/"
     input.OCI.Process.User.UID == 1001
     input.OCI.Process.User.GID == 1001
-    count(input.OCI.Process.User.AdditionalGids) == 0
+    input.OCI.Process.User.AdditionalGids in [[], [1001]]
     input.OCI.Process.NoNewPrivileges == true
     every _, capability in input.OCI.Process.Capabilities {
         count(capability) == 0

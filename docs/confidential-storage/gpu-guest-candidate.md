@@ -122,30 +122,59 @@ schema rendering. No chart/value configuration was changed in this checkpoint.
 
 The [two-volume candidate guide](../../tests/confidential-storage/gpu-guest/README.md)
 now provides a bounded preparer, strict policy, unprivileged vLLM startup, Helm
-resources and tests. The existing populated model PVC is bound by UID. A separate
-new 1 GiB Block/RWOP claim `qwen-gpu-data-v1` and an internal authority Service
-have been created in `confidential-storage-test`; the authority and guest have
-not been deployed. Private preparation produced real TLS/receipt pins and a new
-authority database without changing older state or provisioning any storage key.
+resources and tests. The existing populated model PVC is bound by UID. The new
+1 GiB Block/RWOP claim `qwen-gpu-data-v1` and internal authority Service are in
+`confidential-storage-test`.
 
-The user has dedicated the encrypted-file demo's GPU permanently to the second
-Qwen/KServe instance, with a different chatbot port. This supersedes the earlier
-plan to borrow and restore that GPU. The existing Qwen/KServe/chatbot remain the
-baseline to preserve. GitOps retirement and hardware activation are still pending.
+The encrypted-file demo has been permanently retired in GitOps commit
+`da6e4a9e6b250d18db30062217b5651b399ba86e`. Its GPU is allocated to the second
+Qwen/KServe instance. The original Qwen/KServe and chatbot retain their pod UIDs
+and remain ready. Port 30081 is the intended second chatbot port; it is not yet
+exposed.
+
+The candidate RuntimeClass aliases the existing isolated `kata-snp-storage-probe`
+handler. Only that test handler's configuration was switched to a hash-named
+NVIDIA guest image, with previous configurations retained. The production GPU
+configuration is unchanged; CRI-O was neither reloaded nor restarted.
+
+Guest bring-up admitted the exact non-root process policy and attached both block
+PVCs. Real NVIDIA CDI output required bounded compatibility handling: normalize
+readonly regular-file binds, omit the private persistence socket/daemon, pinned
+firmware files and display modesetting device. Unknown mounts, block devices,
+broad device grants and privilege changes still fail closed. The fixed guest libcuda environment addition is admitted. All 22 native tests
+and the real Regorus policy tests pass. Live GPU CDI admission now succeeds;
+private storage activation is denied and cleanup completes. No application has
+started and no GPU storage E2E is claimed.
+
+The authority image passed its 121 tests inside the built image. Its deployment
+uses `restricted-v2`, namespace UID 1001100000, no capabilities, no service-account
+token and a read-only container root. Vault/ESO supplies its TLS and receipt keys.
+Its two-volume database is retained on `storage-gpu-authority-state` at
+`/state/retained/authority.db`. Missing state prevents startup rather than creating
+a fresh database. A pinned-TLS RCAR challenge against the standard pattern Trustee
+passed. This is connectivity evidence, not successful composite attestation.
+
+**Lab trust boundary:** this authority and the existing Trustee are trusted
+services on the same administrative cluster. The PVC retains state across process
+restarts; it does not protect the authority history from a hostile cluster/storage
+administrator rolling it back. Production freshness requires authority state in a
+separate trusted rollback domain, with retained backups and controlled recovery.
+Neither dm-integrity nor a same-cluster state PVC supplies that guarantee.
 
 ## Remaining acceptance work
 
-- Deploy the prepared authority with durable state and finish exact standard
-  Trustee resource policy/key provisioning. Preserve the retained RO key and RW
-  history; initialization is approved only for the new claim, still subject to
-  the guest zero-device check. Validate the expected EAR issuer/policy IDs live.
-- Verify the release binaries' runtime dependencies and the combined guest boot.
-- Validate the actual guest CDI output, NVIDIA readiness and unprivileged CUDA.
-- Complete standard Trustee composite `/attest`, signed request proof, private
-  CDH key retrieval and denial tests with genuine CPU+GPU evidence.
-- Serve the local encrypted Qwen model through the RO mount and verify durable
-  `/data`, then repeat from a fresh confidential VM and exercise failure cleanup.
-- Finally exercise OCI population for a new model PVC and the chatbot handover.
+- Finish real guest CDI admission and a genuine standard Trustee composite RCAR
+  round trip. Verify signed EAR fields against the reviewed installed policies.
+- Independently match the final guest launch to its approved measurement and
+  InitData. Scope the two new `default/model-keys/qwen-gpu-{model,data}-v1` resources
+  to those exact identities; test denials before provisioning credentials.
+- Preserve the existing RO disk key. Provision a durable new RW key; initialization
+  remains restricted to the new claim and the guest's complete zero-device check.
+- Verify all model hashes, unprivileged CUDA/vLLM inference, and `/data` persistence
+  from a fresh confidential VM, including ownership and failure cleanup.
+- Deploy a second KServe InferenceService and separate chatbot, preserving the
+  original endpoint. Exercise OCI population for a new model PVC as well.
 
-Both GPUs were occupied during preparation. No production workload was stopped,
-no CRI-O reload/restart was performed and no new runtime handler was installed.
+No storage key has been provisioned for this GPU candidate, no data disk formatted,
+and no second GPU inference endpoint or chatbot is ready at this checkpoint.
+See the [live bring-up record](../../tests/confidential-storage/evidence/2026-10-14/gpu-live-bringup/progress.json).

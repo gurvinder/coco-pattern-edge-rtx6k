@@ -35,6 +35,7 @@ async fn exact_image_command_environment_and_no_policy_bypass() {
     let mut user = oci::User::new();
     user.UID = 1001;
     user.GID = 1001;
+    user.AdditionalGids.push(1001);
     process.User = Some(user).into();
     process.Capabilities = Some(oci::LinuxCapabilities::new()).into();
     spec.Process = Some(process).into();
@@ -109,6 +110,9 @@ async fn exact_image_command_environment_and_no_policy_bypass() {
             pointer
         );
     }
+    let mut no_extra_group = base.clone();
+    no_extra_group["OCI"]["Process"]["User"]["AdditionalGids"] = json!([]);
+    assert!(allowed(&mut policy, "CreateContainerRequest", &no_extra_group).await);
     let mut missing = base.clone();
     missing["OCI"]["Process"]["Env"] = json!([]);
     assert!(!allowed(&mut policy, "CreateContainerRequest", &missing).await);

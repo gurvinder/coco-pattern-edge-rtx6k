@@ -134,6 +134,10 @@ kbs:
 
   # Resource policy configuration
   resourcePolicy:
+    # Public, independently approved guest identities for individual model-key
+    # tags. Also append their exact InitData/launch references to RVPS. Existing
+    # tags keep their current CPU+GPU policy; new bound tags fail on mismatch.
+    modelKeyBindings: {}
     # Enforce hardware trust claims in resource policy
     # When true: requires hardware claim >= 2 (affirming range)
     # When false: allows resource access even if hardware claim fails

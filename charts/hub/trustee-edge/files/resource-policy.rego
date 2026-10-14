@@ -5,6 +5,21 @@ import rego.v1
 # support. KBS supplies the canonical path as data, not caller-supplied claims.
 default allow := false
 
+# Helm replaces this public map only for explicitly approved model-key tags.
+# An empty map preserves existing GPU-required resource behavior.
+model_key_bindings := {}
+
+model_key_guest_allowed if {
+    not model_key_bindings[data["resource-path"][2]]
+}
+
+model_key_guest_allowed if {
+    expected := model_key_bindings[data["resource-path"][2]]
+    evidence := input.submods.cpu0["ear.veraison.annotated-evidence"]
+    evidence.snp.measurement == expected.launchMeasurement
+    evidence.init_data == expected.initData
+}
+
 valid_resource_request if {
     data.plugin == "resource"
     is_array(data["resource-path"])
@@ -46,6 +61,7 @@ allow if {
     valid_resource_request
     data["resource-path"][0] == "default"
     data["resource-path"][1] == "model-keys"
+    model_key_guest_allowed
     all_submods_affirming
     cpu := input.submods.cpu0["ear.veraison.annotated-evidence"].snp
     cpu.policy_debug_allowed == false

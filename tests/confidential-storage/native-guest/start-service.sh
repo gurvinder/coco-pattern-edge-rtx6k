@@ -6,7 +6,7 @@ ulimit -c 0
 export PATH=/usr/sbin:/usr/bin:/sbin:/bin
 export MKE2FS_CONFIG=/opt/coco-storage-tools/etc/mke2fs.conf
 unset LD_PRELOAD LD_AUDIT GLIBC_TUNABLES LD_LIBRARY_PATH
-[ "$(id -u)" = 0 ]
+[ "$(/opt/coco-storage-tools/bin/busybox id -u)" = 0 ]
 [ "$(uname -r)" = 6.12.0-211.16.1.el10_2.x86_64 ]
 [ ! -e /run/coco/storage-service ]
 [ ! -e /run/coco/storage ]

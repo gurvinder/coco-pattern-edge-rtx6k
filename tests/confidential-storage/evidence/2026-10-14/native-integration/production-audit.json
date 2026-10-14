@@ -1,0 +1,214 @@
+{
+  "collected_at": "2026-10-14T01:10:50.795660+00:00",
+  "unchanged_since_baseline": {
+    "production_pods": true,
+    "production_resources": true,
+    "runtimes": true,
+    "gitops_sources": true
+  },
+  "production_pods": [
+    {
+      "name": "encrypted-qwen-b74c678b6-74g44",
+      "uid": "3fabfd1e-5f62-4dc8-9102-dfb16ead821a",
+      "runtime": "kata-cc-nvidia-gpu",
+      "phase": "Failed",
+      "spec_sha256": "43c7da29b1c5e7174818c49d96e30dd3ee0b2b0b6badffff4c0b9b41672dc6eb",
+      "containers": [
+        {
+          "name": "vllm",
+          "image": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+          "resources": {
+            "limits": {
+              "cpu": "8",
+              "memory": "64Gi",
+              "nvidia.com/pgpu": "1"
+            },
+            "requests": {
+              "cpu": "8",
+              "memory": "64Gi",
+              "nvidia.com/pgpu": "1"
+            }
+          }
+        },
+        {
+          "name": "results",
+          "image": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2",
+          "resources": {}
+        }
+      ],
+      "status": [
+        {
+          "name": "results",
+          "ready": false,
+          "restarts": 0,
+          "image_id": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2"
+        },
+        {
+          "name": "vllm",
+          "ready": false,
+          "restarts": 0,
+          "image_id": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab"
+        }
+      ]
+    },
+    {
+      "name": "encrypted-qwen-predictor-68c686dc74-hss2g",
+      "uid": "4c6c10b0-3a5c-4c6d-a923-b03541f10074",
+      "runtime": "kata-cc-nvidia-gpu",
+      "phase": "Succeeded",
+      "spec_sha256": "bc509e4a862a42be129d04b37b755b6b721b02ff93c354fa132e97bae37ed92e",
+      "containers": [
+        {
+          "name": "kserve-container",
+          "image": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+          "resources": {
+            "limits": {
+              "cpu": "8",
+              "memory": "64Gi",
+              "nvidia.com/pgpu": "1"
+            },
+            "requests": {
+              "cpu": "8",
+              "memory": "64Gi",
+              "nvidia.com/pgpu": "1"
+            }
+          }
+        },
+        {
+          "name": "results",
+          "image": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2",
+          "resources": {}
+        }
+      ],
+      "status": [
+        {
+          "name": "kserve-container",
+          "ready": false,
+          "restarts": 0,
+          "image_id": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab"
+        },
+        {
+          "name": "results",
+          "ready": false,
+          "restarts": 0,
+          "image_id": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2"
+        }
+      ]
+    },
+    {
+      "name": "encrypted-qwen-predictor-c68947bb9-gw9ml",
+      "uid": "d5cc3080-ae0b-4490-b145-56a216732566",
+      "runtime": "kata-cc-nvidia-gpu",
+      "phase": "Running",
+      "spec_sha256": "9a50a08042da0e24883ecf4273809e22bbb890cda65dbfa042d4ed1d071e5a1a",
+      "containers": [
+        {
+          "name": "kserve-container",
+          "image": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+          "resources": {
+            "limits": {
+              "cpu": "8",
+              "memory": "64Gi",
+              "nvidia.com/pgpu": "1"
+            },
+            "requests": {
+              "cpu": "8",
+              "memory": "64Gi",
+              "nvidia.com/pgpu": "1"
+            }
+          }
+        },
+        {
+          "name": "results",
+          "image": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2",
+          "resources": {}
+        }
+      ],
+      "status": [
+        {
+          "name": "kserve-container",
+          "ready": true,
+          "restarts": 0,
+          "image_id": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab"
+        },
+        {
+          "name": "results",
+          "ready": true,
+          "restarts": 0,
+          "image_id": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2"
+        }
+      ]
+    },
+    {
+      "name": "gpu-encrypted-file-65494c4886-bz4pt",
+      "uid": "39a3c556-23c6-43fa-b6ca-09926834a8c4",
+      "runtime": "kata-cc-nvidia-gpu",
+      "phase": "Running",
+      "spec_sha256": "a8699fd7e863c6606371e70c04171f24b1b4230573950d92c0def41b2278ce41",
+      "containers": [
+        {
+          "name": "encrypted-gpu-test",
+          "image": "quay.io/openshift_sandboxed_containers/gpu-verifier@sha256:dcc55b6c51a85cda62322f7f07f5aa8d42632481254d8bf47e2e24705b245797",
+          "resources": {
+            "limits": {
+              "nvidia.com/pgpu": "1"
+            },
+            "requests": {
+              "nvidia.com/pgpu": "1"
+            }
+          }
+        },
+        {
+          "name": "results",
+          "image": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2",
+          "resources": {}
+        }
+      ],
+      "status": [
+        {
+          "name": "encrypted-gpu-test",
+          "ready": true,
+          "restarts": 0,
+          "image_id": "quay.io/openshift_sandboxed_containers/gpu-verifier@sha256:dcc55b6c51a85cda62322f7f07f5aa8d42632481254d8bf47e2e24705b245797"
+        },
+        {
+          "name": "results",
+          "ready": true,
+          "restarts": 0,
+          "image_id": "registry.redhat.io/ubi9/httpd-24@sha256:68a91ff691092f455fea682330c499588747231c16516cd4f35aff821e6847f2"
+        }
+      ]
+    },
+    {
+      "name": "qwen-chat-6fd79bd4b-vvrqc",
+      "uid": "839d51fc-94fe-491b-9e77-cec5a4c1ae48",
+      "runtime": null,
+      "phase": "Running",
+      "spec_sha256": "73aa598b6720d923eab565b30d4ebea78de521db50e929ba6e8b2902e87f8937",
+      "containers": [
+        {
+          "name": "chat",
+          "image": "registry.access.redhat.com/ubi9/python-312@sha256:56fad467cb1e41666f0028b7fd71107df0556bcc9ecfc577597858c85618f55c",
+          "resources": {
+            "limits": {
+              "cpu": "1",
+              "memory": "256Mi"
+            },
+            "requests": {
+              "cpu": "50m",
+              "memory": "64Mi"
+            }
+          }
+        }
+      ],
+      "status": [
+        {
+          "name": "chat",
+          "ready": true,
+          "restarts": 0,
+          "image_id": "registry.access.redhat.com/ubi9/python-312@sha256:56fad467cb1e41666f0028b7fd71107df0556bcc9ecfc577597858c85618f55c"
+        }
+      ]
+    }
+  ]
+}

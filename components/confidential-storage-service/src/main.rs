@@ -136,6 +136,7 @@ fn bootstrap() -> Result<(Config, String)> {
 
 struct Service {
     reservation: Reservation,
+    stage: &'static str,
     authority: AuthorityClient<PrivateAa>,
     kbs: SnpCpuKbs,
     runtime: tokio::runtime::Runtime,
@@ -184,6 +185,7 @@ impl Service {
         expected.nonce = random_id()?;
         Ok(Self {
             reservation: Reservation::default(),
+            stage: "ready",
             authority,
             kbs,
             runtime: tokio::runtime::Builder::new_current_thread()
@@ -213,6 +215,7 @@ impl Service {
         })
     }
     fn activate(&mut self, request: &Request) -> Result<Response> {
+        self.stage = "reserve";
         self.reservation.reserve(request)?;
         if self.closing {
             return Err(invalid().into());
@@ -232,19 +235,24 @@ impl Service {
         else {
             return Err(invalid().into());
         };
+        self.stage = "resolve-device";
         let file = OpenOptions::new()
             .read(true)
             .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
             .open(device_path)?;
         let device = BlockDevice::from_file(file, *major, *minor)?;
+        self.stage = "authority-reopen";
         self.authorization_attempted = true;
         let (grant, permit) = self.authority.authorize_reopen_key(&self.expected)?;
         self.grant = Some(grant.clone());
         self.effects_attempted = true; // Subsequent failures require explicit close, never re-open.
                                        // Authenticate copied header/profile/manifest BEFORE requesting the key.
+        self.stage = "authenticate-header";
         self.opener = Some(RoOpener::prepare(grant.clone(), &self.manifest, device)?);
+        self.stage = "kbs-retrieve";
         let material = self.runtime.block_on(self.kbs.retrieve(permit))?;
         let key = Zeroizing::new(<[u8; 32]>::try_from(material.as_bytes()).map_err(|_| invalid())?);
+        self.stage = "open-mappings";
         self.opener.as_mut().unwrap().open(&key)?;
         drop(key);
         drop(material);
@@ -256,6 +264,7 @@ impl Service {
         self.response()
     }
     fn close(&mut self, request: &Request) -> Result<Response> {
+        self.stage = "close";
         self.reservation.check_close(request)?;
         self.closing = true; // Admission stays closed even if cleanup fails.
         if self.reservation.closed() {
@@ -349,8 +358,21 @@ fn main() -> Result<()> {
             request.validate()?;
             service.handle(&request)
         })()
-        .unwrap_or_else(|_| {
-            eprintln!("STORAGE_SERVICE denied_state_retained");
+        .unwrap_or_else(|error| {
+            // Classify only our fixed error variants, never format external errors.
+            let category = match error.downcast_ref::<confidential_storage_client::Error>() {
+                Some(confidential_storage_client::Error::Configuration) => "authority-config",
+                Some(confidential_storage_client::Error::Transport) => "authority-transport",
+                Some(confidential_storage_client::Error::Binding) => "authority-binding",
+                Some(confidential_storage_client::Error::Attestation) => "private-attestation",
+                Some(confidential_storage_client::Error::Receipt(_)) => "authority-receipt",
+                None => "local-or-kbs",
+            };
+            // Log only fixed labels: never errors, requests, evidence or keys.
+            eprintln!(
+                "STORAGE_SERVICE denied_state_retained stage={} category={}",
+                service.stage, category
+            );
             Response::Denied
         });
         // Disconnect does not cancel an effect or discard the retained service.

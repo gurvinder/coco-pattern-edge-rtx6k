@@ -1,8 +1,10 @@
 # Confidential storage compatibility report
 
 Observed on 13 October 2026. Implementation branch: `dev/confidential-storage-integration`.
-This is the first implementation checkpoint. Encrypted persistent `/data`, model
-population and KServe storage integration are **not deployed**.
+This records the initial platform checkpoint. For the current result, see the
+[live native RO PVC test](native-ro-pvc.md): model population and confidential RO
+file access passed on 14 October. RW initialization and model serving through the
+new PVC remain incomplete; production KServe storage is unchanged.
 
 ## Live platform
 

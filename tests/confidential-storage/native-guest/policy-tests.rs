@@ -38,11 +38,8 @@ async fn exact_image_command_environment_and_no_policy_bypass() {
     process.User = Some(user).into();
     spec.Process = Some(process).into();
     for (k, v) in [
-        (
-            "io.kubernetes.cri.sandbox-namespace",
-            "confidential-storage-test",
-        ),
-        ("io.kubernetes.cri-o.ContainerName", "model"),
+        ("io.kubernetes.pod.namespace", "confidential-storage-test"),
+        ("io.kubernetes.container.name", "model"),
         ("io.katacontainers.pkg.oci.container_type", "pod_container"),
     ] {
         spec.Annotations.insert(k.into(), v.into());
@@ -107,7 +104,7 @@ async fn exact_image_command_environment_and_no_policy_bypass() {
     let mut pause = base;
     pause["devices"] = json!([]);
     pause["storages"][0]["source"] = json!("pause");
-    pause["OCI"]["Annotations"]["io.kubernetes.cri-o.ContainerName"] = json!("POD");
+    pause["OCI"]["Annotations"]["io.kubernetes.container.name"] = json!("POD");
     pause["OCI"]["Annotations"]["io.katacontainers.pkg.oci.container_type"] = json!("pod_sandbox");
     pause["OCI"]["Process"]["Args"] = json!(["/usr/bin/pod"]);
     assert!(allowed(&mut policy, "CreateContainerRequest", &pause).await);

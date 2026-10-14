@@ -1,0 +1,4 @@
+apiVersion: v2
+name: private-storage-model-probe
+version: 0.1.0
+description: Isolated native-agent encrypted model PVC verification

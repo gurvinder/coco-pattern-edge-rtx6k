@@ -1,0 +1,13 @@
+uid=1000 gid=1000 groups=1000
+CapEff:	0000000000000000
+NoNewPrivs:	1
+LICENSE: OK
+config.json: OK
+generation_config.json: OK
+merges.txt: OK
+model.safetensors: OK
+publisher-source.json: OK
+tokenizer.json: OK
+tokenizer_config.json: OK
+vocab.json: OK
+STORAGE_MODEL_RO_HASHES_PASS

@@ -3,7 +3,7 @@
 //! The separate private service owns all authority/key/mapping state.
 use anyhow::{anyhow, bail, ensure, Context, Result};
 use oci_spec::runtime as oci;
-use protocols::agent::{CreateContainerRequest, CreateSandboxRequest};
+use protocols::agent::{CopyFileRequest, CreateContainerRequest, CreateSandboxRequest};
 use serde::{Deserialize, Serialize};
 use std::{
     fs::{self, OpenOptions},
@@ -31,13 +31,17 @@ lazy_static! {
 /// CDH as an alternate attestation/key oracle, even if REST was host-requested.
 pub fn protect_guest_components() -> Result<()> {
     use std::os::unix::fs::PermissionsExt;
-    let directory = Path::new("/run/confidential-containers");
-    let info = fs::symlink_metadata(directory)?;
-    ensure!(
-        info.is_dir() && info.uid() == 0 && info.mode() & 0o022 == 0,
-        "private guest-components directory invalid"
-    );
-    fs::set_permissions(directory, fs::Permissions::from_mode(0o700))?;
+    for directory in [
+        Path::new("/run/confidential-containers"),
+        Path::new("/run/confidential-containers/attestation-agent"),
+    ] {
+        let info = fs::symlink_metadata(directory)?;
+        ensure!(
+            info.is_dir() && info.uid() == 0 && info.mode() & 0o022 == 0,
+            "private guest-components directory invalid"
+        );
+        fs::set_permissions(directory, fs::Permissions::from_mode(0o700))?;
+    }
     Ok(())
 }
 
@@ -207,6 +211,34 @@ impl State {
     pub fn consumer(&self, cid: &str) -> bool {
         self.consumer.as_deref() == Some(cid)
     }
+    /// Host file mounts are removed, so corresponding runtime copies have no
+    /// consumer. Acknowledge bounded shared-file chunks without creating,
+    /// following, chmodding or writing any path. All real CopyFile stays denied.
+    pub fn discard_host_copy(&self, req: &CopyFileRequest) -> Result<bool> {
+        if !self.enabled() {
+            return Ok(false);
+        }
+        ensure!(!self.closing && !self.closed, "storage guest closing");
+        ensure!(
+            req.path.len() <= 4096
+                && beneath(
+                    Path::new(&req.path),
+                    Path::new("/run/kata-containers/shared/containers")
+                ),
+            "host copy outside discarded shared tree"
+        );
+        ensure!(
+            req.file_size >= 0
+                && req.file_size <= 1024 * 1024
+                && req.offset >= 0
+                && req.offset <= req.file_size
+                && req.data.len() <= 1024 * 1024
+                && req.data.len() as i64 <= req.file_size - req.offset,
+            "host copy bounds invalid"
+        );
+        // No file operation occurs here. Host bytes never enter guest storage.
+        Ok(true)
+    }
     pub fn deny_mutation(&self) -> Result<()> {
         ensure!(
             !self.enabled(),
@@ -280,7 +312,7 @@ impl State {
         // cannot prevent a malicious shared-file symlink from targeting a
         // private guest socket/header. Use a fresh guest tmpfs for /dev/shm.
         strip_host_binds(spec)?;
-        let name = kata_types::k8s::container_name(spec);
+        let name = measured_container_name(spec);
         let runtime_sandbox = sandbox.lock().await;
         ensure!(
             runtime_sandbox.hooks.is_none(),
@@ -335,7 +367,12 @@ impl State {
             readonly,
         } = response
         else {
-            bail!("private storage activation denied");
+            // No consumer has been created yet. A completed denial is safe to
+            // clean up now, while guest networking is still available. Close
+            // retains ownership on any uncertain/busy failure and permanently
+            // closes admission; a transport error above never enters this path.
+            self.close().await?;
+            bail!("private storage activation denied; cleanup completed");
         };
         ensure!(
             destination == binding.destination && readonly,
@@ -418,9 +455,19 @@ fn strip_host_binds(spec: &mut oci::Spec) -> Result<()> {
     Ok(())
 }
 
+// Use the same exact Kubernetes label as the measured workload policy. Kata's
+// generic CRI helper prefers a different, composite name on this CRI-O version.
+fn measured_container_name(spec: &oci::Spec) -> &str {
+    spec.annotations()
+        .as_ref()
+        .and_then(|a| a.get("io.kubernetes.container.name"))
+        .map(String::as_str)
+        .unwrap_or("")
+}
+
 fn validate(req: &CreateContainerRequest, spec: &oci::Spec, binding: &Binding) -> Result<()> {
     ensure!(
-        kata_types::k8s::container_name(spec) == binding.container_name,
+        measured_container_name(spec) == binding.container_name,
         "unapproved consumer"
     );
     ensure!(
@@ -582,7 +629,7 @@ mod tests {
         storage.mount_point = format!("/run/kata-containers/{cid}/rootfs");
         req.storages.push(storage);
         let value = json!({"ociVersion":"1.0.2","root":{"path":"rootfs","readonly":true},
-            "annotations":{"io.kubernetes.cri-o.ContainerName":"consumer"},
+            "annotations":{"io.kubernetes.container.name":"consumer", "io.kubernetes.cri-o.ContainerName":"k8s_consumer_storage-model-ro_confidential-storage-test_uid_0"},
             "process":{"user":{"uid":1000,"gid":1000},"cwd":"/","args":["/test"],"noNewPrivileges":true,
                 "capabilities":{"bounding":[],"effective":[],"permitted":[],"inheritable":[],"ambient":[]}},
             "mounts":[{"destination":"/proc","type":"proc","source":"proc","options":["nosuid","nodev","noexec"]}],
@@ -592,6 +639,21 @@ mod tests {
     }
     fn valid(req: &CreateContainerRequest, value: Value) -> bool {
         validate(req, &serde_json::from_value(value).unwrap(), &binding()).is_ok()
+    }
+    #[test]
+    fn measured_name_uses_kubernetes_label_without_cri_fallback() {
+        let (req, mut value) = fixture();
+        assert!(valid(&req, value.clone()));
+        value["annotations"]["io.kubernetes.container.name"] = json!("POD");
+        let spec: oci::Spec = serde_json::from_value(value.clone()).unwrap();
+        assert_eq!(measured_container_name(&spec), "POD");
+        assert!(!valid(&req, value.clone()));
+        value["annotations"]
+            .as_object_mut()
+            .unwrap()
+            .remove("io.kubernetes.container.name");
+        value["annotations"]["io.kubernetes.cri-o.ContainerName"] = json!("consumer");
+        assert!(!valid(&req, value));
     }
     #[test]
     fn native_runtime_shape_keeps_systemd_cgroups_without_incoming_pid_namespace() {
@@ -664,6 +726,38 @@ mod tests {
         assert_eq!(mounts[0].destination(), Path::new("/proc"));
         assert_eq!(mounts[1].destination(), Path::new("/dev/shm"));
         assert_eq!(mounts[1].typ().as_deref(), Some("tmpfs"));
+    }
+
+    #[test]
+    fn bounded_host_copies_are_discarded_without_any_file_operation() {
+        let mut req = CopyFileRequest::new();
+        req.path = "/run/kata-containers/shared/containers/not-created/hosts".into();
+        req.data = b"untrusted host bytes".to_vec();
+        req.file_size = req.data.len() as i64;
+        assert!(state().discard_host_copy(&req).unwrap());
+        for path in [
+            "/run/coco/storage/header",
+            "/run/confidential-containers/cdh.sock",
+            "/run/kata-containers/shared/containers/../../private",
+            "/run/kata-containers/shared/containers",
+        ] {
+            let mut bad = req.clone();
+            bad.path = path.into();
+            assert!(state().discard_host_copy(&bad).is_err());
+        }
+        let mut bad = req.clone();
+        bad.file_size = 1024 * 1024 + 1;
+        assert!(state().discard_host_copy(&bad).is_err());
+        bad = req.clone();
+        bad.offset = -1;
+        assert!(state().discard_host_copy(&bad).is_err());
+        bad = req.clone();
+        bad.offset = 1;
+        assert!(state().discard_host_copy(&bad).is_err());
+        let mut closing = state();
+        closing.closing = true;
+        assert!(closing.discard_host_copy(&req).is_err());
+        assert!(!State::default().discard_host_copy(&req).unwrap());
     }
 
     #[test]

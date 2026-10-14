@@ -1,8 +1,9 @@
 # Private guest storage service (development)
 
 This component connects the tested authority client, private SNP KBS client and
-read-only LUKS/dm-verity opener. It is **not yet installed in the live guest** and
-is not evidence of either completed PVC E2E. Its initial configuration rejects RW
+read-only LUKS/dm-verity opener. It is **installed only in the isolated development guest** and
+has passed the [RO PVC hash-verification test](../../docs/confidential-storage/native-ro-pvc.md).
+Model inference and the full RW example are still incomplete. Its initial configuration rejects RW
 volumes: first-use formatting still needs integration with the signed journal.
 
 The fixed, measured `/etc/confidential-storage/service.json` contains only public
@@ -27,6 +28,10 @@ never becomes a force-unmount or lease takeover. The agent must destroy the
 consumer first. Closed reservations cannot reactivate. Service state is currently
 in-memory; guest loss requires conservative authority recovery, not ownership
 expiry or automatic reformatting.
+
+Failures log only a fixed activation-stage label. No request body, evidence,
+receipt, key or underlying error text is logged. A denial retains ownership;
+adding diagnostics does not introduce a retry or reformat path.
 
 ## Build and test
 

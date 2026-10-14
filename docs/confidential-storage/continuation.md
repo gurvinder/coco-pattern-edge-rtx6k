@@ -4,78 +4,72 @@ Checkpoint: 13 October 2026, branch `dev/confidential-storage-integration`, base
 on proposal/handoff commit `e4a3616`. Read the [report](compatibility-report.md)
 before making changes. The original six-phase handoff still defines completion.
 
-## Latest checkpoint: native lifecycle and private key/mount service
+## Latest checkpoint: real SNP / Trustee / read-only model PVC
 
-**14 October, 00:10 UTC:** built the private guest storage service and a separate
-native-agent integration against the pinned installed Kata source. Neither is
-installed yet. The live test handler still uses `initrd-kernel-v2`; no node or
-CRI-O changes occurred in this checkpoint. Production audit remains unchanged.
+**14 October, 01:11 UTC:** the [native RO PVC checkpoint](native-ro-pvc.md) passed.
+The real OCI-populated `qwen-luks-model-v1` PVC was opened with Trustee's retained
+test key inside the SNP guest; UID 1000, no capabilities, NoNewPrivs, all nine
+publisher file hashes passed, write attempt rejected, raw device/CDH absent and
+admin exec denied. Both deny-all and successful runs closed authority ownership.
+Production audit is unchanged, CRI-O PID 694089, no further reload/restart.
 
-The native path retains rustjail's pause/app, cgroup, process and teardown
-handling, resolves one SCSI attachment and replaces raw-device exposure with the
-private service's filesystem mount. Host file bind mounts are removed (fresh
-in-guest `/dev/shm` tmpfs), closing the shared-file symlink route to private guest
-state. Root-private AA/CDH and storage service start before app RPC admission;
-the REST helper is never started in this configured guest. Exec, host hooks,
-CDI/CDH privilege shortcuts, swap and mutation RPCs are denied. This is a new
-experiment, not the earlier activation-disabled custom runtime adapter patch.
+This is file verification, **not inference serving or the RW example**. The
+service still rejects RW configuration. Neither full requested final example is
+complete. Next add inference on the verified RO mount, then wire signed first-use
+initialization and persistence/reopen for the untouched blank RW PVC.
 
-The service connects real authority + SNP KBS client + RO LUKS/dm-verity opener.
-It retains ownership across errors, verifies the sealed header before requesting
-the key and closes authority ownership only after kernel teardown. It currently
-rejects RW configuration: signed first-use journal wiring is still outstanding.
-See `components/confidential-storage-service/README.md` and the native-agent README.
+Current isolated image: `initrd-native-v9` under
+`/opt/kata-storage-test/private-aa-probe-94354456b0c3/`, SHA-256
+`faa4ad26059479efec301ee6ecd67354781950c348fc512f0e24cdde1d3b2503`.
+Actual QEMU inputs match the independent reference. InitData is policy v3,
+SHA-256 `e8333e04e750a85da531178685d5898e378e5390680ffe0261f40c2edf928d57`.
+Public build, measurement, policy, application/negative/cleanup logs and production
+audit are in `tests/confidential-storage/evidence/2026-10-14/native-integration`.
+Only this exact image and policy currently qualify for the isolated key.
 
-The isolated SNP-only Trustee KBS is running in `storage-agent-compiler`, port
-8444 with TLS 1.3, admin DenyAll, verified EAR signing chain, offline AMD cache
-and deny-all resource policy. Unauthorized GET/POST returned 401 and TLS 1.2 was
-rejected. **No storage key was provisioned.** No Service/Route was added.
-Private files are `/build/storage-kbs-private`, with local backup outside Git at
-`work/confidential-storage-private/kbs-native-20261014`. The restored AS state is
-`/build/private-as-state`; its loopback REST AS is not restarted yet.
+Compiler/server pod is still `storage-agent-compiler`, IP `10.128.1.245`, started
+22:59 UTC; its sleep expires about 02:59 UTC. Preserve live private authority/KBS
+state before it disappears. Do not reconstruct ownership from stale local files.
+Authority v4 is `/build/storage-authority-v4-private`, port 8443, started via
+`/build/storage-native-server/authority-audit-server.py`. It uses fixed route/status
+logs and current `serve.py` profile preflight. Public profile siblings are under
+`/build/storage-native-server/confidential-storage-guest/profiles/`.
+Loopback AS remains port 8089, `/build/private-as-state`, policy
+`storage-native-ro-v1_cpu.rego`. KBS remains port 8444,
+`/build/storage-kbs-private`; admin DenyAll, strict v9 default CPU appraisal and
+exact resource policy in **`storage/kbs/resource-policy.rego`**. One real test key
+is now provisioned. No public Service or Route exists.
 
-Build trees are `/build/kata-native` (native agent), `/build/storage-service`
-(private service), `/build/storage-kbs-server` (Trustee). Shared agent target is
-`/build/kata/target`. Compiler is still the 22:59 UTC pod, expiring approximately
-02:59 UTC; scratch was 18 GiB/32 GiB at the last check. Public release binaries are
-in `/build/native-outputs`; keep only the newest hash recorded in evidence.
-Local source staging is `/private/tmp/storage-native-agent-v1`.
+The v3 authority is retired, with its failed no-key ownership record preserved
+in private `retired-authority-v3-20261014.tar.gz`. Do not restart it. New v4 public
+config/private generated state is local under
+`work/confidential-storage-private/authority-native-v4-20261014`; live SQLite
+state is newer than that initial local copy. A verified consistent private
+backup after both closes is
+`work/confidential-storage-private/storage-native-live-v4-20261014.tar.gz`; it
+contains the current authority, KBS key and offline AS state. Preserve any newer
+state again after subsequent operations. The retained model key stays in
+`work/confidential-storage-private/qwen-luks-key`, never Git. TLS certificates
+expire roughly 07:55 UTC; regeneration changes measured guest trust pins.
 
-`tests/confidential-storage/native-guest` contains guest assembly/bootstrap,
-deny-all KBS preparation and strict RO file-verification InitData preparation.
-The policy pins UBI digest, exact hash-check command, UID/GID and environment;
-its generated files are `/private/tmp/storage-native-policy-v2`. This workload
-checks all published Qwen file hashes and read-only behavior; it is not yet a
-model inference server. Live policy/request compatibility remains to be checked. The v2 policy also
-requires the actual IPC/UTS/mount namespaces and rejects host namespace paths.
-The original v1 candidate/state remain private scratch only; use v2 next.
+Build trees: `/build/kata-native`, `/build/storage-service`, and
+`/build/storage-kbs-server`. Agent/service now use target `/build/kata/target`;
+release service binary is named `confidential-storage-service` and copied to
+`/build/native-outputs/storage-service`. Latest public binaries are also local in
+`/private/tmp/storage-native-binaries`. Download large artifacts in bounded chunks
+and check full hashes: direct transfers were twice truncated with exit status 0.
 
-The candidate image is now assembled and reproduced byte-for-byte:
-`/private/tmp/storage-native-v2.initrd`, SHA-256
-`43ac494dbd94646c128c892814d3aa36040bbf58f4f9de2cc472e71d88303328`.
-Its overlay and measurement JSON are beside it and public build/measurement
-metadata are in evidence. The intended config disables `[agent.kata].enable_debug`
-and prepends `agent.log=warn` to the existing hypervisor `kernel_params`. Runtime
-source emits `agent.launch_process_timeout=6` before those user parameters, so
-measurement uses that exact ordering. Actual QEMU arguments must match before
-keys. Current handler still has agent/runtime debug enabled, hypervisor debug
-false, no debug console and no tracing; nothing was switched.
-Six native tests, three protocol tests and the strict actual-protobuf policy test
-pass. Source preparation is byte-identical to the tested tree.
+Changes validated: eight native tests, three service protocol tests, strict
+actual-protobuf policy test, 15 negative KBS rule variants plus deny-all, two
+profile startup tests and one KBS policy-filename regression. Live fixes include
+Kubernetes annotation naming, no-write discarded CopyFile compatibility, BusyBox
+bootstrap, 0700 private AA subdirectory and immediate cleanup on definitive
+activation denial. No permissive workload-policy fallback was introduced.
 
-Fresh actual RO authority state/public guest config are private locally at
-`work/confidential-storage-private/authority-native-v2-20261014`. They are not yet
-uploaded or started. They bind the real published manifest to
-`kbs:///storage-test/model-keys/qwen-luks-v1`, but no such KBS key exists. Reuse
-this state and config for the recorded candidate; regenerating signing/TLS data
-changes the guest measurement. TLS validity is eight hours from creation.
-
-**Next:** install/verify only the isolated candidate config/image, restore the
-loopback AS and start this authority, then run strict live no-key/negative checks.
-Only after those pass, authorize this exact measurement and InitData for the
-isolated model key and run actual RO PVC access/serving. Wire the RW signed
-initialization journal next and run blank-PVC format/persistence/reopen and
-negative/cleanup tests. Neither requested full E2E is complete.
+**Correction to the previous checkpoint:** writing `resource-policy` without the
+`.rego` suffix did not configure KBS's effective deny-all rule. It loaded its
+bundled TEE-accepting default. No key existed then. The filename was corrected,
+regression-tested and real KBS PolicyDeny verified before the test key was added.
 
 ## Previous checkpoint: downstream kernel storage stack and agent source port
 

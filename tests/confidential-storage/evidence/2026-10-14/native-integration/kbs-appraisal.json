@@ -1,0 +1,18 @@
+{
+  "source": "isolated KBS attested-session metadata; token omitted",
+  "issuer": "storage-kbs-as",
+  "status": "affirming",
+  "appraisalPolicyId": "default",
+  "trustVector": {
+    "instance-identity": 0,
+    "configuration": 2,
+    "executables": 3,
+    "file-system": 0,
+    "hardware": 2,
+    "runtime-opaque": 0,
+    "storage-opaque": 0,
+    "sourced-data": 0
+  },
+  "initData": "e8333e04e750a85da531178685d5898e378e5390680ffe0261f40c2edf928d57",
+  "measurement": "35ec767b3bd226d710425a775c81b4a25e53a200dedd6a147c1ca02e33031dcf09554d96f7cdf9163750a4f3f390cfbe"
+}

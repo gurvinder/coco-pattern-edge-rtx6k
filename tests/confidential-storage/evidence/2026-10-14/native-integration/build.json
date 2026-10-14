@@ -3,13 +3,13 @@
   "approvedForStorageKeys": false,
   "inputsSha256": {
     "base": "1f9b3a90c60ec7a94985ae966fc66ecb4d04055ca3471b9f0074068f4dac8b62",
-    "agent": "7e1c212aca1c1fcad859cc2f4bd1a7b7bd9160a483fef304a9b6faa17b2ea033",
-    "service": "b44202308e011b2939385c78580c04053a74d467122da05ca11a5a9b6de44563",
+    "agent": "ff6f77c2df3422e6fb75b00cf6d1f68b9036e1c5e6151271400a4ddd5d2e7570",
+    "service": "8bd61b5c598e2bae97bdbd2601397f80a1ca7cdb3d3366ae9bf372d28b02cff7",
     "client": "1a9ea738602ccaebf7141e9e01ced3adfb3125e05a63b1332b930898a86509e5",
-    "config": "d22ff40d99d396e08827b15e0a45f60dfbfb405f92763591c04c14bac6ae0bd9"
+    "config": "c043149da567cc219bee5797789773f1036480700e1c425ff81b6a7176f0dbed"
   },
-  "initrdSha256": "43ac494dbd94646c128c892814d3aa36040bbf58f4f9de2cc472e71d88303328",
-  "overlaySha256": "888a902b93e81cbcae4e4a064432a0bf49c9eb4b2567ba747615021458f201bc",
+  "initrdSha256": "faa4ad26059479efec301ee6ecd67354781950c348fc512f0e24cdde1d3b2503",
+  "overlaySha256": "29cad2b7b406d3e0b60533a5118d00e879a48719f83a2f81a9ae919480e1b55e",
   "replaced": [
     "usr/bin/kata-agent"
   ],
@@ -56,11 +56,11 @@
     "usr/sbin/integritysetup": "42dfb1114959423089ed12e97c5214512cea2d59428e3854d3a93b344e8a5558",
     "usr/sbin/dmsetup": "c931ab728b94132abc87f157ca014d208116755e3687f05a04bca1d9b55c9090",
     "usr/sbin/mkfs.ext4": "ed0842cc014fe4a4a6d925a0bfab51512d77c96f49383510ddbee120d0fb9da2",
-    "usr/bin/kata-agent": "7e1c212aca1c1fcad859cc2f4bd1a7b7bd9160a483fef304a9b6faa17b2ea033",
-    "usr/bin/confidential-storage-service": "b44202308e011b2939385c78580c04053a74d467122da05ca11a5a9b6de44563",
+    "usr/bin/kata-agent": "ff6f77c2df3422e6fb75b00cf6d1f68b9036e1c5e6151271400a4ddd5d2e7570",
+    "usr/bin/confidential-storage-service": "8bd61b5c598e2bae97bdbd2601397f80a1ca7cdb3d3366ae9bf372d28b02cff7",
     "usr/bin/storage-aa-client": "1a9ea738602ccaebf7141e9e01ced3adfb3125e05a63b1332b930898a86509e5",
-    "usr/bin/storage-service-start": "6f31c7049aa92b6d683d7a4bedc1aded32ec12cad78bdf0f972a7df0e7ac1ca0",
+    "usr/bin/storage-service-start": "66c9b215fe4ccdee155aefd908770aa66c69f00b7d3397ff9b5c3055e99ab082",
     "etc/confidential-storage": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "etc/confidential-storage/service.json": "d22ff40d99d396e08827b15e0a45f60dfbfb405f92763591c04c14bac6ae0bd9"
+    "etc/confidential-storage/service.json": "c043149da567cc219bee5797789773f1036480700e1c425ff81b6a7176f0dbed"
   }
 }

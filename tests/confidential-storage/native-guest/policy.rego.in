@@ -60,14 +60,14 @@ common if {
     input.storages[0].fstype == "overlay"
     count(input.storages[0].options) == 0
     input.storages[0].shared == false
-    input.OCI.Annotations["io.kubernetes.cri.sandbox-namespace"] == "confidential-storage-test"
+    input.OCI.Annotations["io.kubernetes.pod.namespace"] == "confidential-storage-test"
 }
 
 # The native agent replaces this process with its measured in-image pause
 # configuration. It removes all host file bind mounts before native creation.
 CreateContainerRequest if {
     common
-    input.OCI.Annotations["io.kubernetes.cri-o.ContainerName"] == "POD"
+    input.OCI.Annotations["io.kubernetes.container.name"] == "POD"
     input.OCI.Annotations["io.katacontainers.pkg.oci.container_type"] == "pod_sandbox"
     input.storages[0].source == "pause"
     input.OCI.Process.Args == ["/usr/bin/pod"]
@@ -77,7 +77,7 @@ CreateContainerRequest if {
 
 CreateContainerRequest if {
     common
-    input.OCI.Annotations["io.kubernetes.cri-o.ContainerName"] == "model"
+    input.OCI.Annotations["io.kubernetes.container.name"] == "model"
     input.OCI.Annotations["io.katacontainers.pkg.oci.container_type"] == "pod_container"
     input.storages[0].source == workload.image
     input.OCI.Process.Args == workload.args

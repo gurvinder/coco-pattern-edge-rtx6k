@@ -1,19 +1,19 @@
 {
-  "scope": "isolated-native-agent-and-private-storage-service-development",
+  "scope": "isolated-live-snp-ro-pvc-hash-verification",
   "completedConfidentialPvcE2E": false,
-  "agentInstalled": false,
-  "storageKeyProvisioned": false,
+  "agentInstalled": true,
+  "storageKeyProvisioned": true,
   "sourcePreparationByteIdentical": true,
   "nativeAgentTests": {
-    "passed": 6,
+    "passed": 8,
     "failed": 0
   },
   "serviceProtocolTests": {
     "passed": 3,
     "failed": 0
   },
-  "agentBinarySha256": "7e1c212aca1c1fcad859cc2f4bd1a7b7bd9160a483fef304a9b6faa17b2ea033",
-  "serviceBinarySha256": "b44202308e011b2939385c78580c04053a74d467122da05ca11a5a9b6de44563",
+  "agentBinarySha256": "ff6f77c2df3422e6fb75b00cf6d1f68b9036e1c5e6151271400a4ddd5d2e7570",
+  "serviceBinarySha256": "8bd61b5c598e2bae97bdbd2601397f80a1ca7cdb3d3366ae9bf372d28b02cff7",
   "kbsBinarySha256": "4fe5159d6c0ba5593a28d6fca66cf108accdd7e04cbfad36071fe8f62a1559f8",
   "isolatedKbs": {
     "tls13Verified": true,
@@ -21,20 +21,23 @@
     "unauthenticatedResourceStatus": 401,
     "unauthenticatedAdminStatus": 401,
     "adminMode": "DenyAll",
-    "resourcePolicy": "deny-all",
-    "noKeysProvisioned": true,
-    "amdCertificateSource": "previously-approved-offline-cache"
+    "resourcePolicy": "exact-v9-SNP-measurement-InitData-TCB-resource",
+    "noKeysProvisioned": false,
+    "amdCertificateSource": "previously-approved-offline-cache",
+    "credentialCount": 1,
+    "effectivePolicyFile": "storage/kbs/resource-policy.rego",
+    "originalNoSuffixDenyAllFileWasIgnored": true,
+    "effectiveDenyAllLiveTestPassedBeforeKeyProvisioning": true
   },
   "knownBuildWarnings": [
     "two pre-existing downstream unused_unsafe warnings",
     "upstream KBS crypto GenericArray deprecation warnings"
   ],
   "remaining": [
-    "validate strict policy and candidate boot on actual handler",
-    "live private service and native lifecycle validation",
-    "real RO key/PVC/model serving",
-    "signed RW journal integration and blank-PVC initialization/reopen",
-    "live negative and cleanup recovery tests"
+    "encrypted model inference from mounted RO PVC",
+    "signed RW initialization integration and real blank-PVC persistence/reopen",
+    "broader live tamper/replay and recovery coverage",
+    "complete clean-cluster reproduction for both final examples"
   ],
   "strictPolicyActualProtobufTest": {
     "passed": 1,
@@ -42,5 +45,40 @@
   },
   "productionUnchanged": true,
   "guestImageRebuildByteIdentical": true,
-  "strictInitDataSha256": "e192944453e4a87969569a9c962b9b9c13c45cf4db9f82c0f96129ab5b2529fb"
+  "strictInitDataSha256": "e8333e04e750a85da531178685d5898e378e5390680ffe0261f40c2edf928d57",
+  "completedRoPvcReadVerification": true,
+  "modelInferenceServingCompleted": false,
+  "rwInitializationCompleted": false,
+  "releasePolicyTests": {
+    "positive": 1,
+    "negativeVariants": 15,
+    "denyAll": 1
+  },
+  "live": {
+    "podUid": "20c87860-02a0-46e8-85f7-07b3cd3ef118",
+    "namespace": "confidential-storage-test",
+    "runtime": "kata-snp-storage-probe",
+    "uid": 1000,
+    "gid": 1000,
+    "effectiveCapabilities": "0000000000000000",
+    "noNewPrivileges": true,
+    "verifiedModelFiles": 9,
+    "writeAttemptRejected": true,
+    "rawDeviceAndCdhSocketAbsent": true,
+    "adminExecDenied": true,
+    "failedActivationOwnerClosed": true,
+    "successfulActivationOwnerClosed": true,
+    "authorityActions": [
+      "register",
+      "approve-published-model",
+      "begin-reopen",
+      "close",
+      "begin-reopen",
+      "close"
+    ],
+    "cpuOnly": true,
+    "productionGpuPolicyChanged": false
+  },
+  "currentlyAuthorizedImageSha256": "faa4ad26059479efec301ee6ecd67354781950c348fc512f0e24cdde1d3b2503",
+  "keyAuthorizationScope": "exact v9 image + strict verification-workload InitData only"
 }

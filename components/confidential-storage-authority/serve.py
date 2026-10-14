@@ -17,6 +17,8 @@ from authority import Authority
 from gateway import Gateway
 from receipts import ReceiptIssuer
 from transport import Server, tls_context
+from publication import PROFILE_PATH as RO_PROFILE
+from initialization_api import PROFILE as RW_PROFILE
 
 
 def private_pem(path):
@@ -31,7 +33,15 @@ def private_pem(path):
         return data
 
 
+def require_storage_profiles():
+    # Package the public profile files beside the authority source. Missing or
+    # invalid profiles must prevent startup, not fail after attestation succeeds.
+    for profile in (RO_PROFILE, RW_PROFILE):
+        read_object(profile.read_bytes(), 64 * 1024)
+
+
 def configured_server(path):
+    require_storage_profiles()
     # Paths and pins here are operator configuration, never request parameters.
     with Path(path).open("rb") as stream:
         config = read_object(stream.read(32769), 32768)

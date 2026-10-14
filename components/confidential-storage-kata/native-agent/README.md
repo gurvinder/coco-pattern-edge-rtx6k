@@ -1,7 +1,8 @@
 # Native agent lifecycle experiment
 
 This is a separate guest-only integration against the installed Kata 3.31.0
-source baseline. It is **development code, not installed or key-approved**. It
+source baseline. It is **development code, installed only in the isolated test handler and not
+authorized only for the exact recorded RO test image/policy**. It
 keeps Kata's normal rustjail process, signal, cgroup and namespace lifecycle.
 It supersedes the earlier adapter assumptions for this live experiment; do not
 apply both patches. No Go shim, CRI-O or production runtime changes are included.
@@ -28,14 +29,17 @@ is not a replacement for a complete workload policy.
 Create/start/remove/destroy are serialized. Admission closes on removal; storage
 cleanup follows native consumer destruction. An absent container after a failed
 create still asks the service for cleanup. Busy mappings preserve ownership.
-Exec, CopyFile, policy replacement, swap, guest clock changes, random reseeding,
+Exec, file-writing CopyFile, policy replacement, swap, guest clock changes, random reseeding,
 resource updates, stdin writes and other mount/diagnostic mutations are rejected
-in the configured storage guest. Ordinary guests without the fixed measured
+in the configured storage guest. Bounded CopyFile chunks beneath the discarded
+shared-file tree are acknowledged without opening, following, creating or writing
+any path; this permits the existing shim to continue after file mounts were
+removed. All other copy paths are rejected. Ordinary guests without the fixed measured
 configuration retain their original behavior. Only the specifically measured
 storage image and strict InitData may be authorized for real keys.
 
 At boot the agent forces private AA/CDH startup, restricts their parent directory
-to 0700 and does not start the REST helper, even if host configuration requests
+and the attestation-agent socket directory to 0700 and does not start the REST helper, even if host configuration requests
 it. It starts the private storage service and waits for its socket before
 accepting container RPCs. Existing private state cannot be silently adopted.
 
@@ -54,8 +58,17 @@ cargo +1.94.1 build --locked --release -p kata-agent --no-default-features \
   --features init-data,agent-policy
 ```
 
-Six tests pass, covering the actual runtime shape, independent privilege escape
+Eight tests pass, covering the actual runtime shape, independent privilege escape
 attempts, mount/path aliases, sandbox hooks/modules/recreation and cleanup
-admission. The source preparation is hash-locked and verified against a clean
+admission, discarded-copy bounds and exact Kubernetes label selection. The name
+check uses `io.kubernetes.container.name`, matching the strict policy; CRI-O
+provides a composite value in `io.kubernetes.cri-o.ContainerName`. No alternate
+label is accepted as a fallback. The source preparation is hash-locked and verified against a clean
 copy. Existing downstream `unused_unsafe` warnings remain. These are compilation
 and structural/lifecycle unit tests, not completed confidential storage tests.
+
+The [live RO PVC checkpoint](../../../docs/confidential-storage/native-ro-pvc.md)
+passed actual key retrieval, hash verification, denied admin exec and cleanup.
+A completed service denial is closed before returning to the host, while guest
+networking is available; a transport error or failed cleanup retains ownership.
+Model inference and the RW service integration remain outstanding.

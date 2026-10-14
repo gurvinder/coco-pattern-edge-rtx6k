@@ -62,7 +62,7 @@ index 504644a..d0db9e1 100644
          return Ok(());
      }
 diff --git a/src/agent/src/rpc.rs b/src/agent/src/rpc.rs
-index f9df3e1..7e4de3a 100644
+index f9df3e1..7019ca5 100644
 --- a/src/agent/src/rpc.rs
 +++ b/src/agent/src/rpc.rs
 @@ -204,8 +204,9 @@ impl AgentService {
@@ -286,16 +286,19 @@ index f9df3e1..7e4de3a 100644
          is_allowed(&req).await?;
  
          do_set_guest_date_time(req.Sec, req.Usec).map_ttrpc_err(same)?;
-@@ -1589,6 +1643,8 @@ impl agent_ttrpc::AgentService for AgentService {
+@@ -1589,6 +1643,11 @@ impl agent_ttrpc::AgentService for AgentService {
          req: protocols::agent::CopyFileRequest,
      ) -> ttrpc::Result<Empty> {
          trace_rpc_call!(ctx, "copy_file", req);
 +        let storage = crate::storage_service::lock().await.map_ttrpc_err(same)?;
-+        storage.deny_mutation().map_ttrpc_err(same)?;
++        if storage.discard_host_copy(&req).map_ttrpc_err(same)? {
++            return Ok(Empty::new());
++        }
++        drop(storage);
          #[cfg(feature = "agent-policy")]
          {
              let req_for_policy: PolicyCopyFileRequest = (&req)
-@@ -1683,6 +1739,8 @@ impl agent_ttrpc::AgentService for AgentService {
+@@ -1683,6 +1742,8 @@ impl agent_ttrpc::AgentService for AgentService {
          req: protocols::agent::AddSwapRequest,
      ) -> ttrpc::Result<Empty> {
          trace_rpc_call!(ctx, "add_swap", req);
@@ -304,7 +307,7 @@ index f9df3e1..7e4de3a 100644
          is_allowed(&req).await?;
  
          do_add_swap(&self.sandbox, &req).await.map_ttrpc_err(same)?;
-@@ -1696,6 +1754,8 @@ impl agent_ttrpc::AgentService for AgentService {
+@@ -1696,6 +1757,8 @@ impl agent_ttrpc::AgentService for AgentService {
          req: protocols::agent::AddSwapPathRequest,
      ) -> ttrpc::Result<Empty> {
          trace_rpc_call!(ctx, "add_swap_path", req);
@@ -313,7 +316,7 @@ index f9df3e1..7e4de3a 100644
          is_allowed(&req).await?;
  
          do_add_swap_path(&req).await.map_ttrpc_err(same)?;
-@@ -1710,6 +1770,8 @@ impl agent_ttrpc::AgentService for AgentService {
+@@ -1710,6 +1773,8 @@ impl agent_ttrpc::AgentService for AgentService {
          req: protocols::agent::SetPolicyRequest,
      ) -> ttrpc::Result<Empty> {
          trace_rpc_call!(ctx, "set_policy", req);
@@ -322,7 +325,7 @@ index f9df3e1..7e4de3a 100644
  
          do_set_policy(&req).await?;
  
-@@ -1722,6 +1784,8 @@ impl agent_ttrpc::AgentService for AgentService {
+@@ -1722,6 +1787,8 @@ impl agent_ttrpc::AgentService for AgentService {
          req: protocols::agent::GetDiagnosticDataRequest,
      ) -> ttrpc::Result<protocols::agent::GetDiagnosticDataResponse> {
          trace_rpc_call!(ctx, "get_diagnostic_data", req);

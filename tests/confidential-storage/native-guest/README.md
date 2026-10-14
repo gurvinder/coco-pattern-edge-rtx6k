@@ -1,8 +1,9 @@
 # Private native-agent guest preparation
 
 Development artifacts only. No image produced here is automatically approved for
-keys or installed. The live handler still uses the earlier RAM-disk diagnostic.
-Neither actual confidential PVC E2E has passed.
+keys or installed. The separate test handler now runs this native integration.
+The [live RO PVC hash-verification checkpoint](../../../docs/confidential-storage/native-ro-pvc.md)
+passed; model inference and the RW example remain incomplete.
 
 `build.py` produces a pinned base plus compressed newc overlay. It replaces only
 `/usr/bin/kata-agent`; all other additions must be new paths. Tools, modules and
@@ -54,7 +55,8 @@ cargo +1.94.1 test --locked -p kata-agent --no-default-features \
 ```
 
 The initial workload verifies all nine published file hashes and rejects writes.
-It is not an inference server, and its policy is not yet live-validated. No broad
+It is not an inference server. The strict policy has admitted the live request;
+actual activation/key/PVC hash verification has now passed. No broad
 policy or diagnostic InitData may be admitted as a fallback when it rejects.
 
 `prepare-authority.py` creates a fresh actual RO owner record from the published
@@ -65,7 +67,56 @@ and KBS share the isolated TLS identity on separately pinned ports.
 
 The recorded candidate guest rebuilds byte-for-byte. `measure.py` calculates its
 SNP launch measurement independently from pinned kernel, firmware and candidate
-initrd, using the intended warning-level agent logging command line. It remains
-uninstalled and unapproved for keys until live configuration, policy and private
-boundary checks pass. See public build/measurement metadata under
+initrd, using the intended warning-level agent logging command line. Each new image remains
+unapproved until live configuration, policy and private boundary checks pass.
+The exact recorded v9 image is installed and authorized only for the isolated
+verification workload. See public build/measurement metadata under
 `../evidence/2026-10-14/native-integration/`.
+
+
+`chart/` renders the isolated RO probe using the already populated model PVC and
+`kata-snp-storage-probe`. It requires generated InitData and workload values,
+permits only the test namespace, disables the service-account token and runs UID
+1000 with a read-only rootfs, no privilege escalation and all capabilities dropped.
+The block attachment is an agent transport input; it must be removed before the
+app starts and replaced by the guest's verified read-only `/models` mount.
+
+```sh
+python3 prepare-policy.py --output /scratch/model-policy
+# Run from this directory; construct only public chart values.
+python3 - <<'PYVALUES'
+import json
+from pathlib import Path
+p = Path("/scratch/model-policy")
+v = {"initdata": (p / "initdata.value").read_text(),
+     "workload": json.loads((p / "workload.json").read_text())}
+Path("/scratch/model-probe-values.json").write_text(json.dumps(v))
+PYVALUES
+helm template storage-model-probe chart --namespace confidential-storage-test \
+  -f /scratch/model-probe-values.json > /scratch/model-probe.yaml
+# Only after the matching measured image/authority are installed:
+oc create -f /scratch/model-probe.yaml
+```
+
+Do not treat a pending pod as a passed test. Capture events by pod UID because
+recreated pods reuse the name. A failed first activation deliberately retains its
+reservation; subsequent `only one measured consumer per guest` errors can be
+secondary retries. Inspect the first fixed service-stage denial before deleting
+the test pod, and preserve authority state for conservative recovery.
+
+
+For the eventual exact resource rule, use `prepare-release-policy.py` with the
+independently calculated measurement and the raw generated InitData TOML. Run
+`kbs-policy-tests.rs` as a `policy-engine` example in the pinned Trustee tree:
+
+```sh
+cargo +1.95.0 run --locked --release -p policy-engine \
+  --example storage_release_test -- /scratch/release.rego
+```
+
+The policy file consumed by KBS is `storage/kbs/resource-policy.rego`. The original
+setup omitted `.rego`, causing upstream's default rule to load instead. No key
+existed then; this was fixed and live deny-all verified before provisioning.
+`test_native_kbs_package.py` prevents regression of this filename contract.
+Package the authority's sibling `confidential-storage-guest/profiles` directory,
+preserve private directory permissions, and verify the server actually starts.

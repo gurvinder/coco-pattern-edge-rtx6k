@@ -1,0 +1,12 @@
+{
+  "-append": "tsc=reliable no_timer_check rcupdate.rcu_expedited=1 i8042.direct=1 i8042.dumbkbd=1 i8042.nopnp=1 i8042.noaux=1 noreplace-smp reboot=k cryptomgr.notests net.ifnames=0 pci=lastbus=0 console=hvc0 console=hvc1 quiet panic=1 nr_cpus=1 selinux=0 scsi_mod.scan=none agent.launch_process_timeout=6 agent.log=warn cgroup_no_v1=all systemd.unified_cgroup_hierarchy=1",
+  "-smp": "1,cores=1,threads=1,sockets=1,maxcpus=1",
+  "-cpu": "EPYC-v4,pmu=off",
+  "-kernel": "/usr/share/kata-containers/osbuilder-images/6.12.0-211.16.1.el10_2.x86_64/vmlinuz",
+  "-bios": "/usr/share/edk2/ovmf/OVMF.amdsev.fd",
+  "-initrd": "/var/opt/kata-storage-test/private-aa-probe-94354456b0c3/initrd-native-v9",
+  "commandLineMatchesIndependentReference": true,
+  "sevObjects": [
+    "sev-snp-guest,id=snp,cbitpos=51,reduced-phys-bits=1,kernel-hashes=on,policy=196608,host-data=6DM+BOdQqF2lMReGhdWJjjeOU5BoD/4CYfQMLt+SjVc="
+  ]
+}

@@ -127,7 +127,7 @@ def prepare(output, guest_path):
     }
     (output / "config.json").write_text(json.dumps(config, indent=2) + "\n")
     (output / "storage/kbs").mkdir(parents=True)
-    (output / "storage/kbs/resource-policy").write_text(
+    (output / "storage/kbs/resource-policy.rego").write_text(
         "package policy\nimport rego.v1\ndefault allow := false\n"
     )
     print(

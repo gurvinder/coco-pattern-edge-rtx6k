@@ -5,13 +5,13 @@
   "files": {
     "vmlinuz": "0317da8a23853124ed4e4da6c56254f40a741ff4507e1afbbcb7f32e5c097206",
     "OVMF.amdsev.fd": "1aa196fe94e56809aa668fc4eabfc50923131288e018bcf0c6ab4dd3581bd850",
-    "storage-native-v2.initrd": "43ac494dbd94646c128c892814d3aa36040bbf58f4f9de2cc472e71d88303328"
+    "storage-native-v9.initrd": "faa4ad26059479efec301ee6ecd67354781950c348fc512f0e24cdde1d3b2503"
   },
   "vcpus": 1,
   "vcpuType": "EPYC-v4",
   "guestFeatures": "0x1",
   "kernelCommandLine": "tsc=reliable no_timer_check rcupdate.rcu_expedited=1 i8042.direct=1 i8042.dumbkbd=1 i8042.nopnp=1 i8042.noaux=1 noreplace-smp reboot=k cryptomgr.notests net.ifnames=0 pci=lastbus=0 console=hvc0 console=hvc1 quiet panic=1 nr_cpus=1 selinux=0 scsi_mod.scan=none agent.launch_process_timeout=6 agent.log=warn cgroup_no_v1=all systemd.unified_cgroup_hierarchy=1",
-  "launchMeasurement": "609d972bfb8c6056e3e71ba9c9f9053bcb54c396dd30d8851a154a7b60a9027b3a8d3a691b0c2a60fc9858707ea5e24b",
+  "launchMeasurement": "35ec767b3bd226d710425a775c81b4a25e53a200dedd6a147c1ca02e33031dcf09554d96f7cdf9163750a4f3f390cfbe",
   "reportedTcb": {
     "bootloader": 3,
     "tee": 2,

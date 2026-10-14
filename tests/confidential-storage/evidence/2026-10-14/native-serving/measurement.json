@@ -1,0 +1,21 @@
+{
+  "purpose": "native-private-storage-candidate",
+  "approvedForStorageKeys": false,
+  "calculator": "sev-snp-measure==0.0.13",
+  "files": {
+    "vmlinuz": "0317da8a23853124ed4e4da6c56254f40a741ff4507e1afbbcb7f32e5c097206",
+    "OVMF.amdsev.fd": "1aa196fe94e56809aa668fc4eabfc50923131288e018bcf0c6ab4dd3581bd850",
+    "storage-native-v12.initrd": "c8fb65e0013a2715d07559501dd56a54442d81c3d13c243f87ce308a7174fee1"
+  },
+  "vcpus": 1,
+  "vcpuType": "EPYC-v4",
+  "guestFeatures": "0x1",
+  "kernelCommandLine": "tsc=reliable no_timer_check rcupdate.rcu_expedited=1 i8042.direct=1 i8042.dumbkbd=1 i8042.nopnp=1 i8042.noaux=1 noreplace-smp reboot=k cryptomgr.notests net.ifnames=0 pci=lastbus=0 console=hvc0 console=hvc1 quiet panic=1 nr_cpus=1 selinux=0 scsi_mod.scan=none agent.launch_process_timeout=6 agent.log=warn cgroup_no_v1=all systemd.unified_cgroup_hierarchy=1",
+  "launchMeasurement": "b1c7539897de7c630afb70b48f2f9996c3d742e740d86cbc9216a827173ddfc1662e4008832cba0dfdb8760418dde276",
+  "reportedTcb": {
+    "bootloader": 3,
+    "tee": 2,
+    "snp": 6,
+    "microcode": 117
+  }
+}

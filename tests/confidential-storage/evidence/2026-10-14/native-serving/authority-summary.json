@@ -1,0 +1,42 @@
+[
+  {
+    "volume_id": "qwen-luks-model-v1",
+    "state": "Ready",
+    "revoked": true,
+    "owner": null,
+    "actions": [
+      "register",
+      "approve-published-model",
+      "begin-reopen",
+      "close",
+      "begin-reopen",
+      "close",
+      "revoke"
+    ]
+  },
+  {
+    "volume_id": "qwen-luks-serving-v1",
+    "state": "Ready",
+    "revoked": true,
+    "owner": null,
+    "actions": [
+      "register",
+      "approve-published-model",
+      "revoke"
+    ]
+  },
+  {
+    "volume_id": "qwen-luks-serving-v2",
+    "state": "Ready",
+    "revoked": false,
+    "owner": null,
+    "actions": [
+      "register",
+      "approve-published-model",
+      "begin-reopen",
+      "close",
+      "begin-reopen",
+      "close"
+    ]
+  }
+]

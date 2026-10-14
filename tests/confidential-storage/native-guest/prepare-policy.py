@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare strict RO verification-workload InitData, with no storage key.
-
-This is a file-hash/RO verification workload, not yet a model inference server.
+"""Prepare strict RO verification or CPU inference InitData, with no storage key.
 Admission must be tested with the exact downstream Regorus and live agent.
 """
 import argparse
@@ -21,7 +19,7 @@ IMAGE = (
 )
 
 
-def prepare(output):
+def prepare(output, mode="verify"):
     output.mkdir()
     descriptor = json.loads(
         (
@@ -74,6 +72,41 @@ def prepare(output):
             "KUBERNETES_PORT_443_TCP_PORT=443",
         ],
     }
+    if mode == "serve":
+        image = json.loads((HERE / "serving-image.json").read_text())
+        program = (
+            (HERE / "model-server.py")
+            .read_text()
+            .replace("__INVENTORY_JSON__", repr(descriptor["files"]))
+        )
+        overrides = {
+            "NVIDIA_VISIBLE_DEVICES": "void",
+            "CUDA_VISIBLE_DEVICES": "",
+            "TMPDIR": "/dev/shm",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "HF_HOME": "/dev/shm/hf",
+            "HF_HUB_OFFLINE": "1",
+            "TRANSFORMERS_OFFLINE": "1",
+            "TOKENIZERS_PARALLELISM": "false",
+            "OMP_NUM_THREADS": "1",
+            "MKL_NUM_THREADS": "1",
+        }
+        environment = dict(item.split("=", 1) for item in workload["environment"])
+        environment.update(item.split("=", 1) for item in image["environment"])
+        environment.update(overrides)
+        workload.update(
+            image=image["image"],
+            args=[image["python"], "-c", program],
+            # Kata/CRI-O may replace the OCI PATH even when explicitly set.
+            # Both accepted values come from pinned image/runtime inputs.
+            environment=sorted(
+                set(
+                    [f"{k}={v}" for k, v in environment.items()]
+                    + [workload["environment"][0]]
+                )
+            ),
+            podEnvironment=[{"name": k, "value": v} for k, v in overrides.items()],
+        )
     policy = (
         (HERE / "policy.rego.in")
         .read_text()
@@ -92,6 +125,8 @@ def prepare(output):
     initdata = 'version = "0.1.0"\nalgorithm = "sha256"\n\n[data]\n'
     initdata += "".join(f"{json.dumps(k)} = {json.dumps(v)}\n" for k, v in data.items())
     raw = initdata.encode()
+    if len(raw) > 65536:
+        raise ValueError("InitData exceeds guest limit")
     (output / "initdata.toml").write_bytes(raw)
     (output / "initdata.value").write_text(
         base64.b64encode(gzip.compress(raw, mtime=0)).decode()
@@ -112,4 +147,6 @@ def prepare(output):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
-    prepare(parser.parse_args().output)
+    parser.add_argument("--mode", choices=("verify", "serve"), default="verify")
+    args = parser.parse_args()
+    prepare(args.output, args.mode)

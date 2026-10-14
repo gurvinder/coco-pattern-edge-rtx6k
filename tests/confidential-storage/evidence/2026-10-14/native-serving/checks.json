@@ -1,0 +1,56 @@
+{
+  "scope": "isolated-live-SNP-RO-encrypted-model-inference",
+  "roModelServingCompleted": true,
+  "rwInitializationCompleted": false,
+  "productionUnchanged": true,
+  "podUid": "bf8073ef-9f2f-4d53-a798-3702c7b2436a",
+  "node": "9c-63-c0-dd-06-52",
+  "runtime": "kata-snp-storage-probe",
+  "podIp": "10.128.1.11",
+  "image": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+  "cpuOnly": true,
+  "engine": "Transformers AutoModelForCausalLM, BF16 CPU, not vLLM",
+  "guestMemoryMiB": 49152,
+  "vcpus": 1,
+  "modelFilesVerified": 9,
+  "uid": 1000,
+  "gid": 1000,
+  "effectiveCapabilities": 0,
+  "noNewPrivileges": true,
+  "modelMountReadonly": true,
+  "rawDeviceAndCdhSocketAbsent": true,
+  "adminExecDenied": true,
+  "liveDenyAllPolicyDeny": true,
+  "unapprovedModelHttpStatus": 400,
+  "allAuthorityOwnersClosed": true,
+  "initrdSha256": "c8fb65e0013a2715d07559501dd56a54442d81c3d13c243f87ce308a7174fee1",
+  "launchMeasurement": "b1c7539897de7c630afb70b48f2f9996c3d742e740d86cbc9216a827173ddfc1662e4008832cba0dfdb8760418dde276",
+  "initDataSha256": "3e51184404f1258d128f3b0b51fc08ce62131d71e7b94f5a1bc14dcfc8ed04d6",
+  "policySha256": "71818751ba7fee4d56f056778d14325dae8483b850da56091958f4cd05fcdd15",
+  "strictAgentPolicyTest": {
+    "passed": 1,
+    "negativeVariants": 16
+  },
+  "kbsRuleTests": {
+    "positive": 1,
+    "negatives": 15,
+    "denyAll": 1
+  },
+  "authorityUpgradeTests": {
+    "passed": 2
+  },
+  "inferenceRequests": 4,
+  "qualityCanaries": {
+    "capitalOfFrance": "Paris",
+    "onePlusOne": "2",
+    "twoPlusTwoIncorrect": "2",
+    "exactHelloNotFollowed": true
+  },
+  "limitations": [
+    "No GPU allocated; production GPU workload unchanged",
+    "Internal HTTP public test prompts; no TLS/private-prompt claim",
+    "Lab authority/KBS in temporary compiler; not production durable infrastructure",
+    "dm-verity read-only model integrity; RW native initializer remains incomplete"
+  ],
+  "guestImageRebuildByteIdentical": true
+}

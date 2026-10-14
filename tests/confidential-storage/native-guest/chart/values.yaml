@@ -4,3 +4,6 @@ claim: qwen-luks-model-v1
 workload:
   image: ""
   args: []
+deadlineSeconds: 300
+memoryRequest: 2Gi
+memoryLimit: 4Gi

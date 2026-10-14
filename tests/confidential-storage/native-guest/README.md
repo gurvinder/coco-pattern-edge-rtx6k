@@ -120,3 +120,13 @@ existed then; this was fixed and live deny-all verified before provisioning.
 `test_native_kbs_package.py` prevents regression of this filename contract.
 Package the authority's sibling `confidential-storage-guest/profiles` directory,
 preserve private directory permissions, and verify the server actually starts.
+
+
+## CPU inference mode
+
+`prepare-policy.py --mode serve` embeds the exact Qwen server and verified file
+inventory. The [live serving guide](../../../docs/confidential-storage/native-model-serving.md)
+records the completed SNP/Trustee/OCI-populated PVC inference, actual responses,
+negative tests and reproduction. This uses Transformers on CPU; it does not take
+a GPU from production. The default `--mode verify` remains the small hash-check
+workload. Native RW initialization is still incomplete.

@@ -1,0 +1,116 @@
+[
+  {
+    "request": {
+      "model": "qwen3-0.6b-luks",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are a helpful assistant."
+        },
+        {
+          "role": "user",
+          "content": "What is the capital of France?"
+        }
+      ],
+      "max_tokens": 32,
+      "temperature": 0
+    },
+    "response": {
+      "model": "qwen3-0.6b-luks",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "The capital of France is **Paris**."
+          }
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 30,
+        "completion_tokens": 10,
+        "total_tokens": 40
+      },
+      "test": {
+        "device": "cpu",
+        "elapsed_seconds": 1.636
+      }
+    }
+  },
+  {
+    "request": {
+      "model": "qwen3-0.6b-luks",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are a helpful assistant."
+        },
+        {
+          "role": "user",
+          "content": "Reply with exactly the word hello."
+        }
+      ],
+      "max_tokens": 32,
+      "temperature": 0
+    },
+    "response": {
+      "model": "qwen3-0.6b-luks",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Hello! \ud83d\ude0a"
+          }
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 30,
+        "completion_tokens": 5,
+        "total_tokens": 35
+      },
+      "test": {
+        "device": "cpu",
+        "elapsed_seconds": 1.201
+      }
+    }
+  },
+  {
+    "request": {
+      "model": "qwen3-0.6b-luks",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are a helpful assistant."
+        },
+        {
+          "role": "user",
+          "content": "What is 1 + 1?"
+        }
+      ],
+      "max_tokens": 32,
+      "temperature": 0
+    },
+    "response": {
+      "model": "qwen3-0.6b-luks",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "1 + 1 equals 2."
+          }
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 31,
+        "completion_tokens": 9,
+        "total_tokens": 40
+      },
+      "test": {
+        "device": "cpu",
+        "elapsed_seconds": 1.568
+      }
+    }
+  }
+]

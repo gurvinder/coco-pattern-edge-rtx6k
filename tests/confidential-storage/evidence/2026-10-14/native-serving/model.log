@@ -1,0 +1,12 @@
+STORAGE_MODEL_SERVER_HASHES_PASS uid=1000 capabilities=0 readonly=true
+/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py:63: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+STORAGE_MODEL_SERVER_READY port=8080 device=cpu
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+STORAGE_MODEL_INFERENCE_PASS
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+STORAGE_MODEL_INFERENCE_PASS
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+STORAGE_MODEL_INFERENCE_PASS
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+STORAGE_MODEL_INFERENCE_PASS

@@ -4,6 +4,42 @@ Checkpoint: 13 October 2026, branch `dev/confidential-storage-integration`, base
 on proposal/handoff commit `e4a3616`. Read the [report](compatibility-report.md)
 before making changes. The original six-phase handoff still defines completion.
 
+## Latest checkpoint: encrypted model inference completed
+
+**14 October, 01:50 UTC:** [native model serving](native-model-serving.md) passed
+from the actual OCI-populated RO PVC inside the unprivileged SNP guest. Four HTTP
+requests executed real local Qwen3-0.6B CPU inference; Paris and 1+1 canaries passed,
+but the first 2+2 answer was incorrect and is retained. UID 1000/capabilities zero,
+all nine file hashes, RO mount, raw device/CDH absence and admin-exec denial passed.
+Actual KBS deny-all failed key retrieval and closed cleanly; successful serving
+also closed. Production audit is unchanged. **RW initialization remains incomplete.**
+
+Current test image is `initrd-native-v12`, SHA-256
+`c8fb65e0013a2715d07559501dd56a54442d81c3d13c243f87ce308a7174fee1`, same
+agent/service binaries as v9. Serving policy v2 and guest public config are in local
+`/private/tmp/storage-native-serving-policy-v2` and
+`/private/tmp/storage-native-serving-guest-v2.json`. Test handler boot memory is now
+49152 MiB and create-container timeout 600 seconds. CRI-O PID 694089, no reload.
+The successful/diagnostic/probe pods were removed; the PVCs remain.
+
+Authority v4 database/signers remain intact. `qwen-luks-model-v1` and
+`qwen-luks-serving-v1` records are revoked; `qwen-luks-serving-v2` is Ready/no owner.
+Do not reconstruct old state or undo revocation. AS and KBS CPU/resource policies
+now pin v12 and serving InitData. The retained single model key is unchanged.
+Latest consistent private backup is
+`work/confidential-storage-private/storage-native-serving-v12-20261014.tar.gz`;
+all owners were closed when captured. Keep this newer backup instead of restoring
+the old v4 snapshot. Compiler remains IP `10.128.1.245`, expires ~02:59 UTC;
+TLS expires ~07:55 UTC. Preserve updated state before either becomes unavailable.
+
+Next implement the actual Rust guest initializer using signed Plan/Begin/Step/
+Complete/Ready decisions, wire RW service/agent mount mode and run the untouched
+`storage-audit-data` PVC through first use, write, close and fresh-VM reopen.
+`components/confidential-storage-client/src/initialization.rs` already verifies
+signed decisions; `tests/confidential-storage/kernel-lab/init` has tested fixed
+cryptsetup/integrity/mkfs operations. Neither is yet a native RW execution path.
+Keep uncertain initialization ownership retained; never automatically reformat.
+
 ## Latest checkpoint: real SNP / Trustee / read-only model PVC
 
 **14 October, 01:11 UTC:** the [native RO PVC checkpoint](native-ro-pvc.md) passed.

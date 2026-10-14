@@ -80,11 +80,12 @@ clusterGroup:
           value: "false"
     gpu-workload:
       overrides:
-        # Reuse this demo GPU for Qwen; the encrypted-array test stays enabled.
+        # Dedicate both GPUs to Qwen: original service plus RO/RW storage service.
+        # Keep the standalone vector and encrypted-file demos disabled.
         - name: vectorAddReplicas
           value: "0"
         - name: encryptedFileTest.enabled
-          value: "true"
+          value: "false"
       name: gpu-workload
       namespace: gpu-workload
       project: workloads

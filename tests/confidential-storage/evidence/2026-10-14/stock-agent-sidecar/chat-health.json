@@ -1,0 +1,15 @@
+{
+  "scope": "chatbot page reachability; no inference request",
+  "checks": [
+    {
+      "port": 30080,
+      "status": 200,
+      "htmlBytes": 6863
+    },
+    {
+      "port": 30081,
+      "status": 200,
+      "htmlBytes": 6863
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "unchangedReadyAndRestarts": true,
+  "workloads": [
+    {
+      "namespace": "confidential-storage-test",
+      "name": "qwen-chat-777b4d7f44-tzch7",
+      "uid": "ee6a4a4b-2e67-4eea-b537-9dbd3b96804c",
+      "containers": {
+        "chat": [
+          true,
+          0
+        ]
+      }
+    },
+    {
+      "namespace": "confidential-storage-test",
+      "name": "qwen-storage-predictor-775f794c77-hlvrg",
+      "uid": "c7e5ca9d-6120-4057-b72d-2aeadabe41cb",
+      "containers": {
+        "kserve-container": [
+          true,
+          0
+        ]
+      }
+    },
+    {
+      "namespace": "gpu-workload",
+      "name": "encrypted-qwen-predictor-c68947bb9-gw9ml",
+      "uid": "d5cc3080-ae0b-4490-b145-56a216732566",
+      "containers": {
+        "kserve-container": [
+          true,
+          0
+        ],
+        "results": [
+          true,
+          0
+        ]
+      }
+    },
+    {
+      "namespace": "gpu-workload",
+      "name": "qwen-chat-6fd79bd4b-vvrqc",
+      "uid": "839d51fc-94fe-491b-9e77-cec5a4c1ae48",
+      "containers": {
+        "chat": [
+          true,
+          0
+        ]
+      }
+    }
+  ]
+}

@@ -34,6 +34,11 @@ capabilities. Confidential `emptyDir`, encrypted container-image storage and
 peer-pods storage are related work, but are not the persistent block-volume path
 implemented here. See the [upstream reuse discussion](../encrypted-model-volume-proposal.md).
 
+**Separate sidecar experiment:** [stock-agent mount transfer](stock-agent-sidecar-experiment.md)
+subsequently demonstrated RO/RW mounts into an unprivileged container without an
+agent patch. It is an isolated no-key test, not a replacement for the validated
+Qwen deployment or its lifecycle/attestation guarantees.
+
 ## What we reuse without a source fork
 
 | Existing layer | Role in the implemented path | Configuration we supplied |

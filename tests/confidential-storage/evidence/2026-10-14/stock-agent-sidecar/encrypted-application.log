@@ -1,0 +1,2 @@
+{"result": "PASS", "uid": 1001, "gid": 1001, "capEff": "0000000000000000", "noNewPrivs": "1", "mounts": ["403 389 0:49 / /data rw,relatime - tmpfs tmpfs rw,inode64", "404 389 0:50 / /models/qwen rw,relatime - tmpfs tmpfs rw,inode64", "412 404 252:1 / /models/qwen ro,nosuid,nodev,noexec,relatime - ext4 /dev/mapper/sidecar-model ro,norecovery", "413 403 252:3 / /data rw,nosuid,nodev,noexec,relatime - ext4 /dev/mapper/sidecar-data rw"], "roWriteDenied": true, "rwFsyncReadback": true, "privateResourcesDenied": true, "inferenceTested": false}
+APPLICATION_MOUNTS_REMOVED_PASS

@@ -1,0 +1,15 @@
+{"sidecarPid": 2, "applicationPid": 3, "sidecarMountNS": "mnt:[4026532391]", "applicationMountNS": "mnt:[4026532393]", "tools": {"cryptsetup": null, "dmsetup": null, "mkfs.ext4": "/usr/sbin/mkfs.ext4", "mount": "/usr/bin/mount"}}
+{"mountSource": "tmpfs", "mountTarget": "/mnt/ro", "flags": 14}
+{"mountSource": "tmpfs", "mountTarget": "/mnt/rw", "flags": 14}
+{"mountSource": "tmpfs", "mountTarget": "/mnt/private", "flags": 14}
+ENTER_CONSUMER_MOUNT_NS
+ENTER_CONSUMER_ROOT
+CONSUMER_ROOT_ENTERED
+ATTACH_DETACHED_MOUNT /models/qwen
+{"mountSource": null, "mountTarget": "/models/qwen", "flags": 4143}
+ATTACH_DETACHED_MOUNT /data
+{"mountSource": null, "mountTarget": "/data", "flags": 4142}
+ENTER_CONSUMER_MOUNT_NS
+ENTER_CONSUMER_ROOT
+CONSUMER_ROOT_ENTERED
+SIDECAR_MOUNT_SHARE_AND_CLEANUP_PASS

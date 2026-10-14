@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-14",
+  "pod": "stock-agent-sidecar-mounts-v5",
+  "uid": "f0a5a97e-8612-4218-a054-20b0f62fffad",
+  "namespace": "confidential-sidecar-test",
+  "phase": "Succeeded",
+  "runtimeClass": "kata-cc",
+  "scc": "confidential-sidecar-probe",
+  "containers": [
+    {
+      "name": "storage-sidecar",
+      "image": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+      "securityContext": {
+        "privileged": true,
+        "runAsUser": 0
+      }
+    },
+    {
+      "name": "application",
+      "image": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+      "securityContext": {
+        "allowPrivilegeEscalation": false,
+        "capabilities": {
+          "drop": [
+            "ALL"
+          ]
+        },
+        "privileged": false,
+        "readOnlyRootFilesystem": true,
+        "runAsGroup": 1001,
+        "runAsNonRoot": true,
+        "runAsUser": 1001,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      }
+    }
+  ],
+  "stockRuntimeConfigSha256": "eaaef2096a34cea8a2a945b48b0f1a9e66b429b31de7bed25a31ebe23d124f87",
+  "stockInitrdSha256": "1f9b3a90c60ec7a94985ae966fc66ecb4d04055ca3471b9f0074068f4dac8b62",
+  "stockAgentSha256": "7592b09b0a8e57837f47c46f03d4844d1a010d30d469dcd11df99fdd22b2e6d4",
+  "kernelSha256": "0317da8a23853124ed4e4da6c56254f40a741ff4507e1afbbcb7f32e5c097206",
+  "scope": "tmpfs mount transfer into unchanged vLLM image; no inference, KBS or persistent volume test"
+}

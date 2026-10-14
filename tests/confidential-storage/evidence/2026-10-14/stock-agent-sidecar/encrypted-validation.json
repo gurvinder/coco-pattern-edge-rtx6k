@@ -1,0 +1,89 @@
+{
+  "observedAt": "2026-10-14T14:56:15.937490+00:00",
+  "pod": "stock-agent-sidecar-encrypted-final",
+  "uid": "d9cc7e47-dd9a-46a1-ae88-20c5c11c4480",
+  "namespace": "confidential-sidecar-test",
+  "phase": "Succeeded",
+  "runtimeClass": "kata-cc",
+  "scc": "confidential-sidecar-probe",
+  "containers": [
+    {
+      "name": "storage-sidecar",
+      "image": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+      "securityContext": {
+        "privileged": true,
+        "runAsUser": 0
+      },
+      "commandSha256": "0ca70161419761a77ec616b32a8d6c331243d3208e8434686132309dca22f246"
+    },
+    {
+      "name": "application",
+      "image": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+      "securityContext": {
+        "allowPrivilegeEscalation": false,
+        "capabilities": {
+          "drop": [
+            "ALL"
+          ]
+        },
+        "privileged": false,
+        "readOnlyRootFilesystem": true,
+        "runAsGroup": 1001,
+        "runAsNonRoot": true,
+        "runAsUser": 1001,
+        "seccompProfile": {
+          "type": "RuntimeDefault"
+        }
+      },
+      "commandSha256": "b549e28a4624b22b7a5de9b515fe15f2c095ae5ae8018331f18963cf3614c2ae"
+    }
+  ],
+  "applicationResult": {
+    "result": "PASS",
+    "uid": 1001,
+    "gid": 1001,
+    "capEff": "0000000000000000",
+    "noNewPrivs": "1",
+    "mounts": [
+      "403 389 0:49 / /data rw,relatime - tmpfs tmpfs rw,inode64",
+      "404 389 0:50 / /models/qwen rw,relatime - tmpfs tmpfs rw,inode64",
+      "412 404 252:1 / /models/qwen ro,nosuid,nodev,noexec,relatime - ext4 /dev/mapper/sidecar-model ro,norecovery",
+      "413 403 252:3 / /data rw,nosuid,nodev,noexec,relatime - ext4 /dev/mapper/sidecar-data rw"
+    ],
+    "roWriteDenied": true,
+    "rwFsyncReadback": true,
+    "privateResourcesDenied": true,
+    "inferenceTested": false
+  },
+  "stockAgentUnmodified": true,
+  "stockInitrdUnmodified": true,
+  "stockRuntimeConfigUnmodified": true,
+  "guestModulesAddedAtRuntime": [
+    "xor",
+    "async_tx",
+    "async_xor",
+    "dm-integrity"
+  ],
+  "toolBundle": {
+    "bundleSha256": "c4230b2b6ed01202beffdd7e9213567651239ecc72a1d8797664223c16b9c33f",
+    "bytes": 13783040,
+    "files": 31
+  },
+  "syntheticDiskBytesEach": 134217728,
+  "persistentPVCsUsed": false,
+  "trusteeKeyReleaseTested": false,
+  "gpuInferenceTested": false,
+  "reopenScope": "same VM, after closing LUKS mapping",
+  "checks": [
+    "LUKS + verity RO mount",
+    "LUKS + keyed dm-integrity RW mount",
+    "unprivileged application access",
+    "RO write EROFS",
+    "RW fsync/readback",
+    "application denied private helper key/device paths",
+    "mount removal",
+    "RW mapping close/reopen",
+    "mapping cleanup"
+  ],
+  "repositoryWideChecks": "pattern.sh preview-all and validate-schema blocked by sandbox access to local Podman socket; Helm lint/render, Python/Black and live tests passed"
+}

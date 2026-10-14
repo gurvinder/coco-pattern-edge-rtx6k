@@ -1,0 +1,132 @@
+{{- if ne .Release.Namespace "confidential-sidecar-test" }}
+{{- fail "Use only the separate confidential-sidecar-test namespace" }}
+{{- end }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Release.Namespace }}
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    security.openshift.io/scc.podSecurityLabelSync: "false"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: stock-sidecar-probe
+---
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: confidential-sidecar-probe
+allowPrivilegedContainer: true
+allowPrivilegeEscalation: true
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowedCapabilities: ['*']
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+fsGroup:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+seccompProfiles: ['runtime/default', 'unconfined']
+volumes: [emptyDir, persistentVolumeClaim]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: stock-sidecar-probe
+rules:
+  - apiGroups: [security.openshift.io]
+    resources: [securitycontextconstraints]
+    resourceNames: [confidential-sidecar-probe]
+    verbs: [use]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stock-sidecar-probe
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: stock-sidecar-probe
+subjects:
+  - kind: ServiceAccount
+    name: stock-sidecar-probe
+    namespace: {{ .Release.Namespace }}
+{{- if .Values.workload.enabled }}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Values.podName }}
+  labels:
+    coco.io/skip-initdata: "true"
+    app: stock-sidecar-probe
+  annotations:
+    io.katacontainers.config.hypervisor.cc_init_data: {{ required "Explicit no-key diagnostic InitData required" .Values.initdata | quote }}
+    openshift.io/required-scc: confidential-sidecar-probe
+    io.katacontainers.config.runtime.create_container_timeout: "300"
+    io.katacontainers.config.hypervisor.default_memory: "65536"
+    io.katacontainers.config.hypervisor.default_vcpus: "4"
+spec:
+  serviceAccountName: stock-sidecar-probe
+  automountServiceAccountToken: false
+  runtimeClassName: {{ .Values.runtimeClassName }}
+  restartPolicy: Never
+  activeDeadlineSeconds: 600
+  shareProcessNamespace: true
+  securityContext:
+    fsGroup: 1001
+  containers:
+    - name: storage-sidecar
+      image: {{ .Values.image | quote }}
+      command: [python3, -u, -c]
+      args:
+        - {{ printf "%s\n%s" (.Files.Get "files/encrypted.py") (.Files.Get "files/sidecar.py") | toYaml | nindent 10 }}
+      env:
+        - {name: ENCRYPTED_PROBE, value: {{ .Values.encrypted.enabled | quote }}}
+        - {name: TOOLS_SHA256, value: {{ .Values.encrypted.toolsSha256 | quote }}}
+      securityContext:
+        runAsUser: 0
+        privileged: true
+      resources:
+        requests: {cpu: "1", memory: 2Gi}
+        limits: {cpu: "2", memory: 4Gi}
+      volumeMounts:
+        - {name: rendezvous, mountPath: /rendezvous}
+    - name: application
+      image: {{ .Values.image | quote }}
+      command: [python3, -u, -c]
+      args:
+        - {{ .Files.Get "files/application.py" | toYaml | nindent 10 }}
+      securityContext:
+        runAsUser: 1001
+        runAsGroup: 1001
+        runAsNonRoot: true
+        privileged: false
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities: {drop: [ALL]}
+        seccompProfile: {type: RuntimeDefault}
+      resources:
+        requests: {cpu: "3", memory: 62Gi}
+        limits: {cpu: "4", memory: 66Gi}
+      volumeMounts:
+        - {name: rendezvous, mountPath: /rendezvous}
+        - {name: model-target, mountPath: /models/qwen}
+        - {name: data-target, mountPath: /data}
+  volumes:
+    - name: rendezvous
+      emptyDir: {medium: Memory, sizeLimit: 4Mi}
+    - name: model-target
+      emptyDir: {medium: Memory, sizeLimit: 4Mi}
+    - name: data-target
+      emptyDir: {medium: Memory, sizeLimit: 4Mi}
+
+{{- end }}

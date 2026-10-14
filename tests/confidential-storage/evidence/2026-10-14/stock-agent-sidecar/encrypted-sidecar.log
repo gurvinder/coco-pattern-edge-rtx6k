@@ -1,0 +1,20 @@
+{"sidecarPid": 2, "applicationPid": 3, "sidecarMountNS": "mnt:[4026532391]", "applicationMountNS": "mnt:[4026532393]", "tools": {"cryptsetup": null, "dmsetup": null, "mkfs.ext4": "/usr/sbin/mkfs.ext4", "mount": "/usr/bin/mount"}}
+{"mountSource": "tmpfs", "mountTarget": "/mnt/private", "flags": 14}
+{"loopModuleLoaded": true, "deviceMapperLoaded": true}
+{"mountSource": "/dev/mapper/sidecar-model", "mountTarget": "/mnt/ro", "flags": 14}
+{"mountSource": "/dev/mapper/sidecar-model", "mountTarget": "/mnt/ro", "flags": 15}
+{"mountSource": "/dev/mapper/sidecar-data", "mountTarget": "/mnt/rw", "flags": 14}
+SIDECAR_LUKS_VERITY_AND_KEYED_INTEGRITY_OPEN_PASS
+ENTER_CONSUMER_MOUNT_NS
+ENTER_CONSUMER_ROOT
+CONSUMER_ROOT_ENTERED
+ATTACH_DETACHED_MOUNT /models/qwen
+{"mountSource": null, "mountTarget": "/models/qwen", "flags": 4143}
+ATTACH_DETACHED_MOUNT /data
+{"mountSource": null, "mountTarget": "/data", "flags": 4142}
+ENTER_CONSUMER_MOUNT_NS
+ENTER_CONSUMER_ROOT
+CONSUMER_ROOT_ENTERED
+{"mountSource": "/dev/mapper/sidecar-data", "mountTarget": "/mnt/rw", "flags": 14}
+SIDECAR_ENCRYPTED_REOPEN_CLEANUP_PASS
+SIDECAR_MOUNT_SHARE_AND_CLEANUP_PASS

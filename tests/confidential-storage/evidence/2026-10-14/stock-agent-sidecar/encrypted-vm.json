@@ -1,0 +1,13 @@
+{
+  "pod": "stock-agent-sidecar-encrypted-final",
+  "uid": "d9cc7e47-dd9a-46a1-ae88-20c5c11c4480",
+  "qemu": {
+    "-name": "sandbox-ea13e699809652e1ce69ee5687368f7365c610db85cd00e9af0d07f5ad6e92bb,debug-threads=on",
+    "-machine": "q35,accel=kvm,kernel_irqchip=split,confidential-guest-support=snp",
+    "-kernel": "/usr/share/kata-containers/osbuilder-images/6.12.0-211.16.1.el10_2.x86_64/vmlinuz",
+    "-initrd": "/usr/share/kata-containers/osbuilder-images/6.12.0-211.16.1.el10_2.x86_64/kata-cc.initrd",
+    "-m": "65536M",
+    "-smp": "4,cores=1,threads=1,sockets=4,maxcpus=4",
+    "vfioAttached": false
+  }
+}

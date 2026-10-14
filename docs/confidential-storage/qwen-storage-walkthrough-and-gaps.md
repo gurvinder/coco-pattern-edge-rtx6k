@@ -490,6 +490,10 @@ enforcing model-generation freshness.
 
 ## Components: additions, changes and reuse
 
+The deployed Qwen path below uses our agent patch. A separate
+[stock-agent sidecar experiment](stock-agent-sidecar-experiment.md) demonstrates
+an alternative mount-delivery mechanism; it has a narrower validation scope.
+
 | Component / source | What we implemented or configured | Where it runs / privilege |
 | --- | --- | --- |
 | [Model publisher and populator](../../components/encrypted-model-populator/) | Encrypted Qwen disk packaging, OCI digest verification, custom source API, prime-PVC import/rebind; small namespace-colocation extension to vendored `lib-volume-populator` v3.2.0 | Trusted publisher handles plaintext; controller moves metadata; importer writes ciphertext as UID 0 with no added capabilities and `privileged: false` |

@@ -1,0 +1,4 @@
+apiVersion: v2
+name: stock-agent-sidecar-probe
+version: 0.1.0
+description: Isolated stock Kata mount-sharing experiment; no real keys or models

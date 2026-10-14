@@ -1,0 +1,11 @@
+podName: stock-agent-sidecar-mounts
+image: nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab
+runtimeClassName: kata-cc
+initdata: ""
+tools:
+  enabled: false
+encrypted:
+  enabled: false
+  toolsSha256: ""
+workload:
+  enabled: true

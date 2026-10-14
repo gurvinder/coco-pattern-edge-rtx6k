@@ -64,7 +64,10 @@ def main():
     request = parse(args.request.read_bytes(), MAX_BYTES)
     if request.get("kind") == "ConfigMap":
         request = parse(request["data"]["request.json"].encode(), MAX_BYTES)
-    artifacts = {n: (args.artifacts / n).read_text() for n in ARTIFACTS}
+    names = ARTIFACTS | (
+        {"sidecar-deployment.json"} if "deployment" in request else set()
+    )
+    artifacts = {n: (args.artifacts / n).read_text() for n in names}
     require(
         args.key.is_file()
         and not args.key.is_symlink()

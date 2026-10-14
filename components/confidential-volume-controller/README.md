@@ -2,7 +2,43 @@
 
 Namespace-scoped reconciliation for the existing `ConfidentialVolume` API and
 Pod/KServe binding format. It reuses the contract compiler; it never formats a
-disk, reads a Secret, retrieves a volume key, signs an approval or changes a pod.
+disk, reads a Secret, retrieves a volume key or signs an approval. It does not
+write Pods directly. The opt-in sidecar deployment mode now creates and updates
+approved KServe InferenceServices.
+
+## Automatic stock-sidecar deployment (0.3.0)
+
+Set `controller.sidecarWorkloads` to an explicit list of KServe target names and
+install the new `ConfidentialWorkload` CRD. The declaration holds the desired
+single-container application and ConfidentialVolume bindings; its generated
+InferenceService contains the reviewed sidecar. Keeping these separate prevents
+the controller's own injection from changing its approval request.
+
+The request binds the declaration UID, cluster identity, template and exact volume
+identities. A signed package adds `sidecar-deployment.json` to the original three
+public artifacts. The controller validates the measured configuration, publishes
+its immutable ConfigMap and creates/adopts/updates only an enabled KServe target.
+Adoption requires an explicitly approved existing UID and no other owner. Repeated
+reconciliation is idempotent; deleted generated workloads are recreated while the
+approval is valid. Invalid/expired approval prevents deployment but does not revoke
+keys or kill an existing workload.
+
+This opt-in mode adds ConfidentialWorkload reads/status writes and restricted
+InferenceService creation/update. A separate admission policy bounds creation to
+the configured namespace and names; update/delete RBAC uses resourceNames.
+Kubernetes requires delete permission on an existing dependent to set its owner
+reference during adoption; the reconciler itself does not send DELETE requests. There is no
+Secret read, PVC write, exec, signer or Trustee administration permission.
+
+See the [deployment guide, one-time installation requirements and per-volume
+approval steps](../../docs/confidential-storage/controller-sidecar-deployment.md).
+The existing offline signer is retained; automatic trusted approval issuance and
+renewal are not implemented by this change.
+
+The sections below describe the retained **publication-only mode** and its original
+approval contract. Workload-write restrictions there apply when
+`controller.sidecarWorkloads` is empty. The full lab example and live controller
+rollout evidence are linked from the deployment guide.
 
 ## Reconciliation
 

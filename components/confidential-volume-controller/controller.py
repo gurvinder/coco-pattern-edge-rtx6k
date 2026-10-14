@@ -42,6 +42,7 @@ GROUP = "storage.confidentialcontainers.org"
 MANAGED = GROUP + "/controller"
 MAX_BYTES = 768 * 1024
 KINDS = {
+    "ConfidentialWorkload": "/apis/" + API + "/namespaces/{ns}/confidentialworkloads",
     "ConfidentialVolume": "/apis/" + API + "/namespaces/{ns}/confidentialvolumes",
     "EncryptedModelSource": "/apis/" + API + "/namespaces/{ns}/encryptedmodelsources",
     "PersistentVolumeClaim": "/api/v1/namespaces/{ns}/persistentvolumeclaims",
@@ -147,6 +148,23 @@ class Kubernetes:
 
     def create(self, obj):
         return self.call("POST", self.path("ConfigMap"), obj)
+
+    def intent_status(self, obj, status):
+        body = copy.deepcopy(obj)
+        body["status"] = status
+        return self.call(
+            "PUT",
+            self.path("ConfidentialWorkload", obj["metadata"]["name"]) + "/status",
+            body,
+        )
+
+    def create_workload(self, obj):
+        return self.call("POST", self.path("InferenceService"), obj)
+
+    def update_workload(self, obj):
+        return self.call(
+            "PUT", self.path("InferenceService", obj["metadata"]["name"]), obj
+        )
 
     def status(self, obj, status):
         # PUT /status with resourceVersion prevents stale reconciliation winning.
@@ -283,13 +301,20 @@ def request_for(namespace, cluster_id, workload, declarations, claims, sources):
         "claims": sorted(claim_facts, key=lambda x: x["name"]),
         "sources": sorted(source_facts, key=lambda x: x["name"]),
     }
+    if "_sidecarOwner" in workload:
+        from sidecar import request_binding
+
+        request["deployment"] = request_binding(workload)
     require(len(canonical(request)) <= 65536, "request exceeds size budget")
     return request
 
 
 def validate_artifacts(artifacts, request):
     """Check public package/binding shape; independent signer approves semantics."""
-    fields(artifacts, ARTIFACTS)
+    fields(
+        artifacts,
+        ARTIFACTS | ({"sidecar-deployment.json"} if "deployment" in request else set()),
+    )
     require(
         all(
             type(v) is str and 0 < len(v.encode()) <= 256 * 1024
@@ -358,6 +383,10 @@ def validate_artifacts(artifacts, request):
             e["policy_sha256"] == guest["authority"]["policy_sha256"],
             "guest policy mismatch",
         )
+    if "deployment" in request:
+        from sidecar import validate
+
+        validate(artifacts, request, guest, runtime)
     # No heuristic secret scrubbing: the trusted packager must supply public-only files.
     # This controller never accepts server.json, authority DB or credentials as inputs.
 
@@ -450,7 +479,15 @@ def condition(kind, good, reason, generation, now, previous):
 
 
 class Controller:
-    def __init__(self, api, namespace, cluster_id, public_keys, include_pods=False):
+    def __init__(
+        self,
+        api,
+        namespace,
+        cluster_id,
+        public_keys,
+        include_pods=False,
+        sidecar_targets=(),
+    ):
         self.api, self.namespace = api, name(namespace)
         self.cluster_id = name(cluster_id)
         require(
@@ -461,6 +498,7 @@ class Controller:
             name(key_id)
             sha256(key)  # Ed25519 public keys are 32 bytes, represented as hex.
         self.keys, self.include_pods = public_keys, include_pods
+        self.sidecar_targets = {name(n) for n in sidecar_targets}
 
     def reconcile(self, now):
         declarations = {
@@ -482,6 +520,23 @@ class Controller:
             ]
         consumers = {n: [] for n in declarations}
         failed_inventory = False
+        if self.sidecar_targets:
+            from sidecar import desired
+
+            for intent in self.api.list("ConfidentialWorkload"):
+                if intent.get("metadata", {}).get("deletionTimestamp"):
+                    continue
+                try:
+                    workloads.append(desired(intent, declarations))
+                except (Invalid, KeyError, TypeError, ValueError):
+                    failed_inventory = True
+                    blocked = {
+                        "observedGeneration": intent["metadata"].get("generation", 1),
+                        "phase": "Blocked",
+                        "reason": "InvalidInputs",
+                    }
+                    if intent.get("status") != blocked:
+                        self.api.intent_status(intent, blocked)
         for workload in workloads:
             try:
                 refs = referenced(workload)
@@ -492,8 +547,12 @@ class Controller:
             if not refs:
                 continue
             ref = {
-                "kind": workload["kind"],
-                "name": workload["metadata"]["name"],
+                "kind": (
+                    "ConfidentialWorkload"
+                    if "_sidecarOwner" in workload
+                    else workload["kind"]
+                ),
+                "name": workload.get("_sidecarOwner", workload)["metadata"]["name"],
                 "uid": workload["metadata"].get("uid", ""),
                 "phase": "Blocked",
                 "reason": "InvalidInputs",
@@ -551,8 +610,35 @@ class Controller:
                         approvalSha256=approval_sha,
                         expiresAt=envelope["payload"]["expiresAt"],
                     )
+                    if "_sidecarOwner" in workload:
+                        from sidecar import deploy
+
+                        ref.update(phase="Blocked", reason="DeploymentBlocked")
+                        action = deploy(
+                            self.api,
+                            workload,
+                            request,
+                            envelope["payload"]["artifacts"],
+                            parse(envelope["payload"]["artifacts"]["runtime.json"]),
+                            approval_sha,
+                            self.sidecar_targets,
+                        )
+                        ref.update(
+                            phase="Approved",
+                            reason="ApprovedWorkloadApplied",
+                            deploymentAction=action,
+                        )
+
             except (Invalid, KeyError, TypeError, ValueError):
                 pass  # Only fixed categories enter status; never input or exception strings.
+            if "_sidecarOwner" in workload:
+                intent = workload["_sidecarOwner"]
+                desired_status = {
+                    **ref,
+                    "observedGeneration": intent["metadata"].get("generation", 1),
+                }
+                if intent.get("status") != desired_status:
+                    self.api.intent_status(intent, desired_status)
             for n in set(refs):
                 if n in consumers:
                     consumers[n].append(copy.deepcopy(ref))
@@ -658,6 +744,7 @@ def main():
     parser.add_argument("--interval", type=int, default=15)
     parser.add_argument("--include-pods", action="store_true")
     parser.add_argument("--once", action="store_true")
+    parser.add_argument("--sidecar-workload", action="append", default=[])
     args = parser.parse_args()
     require(2 <= args.interval <= 60, "invalid reconciliation interval")
     api = Kubernetes(args.namespace, args.api_origin, args.ca, args.token)
@@ -667,6 +754,7 @@ def main():
         args.cluster_id,
         parse(Path(args.keys).read_bytes(), 8192),
         args.include_pods,
+        args.sidecar_workload,
     )
     while True:
         try:

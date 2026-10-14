@@ -1,0 +1,319 @@
+{
+  "previousInferenceServiceUid": "ea0effa3-5602-407f-96c1-d42ac79ca454",
+  "recreatedInferenceServiceUid": "64d76866-692d-4e2a-a9a2-5807349923c6",
+  "confidentialWorkloadUid": "1cee5bd9-d80d-4f70-89df-051d252a3b73",
+  "identicalPredictor": true,
+  "sameRequestSha256": "822b1225ecf5729fdfe1f357c56c4bb07420470387f18789394d415b26cd014f",
+  "sameApprovalSha256": "40c779260a6619957f4557a9cf05ca5a6bd57ee049ecd8c5e7317da8d1c8453a",
+  "noKeyOrAuthorityPolicyChanges": true,
+  "request": {
+    "claims": [
+      {
+        "dataSourceRef": null,
+        "name": "qwen-gpu-data-v1",
+        "storageClassName": "lvms-vg1",
+        "uid": "9bd3b354-b1f1-41a9-bd45-f13de5aec3ad",
+        "volumeName": "pvc-9bd3b354-b1f1-41a9-bd45-f13de5aec3ad"
+      },
+      {
+        "dataSourceRef": {
+          "apiGroup": "storage.confidentialcontainers.org",
+          "kind": "EncryptedModelSource",
+          "name": "qwen-luks-model-v1"
+        },
+        "name": "qwen-luks-model-v1",
+        "storageClassName": "lvms-vg1",
+        "uid": "997cefd0-0f9b-4325-b57e-b5220cc08d3e",
+        "volumeName": "pvc-53822a2f-af5c-4025-a246-1887d22005b4"
+      }
+    ],
+    "clusterId": "edge-rtx6k",
+    "contract": {
+      "namespace": "confidential-storage-test",
+      "podTemplateSha256": "b1dbee53752d137362f1102a05cb2bc36e01000ad58425666173e2854bacfb9b",
+      "purpose": "confidential-volume-approval-request/v1",
+      "schemaVersion": 1,
+      "volumes": [
+        {
+          "access": "ReadWrite",
+          "bindingId": "data",
+          "claimRef": {
+            "name": "qwen-gpu-data-v1",
+            "uid": "9bd3b354-b1f1-41a9-bd45-f13de5aec3ad"
+          },
+          "container": "kserve-container",
+          "declaration": "qwen-gpu-data",
+          "declarationSpecSha256": "999de276e74f0a3e3a6181737b64fde54a00b4f8954d72d8b56516bc46cc4d39",
+          "devicePath": "/dev/coco-volume-1",
+          "initialization": {
+            "filesystem": "ext4",
+            "owner": {
+              "gid": 1001,
+              "uid": 1001
+            },
+            "policy": "OnceIfApproved"
+          },
+          "keyResource": "kbs:///default/model-keys/qwen-gpu-data-v1",
+          "mountPath": "/data",
+          "profile": "luks-integrity-v1",
+          "requestedBytes": 1073741824
+        },
+        {
+          "access": "ReadOnly",
+          "bindingId": "model",
+          "claimRef": {
+            "name": "qwen-luks-model-v1",
+            "uid": "997cefd0-0f9b-4325-b57e-b5220cc08d3e"
+          },
+          "container": "kserve-container",
+          "content": {
+            "approvedManifestRef": "qwen-luks-e2e-v1"
+          },
+          "declaration": "qwen-gpu-model",
+          "declarationSpecSha256": "038cb746328a7f45c1eded62053d7d982f415187e88fe9278364245782a6248c",
+          "devicePath": "/dev/coco-volume-0",
+          "initialization": {
+            "policy": "Never"
+          },
+          "keyResource": "kbs:///default/model-keys/qwen-gpu-model-v1",
+          "mountPath": "/models/qwen",
+          "profile": "luks-verity-v1",
+          "requestedBytes": 2147483648
+        }
+      ],
+      "workload": {
+        "apiVersion": "serving.kserve.io/v1beta1",
+        "container": "kserve-container",
+        "image": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+        "kind": "InferenceService",
+        "name": "qwen-storage"
+      }
+    },
+    "declarations": [
+      {
+        "name": "qwen-gpu-data",
+        "uid": "5b687a79-d9d1-4fd9-b0ce-50b359384403"
+      },
+      {
+        "name": "qwen-gpu-model",
+        "uid": "422cd36f-0333-4f7b-9458-6a5a3d54edc6"
+      }
+    ],
+    "deployment": {
+      "adoptExistingUID": "ea0effa3-5602-407f-96c1-d42ac79ca454",
+      "desired": {
+        "metadata": {
+          "annotations": {
+            "serving.kserve.io/deploymentMode": "Standard"
+          },
+          "name": "qwen-storage"
+        },
+        "spec": {
+          "predictor": {
+            "annotations": {
+              "storage.confidentialcontainers.org/bindings": "[{\"volume\":\"model\",\"confidentialVolume\":\"qwen-gpu-model\",\"container\":\"kserve-container\",\"mountPath\":\"/models/qwen\"},{\"volume\":\"data\",\"confidentialVolume\":\"qwen-gpu-data\",\"container\":\"kserve-container\",\"mountPath\":\"/data\"}]"
+            },
+            "automountServiceAccountToken": false,
+            "containers": [
+              {
+                "command": [
+                  "/usr/bin/python3",
+                  "-c",
+                  "\"\"\"Measured startup for the isolated two-volume GPU candidate.\"\"\"\nimport hashlib\nimport json\nimport os\nfrom pathlib import Path\n\nINVENTORY = [{'bytes': 11343, 'path': 'LICENSE', 'sha256': '832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e'}, {'bytes': 726, 'path': 'config.json', 'sha256': '660db3b73d788119c04535e48cf9be5f55bc3100841a718637ae695b442f27dd'}, {'bytes': 239, 'path': 'generation_config.json', 'sha256': '2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2'}, {'bytes': 1671853, 'path': 'merges.txt', 'sha256': '8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5'}, {'bytes': 1503300328, 'path': 'model.safetensors', 'sha256': 'f47f71177f32bcd101b7573ec9171e6a57f4f4d31148d38e382306f42996874b'}, {'bytes': 1079, 'path': 'publisher-source.json', 'sha256': 'd5945b210faf8c6c869fb72de03acd0e386507dae493107fed818ea9bb6948d8'}, {'bytes': 11422654, 'path': 'tokenizer.json', 'sha256': 'aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4'}, {'bytes': 9732, 'path': 'tokenizer_config.json', 'sha256': 'd5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101'}, {'bytes': 2776833, 'path': 'vocab.json', 'sha256': 'ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910'}]\nMODEL = Path('/models/qwen')\nDATA = Path('/data')\n\n\ndef require(condition, message):\n    if not condition:\n        raise RuntimeError(message)\n\n\nrequire(os.getuid() == 1001 and os.getgid() == 1001, 'unexpected application owner')\nstatus = dict(line.split(':', 1) for line in Path('/proc/self/status').read_text().splitlines() if ':' in line)\nrequire(int(status['CapEff'].strip(), 16) == 0, 'application has capabilities')\nrequire(status['NoNewPrivs'].strip() == '1', 'privilege escalation is enabled')\nfor private in ['/dev/coco-volume-0', '/dev/coco-volume-1', '/dev/mapper/control',\n                '/run/confidential-containers/cdh.sock', '/run/coco/storage-service/agent.sock']:\n    require(not Path(private).exists(), 'guest control or raw disk visible to application')\nrequire(os.statvfs(MODEL).f_flag & os.ST_RDONLY, 'model mount is writable')\nrequire(not os.statvfs(DATA).f_flag & os.ST_RDONLY, 'data mount is read-only')\nfor item in INVENTORY:\n    path = MODEL / item['path']\n    require(path.is_file() and not path.is_symlink(), 'unexpected model file type')\n    require(path.stat().st_size == item['bytes'], 'model size mismatch')\n    with path.open('rb') as stream:\n        digest = hashlib.file_digest(stream, 'sha256').hexdigest()\n    require(digest == item['sha256'], 'model file hash mismatch')\nprint('STORAGE_MODEL_RO_HASHES_PASS', flush=True)\n# This is a disposable persistence probe, not a model freshness/anti-replay counter.\ncanary = DATA / 'gpu-storage-canary.json'\nexpected = {'purpose': 'confidential-gpu-storage-persistence/v1', 'model': 'Qwen3-0.6B'}\nif canary.exists():\n    require(json.loads(canary.read_text()) == expected, 'persistent canary mismatch')\n    print('STORAGE_DATA_REOPEN_PASS', flush=True)\nelse:\n    with canary.open('x') as stream:\n        json.dump(expected, stream, sort_keys=True)\n        stream.flush()\n        os.fsync(stream.fileno())\n    fd = os.open(DATA, os.O_DIRECTORY)\n    os.fsync(fd)\n    os.close(fd)\n    print('STORAGE_DATA_FIRST_WRITE_PASS', flush=True)\nfor name in ['tmp', 'hf', 'vllm', 'triton', 'cache', 'home']:\n    (DATA / name).mkdir(exist_ok=True)\nimport torch\nrequire(torch.cuda.is_available() and torch.cuda.device_count() == 1, 'exactly one CUDA GPU required')\na = torch.arange(4096, dtype=torch.int32, device='cuda')\nrequire(torch.equal((a + a).cpu(), torch.arange(4096, dtype=torch.int32) * 2), 'CUDA vector addition failed')\nprint(json.dumps({'event': 'CUDA_GPU_PROBE_PASS', 'device': torch.cuda.get_device_name(0),\n                  'torch': torch.__version__, 'cuda': torch.version.cuda}), flush=True)\ndel a\n# GPU confidentiality is gated by composite Trustee attestation before storage\n# opens. Successful CUDA arithmetic alone is not proof of confidential mode.\nos.execvp('vllm', ['vllm', 'serve', str(MODEL), '--served-model-name', 'qwen3-0.6b',\n                  '--host', '0.0.0.0', '--port', '8000', '--dtype', 'bfloat16',\n                  '--max-model-len', '2048', '--max-num-seqs', '4',\n                  '--gpu-memory-utilization', '0.25', '--enforce-eager',\n                  '--disable-log-requests', '--generation-config', 'vllm'])\n"
+                ],
+                "env": [
+                  {
+                    "name": "NVIDIA_VISIBLE_DEVICES",
+                    "value": "void"
+                  },
+                  {
+                    "name": "NVIDIA_DRIVER_CAPABILITIES",
+                    "value": "compute,utility"
+                  },
+                  {
+                    "name": "CUDA_VISIBLE_DEVICES",
+                    "value": "0"
+                  },
+                  {
+                    "name": "TMPDIR",
+                    "value": "/data/tmp"
+                  },
+                  {
+                    "name": "HOME",
+                    "value": "/data/home"
+                  },
+                  {
+                    "name": "PYTHONDONTWRITEBYTECODE",
+                    "value": "1"
+                  },
+                  {
+                    "name": "HF_HOME",
+                    "value": "/data/hf"
+                  },
+                  {
+                    "name": "HF_HUB_OFFLINE",
+                    "value": "1"
+                  },
+                  {
+                    "name": "TRANSFORMERS_OFFLINE",
+                    "value": "1"
+                  },
+                  {
+                    "name": "VLLM_CACHE_ROOT",
+                    "value": "/data/vllm"
+                  },
+                  {
+                    "name": "VLLM_NO_USAGE_STATS",
+                    "value": "1"
+                  },
+                  {
+                    "name": "DO_NOT_TRACK",
+                    "value": "1"
+                  },
+                  {
+                    "name": "OMP_NUM_THREADS",
+                    "value": "1"
+                  },
+                  {
+                    "name": "TRITON_CACHE_DIR",
+                    "value": "/data/triton"
+                  },
+                  {
+                    "name": "XDG_CACHE_HOME",
+                    "value": "/data/cache"
+                  },
+                  {
+                    "name": "TOKENIZERS_PARALLELISM",
+                    "value": "false"
+                  },
+                  {
+                    "name": "LD_LIBRARY_PATH",
+                    "value": "/usr/lib64:/usr/local/lib/python3.12/dist-packages/torch/lib:/usr/local/lib/python3.12/dist-packages/torch_tensorrt/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64"
+                  },
+                  {
+                    "name": "USER",
+                    "value": "qwen"
+                  },
+                  {
+                    "name": "LOGNAME",
+                    "value": "qwen"
+                  },
+                  {
+                    "name": "TORCHINDUCTOR_CACHE_DIR",
+                    "value": "/data/cache/torchinductor"
+                  },
+                  {
+                    "name": "PATH",
+                    "value": "/usr/local/lib/python3.12/dist-packages/torch_tensorrt/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/mpi/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/ucx/bin:/opt/amazon/efa/bin:/opt/tensorrt/bin"
+                  },
+                  {
+                    "name": "INFERENCE_SERVICE_NAME",
+                    "value": "qwen-storage"
+                  },
+                  {
+                    "name": "PYTHONUNBUFFERED",
+                    "value": "1"
+                  },
+                  {
+                    "name": "VLLM_USE_FLASHINFER_SAMPLER",
+                    "value": "0"
+                  }
+                ],
+                "image": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+                "name": "kserve-container",
+                "ports": [
+                  {
+                    "containerPort": 8000,
+                    "name": "http"
+                  }
+                ],
+                "readinessProbe": {
+                  "failureThreshold": 3,
+                  "httpGet": {
+                    "path": "/health",
+                    "port": 8000
+                  },
+                  "periodSeconds": 5,
+                  "timeoutSeconds": 2
+                },
+                "resources": {
+                  "limits": {
+                    "cpu": "8",
+                    "memory": "48Gi",
+                    "nvidia.com/pgpu": 1
+                  },
+                  "requests": {
+                    "cpu": "4",
+                    "memory": "16Gi",
+                    "nvidia.com/pgpu": 1
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  },
+                  "privileged": false,
+                  "readOnlyRootFilesystem": true,
+                  "runAsGroup": 1001,
+                  "runAsNonRoot": true,
+                  "runAsUser": 1001
+                },
+                "volumeMounts": [
+                  {
+                    "mountPath": "/dev/shm",
+                    "name": "shm"
+                  }
+                ],
+                "workingDir": "/"
+              }
+            ],
+            "deploymentStrategy": {
+              "type": "Recreate"
+            },
+            "enableServiceLinks": false,
+            "labels": {
+              "coco.io/skip-initdata": "true"
+            },
+            "maxReplicas": 1,
+            "minReplicas": 1,
+            "securityContext": {
+              "fsGroup": 1001
+            },
+            "terminationGracePeriodSeconds": 180,
+            "volumes": [
+              {
+                "emptyDir": {
+                  "medium": "Memory",
+                  "sizeLimit": "4Gi"
+                },
+                "name": "shm"
+              }
+            ]
+          }
+        }
+      },
+      "mode": "stock-kata-sidecar/v1",
+      "ownerName": "qwen-storage",
+      "ownerUID": "1cee5bd9-d80d-4f70-89df-051d252a3b73"
+    },
+    "purpose": "confidential-volume-reconcile-request/v1",
+    "schemaVersion": 1,
+    "sources": [
+      {
+        "name": "qwen-luks-model-v1",
+        "spec": {
+          "diskBytes": 2147483648,
+          "diskDigest": "sha256:c350a0f6ea363219ab750a3a3c7d309f7d35fc009b5171d417acde33c69fa8b7",
+          "format": "luks-verity-v1",
+          "manifestDigest": "sha256:49d4cc9827fc214fa339206c660656d8523dc8c2de1e95a9c1d9f7992934cd25",
+          "repository": "confidential-storage-test/qwen-luks-e2e"
+        },
+        "uid": "9a4a1bf8-177a-453d-a049-c9130717387a"
+      }
+    ],
+    "workloadUID": "1cee5bd9-d80d-4f70-89df-051d252a3b73"
+  }
+}

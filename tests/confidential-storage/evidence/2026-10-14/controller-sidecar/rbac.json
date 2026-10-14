@@ -1,0 +1,42 @@
+[
+  {
+    "verb": "get",
+    "resource": "secrets",
+    "allowed": false
+  },
+  {
+    "verb": "patch",
+    "resource": "persistentvolumeclaims",
+    "allowed": false
+  },
+  {
+    "verb": "create",
+    "resource": "pods/exec",
+    "allowed": false
+  },
+  {
+    "verb": "update",
+    "resource": "inferenceservices/qwen-storage",
+    "allowed": true
+  },
+  {
+    "verb": "delete",
+    "resource": "inferenceservices/qwen-storage",
+    "allowed": true
+  },
+  {
+    "verb": "update",
+    "resource": "inferenceservices/unrelated",
+    "allowed": false
+  },
+  {
+    "verb": "delete",
+    "resource": "inferenceservices/unrelated",
+    "allowed": false
+  },
+  {
+    "test": "out-of-allowlist create, server dry-run",
+    "denied": true,
+    "reason": "ValidatingAdmissionPolicy target guard"
+  }
+]

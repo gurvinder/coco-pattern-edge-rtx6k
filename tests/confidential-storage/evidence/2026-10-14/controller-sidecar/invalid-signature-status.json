@@ -1,0 +1,1 @@
+{"kind":"ConfidentialWorkload","name":"qwen-storage","observedGeneration":1,"phase":"Blocked","reason":"InvalidApproval","requestConfigMap":"cv-request-822b1225ecf5729fdfe1f357c56c4bb07420470387f18789","requestSha256":"822b1225ecf5729fdfe1f357c56c4bb07420470387f18789394d415b26cd014f","uid":"1cee5bd9-d80d-4f70-89df-051d252a3b73"}

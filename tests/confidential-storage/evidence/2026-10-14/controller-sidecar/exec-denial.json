@@ -1,0 +1,12 @@
+[
+  {
+    "container": "kserve-container",
+    "exitStatus": 1,
+    "denial": "PermissionDenied: ExecProcessRequest is blocked by policy"
+  },
+  {
+    "container": "storage-sidecar",
+    "exitStatus": 1,
+    "denial": "PermissionDenied: ExecProcessRequest is blocked by policy"
+  }
+]

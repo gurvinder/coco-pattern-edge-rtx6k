@@ -138,9 +138,10 @@ that distinction matters when evaluating the evidence.
 
 Remaining integration work:
 
-- The ConfidentialVolume controller still compiles the earlier agent-integrated
-  contract. It needs separate transport-container and consumer-container bindings
-  plus sidecar injection/publication before declarations alone automate this path.
+- The [controller deployment extension](controller-sidecar-deployment.md) now
+  handles separate transport/consumer roles and reconciles approved sidecar workloads.
+  Trusted release preparation, approval issuance/renewal and per-volume key/authority
+  enrollment remain explicit trust operations.
 - Package maintained, versioned helper images and a supported stock-runtime
   compatibility matrix. This build pins the lab kernel, modules, guest components,
   NVIDIA image and observed OCI request shapes.

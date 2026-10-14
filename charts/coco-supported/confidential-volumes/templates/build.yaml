@@ -2,11 +2,13 @@
 apiVersion: image.openshift.io/v1
 kind: ImageStream
 metadata:
+  namespace: {{ .Release.Namespace }}
   name: confidential-volume-controller
 ---
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
+  namespace: {{ .Release.Namespace }}
   name: confidential-volume-controller
 spec:
   runPolicy: Serial

@@ -24,6 +24,8 @@ def main():
         files.append((path, "wheels/" + filename))
     for relative in [
         "components/confidential-volume-controller/controller.py",
+        "components/confidential-volume-controller/sidecar.py",
+        "components/confidential-volume-controller/test_sidecar.py",
         "components/confidential-volume-controller/test_controller.py",
         "components/confidential-volume-controller/approve.py",
         "components/confidential-volume-contract/compiler.py",

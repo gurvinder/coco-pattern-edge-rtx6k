@@ -51,7 +51,7 @@ spec:
                     properties:
                       kind:
                         type: string
-                        enum: [Pod, InferenceService]
+                        enum: [Pod, InferenceService, ConfidentialWorkload]
                       name:
                         type: string
                       uid:
@@ -59,6 +59,8 @@ spec:
                       phase:
                         type: string
                       reason:
+                        type: string
+                      deploymentAction:
                         type: string
                       requestSha256:
                         type: string

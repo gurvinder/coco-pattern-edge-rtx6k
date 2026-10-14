@@ -8,6 +8,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  namespace: {{ .Release.Namespace }}
   name: confidential-volume-controller-trust
 data:
   keys.json: {{ .Values.controller.approvalKeys | toJson | quote }}
@@ -15,6 +16,7 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: {{ .Release.Namespace }}
   name: confidential-volume-controller
 spec:
   replicas: 1
@@ -45,6 +47,9 @@ spec:
             - --cluster-id={{ .Values.controller.clusterId }}
             - --keys=/trust/keys.json
             - --interval={{ .Values.controller.intervalSeconds }}
+            {{- range .Values.controller.sidecarWorkloads }}
+            - --sidecar-workload={{ . }}
+            {{- end }}
             {{- if .Values.controller.includeStandalonePods }}
             - --include-pods
             {{- end }}

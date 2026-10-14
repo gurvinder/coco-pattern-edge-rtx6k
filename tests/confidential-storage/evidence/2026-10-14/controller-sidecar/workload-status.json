@@ -1,0 +1,14 @@
+{
+  "approvalSha256": "40c779260a6619957f4557a9cf05ca5a6bd57ee049ecd8c5e7317da8d1c8453a",
+  "artifactConfigMap": "cv-approved-40c779260a6619957f4557a9cf05ca5a6bd57ee049ecd8c5",
+  "deploymentAction": "Unchanged",
+  "expiresAt": 1792087794,
+  "kind": "ConfidentialWorkload",
+  "name": "qwen-storage",
+  "observedGeneration": 1,
+  "phase": "Approved",
+  "reason": "ApprovedWorkloadApplied",
+  "requestConfigMap": "cv-request-822b1225ecf5729fdfe1f357c56c4bb07420470387f18789",
+  "requestSha256": "822b1225ecf5729fdfe1f357c56c4bb07420470387f18789394d415b26cd014f",
+  "uid": "1cee5bd9-d80d-4f70-89df-051d252a3b73"
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "name": "qwen-storage-predictor-55b6457bb5-smbbt",
+    "uid": "c5f17a5c-aee4-479d-b5ef-3610582c1a2c",
+    "reason": "stale already-completed API object blocked foreground garbage collection",
+    "bothContainersExitedZero": true,
+    "CRIHasNoSandbox": true
+  },
+  {
+    "name": "qwen-storage-predictor-55b6457bb5-wnjj6",
+    "uid": "bda581c2-a043-4824-a7be-9fa3c3d797dc",
+    "reason": "stale already-completed API object blocked foreground garbage collection",
+    "bothContainersExitedZero": true,
+    "CRIHasNoSandbox": true
+  }
+]

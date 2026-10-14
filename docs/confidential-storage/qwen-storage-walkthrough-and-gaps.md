@@ -1,5 +1,7 @@
 # Qwen confidential storage: implementation, workflow and integration gaps
 
+**Controller update:** [ConfidentialWorkload-to-KServe deployment](controller-sidecar-deployment.md) is implemented and tested with the stock-Kata sidecar. The guide covers one-time installation and the remaining explicit approval/enrollment steps.
+
 **Current deployment update:** `qwen-storage` has moved to the [stock-Kata sidecar add-on](stock-kata-qwen-storage-addon.md). The v19 walkthrough below documents the earlier agent-integrated implementation and its controller contract; its custom-runtime/no-sidecar statements describe that earlier snapshot. Storage declarations and the OCI population path are retained.
 
 **Implementation snapshot: 14 October 2026, validated workload revision v19.**
@@ -8,7 +10,7 @@ ConfidentialVolume controller at `018ae67`.
 It is not a new live health check. Examples use the actual Qwen storage identities;
 abridged examples are marked explicitly. No credentials are included.
 
-## Summary to share
+## Earlier v19 summary (historical)
 
 Qwen runs through KServe inside a confidential SEV-SNP GPU VM.
 `/models/qwen` uses an OCI-populated, encrypted read-only PVC, protected by LUKS

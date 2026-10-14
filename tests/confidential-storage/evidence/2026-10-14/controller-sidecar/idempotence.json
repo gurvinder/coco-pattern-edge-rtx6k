@@ -1,0 +1,9 @@
+{
+  "inferenceServiceUid": "ea0effa3-5602-407f-96c1-d42ac79ca454",
+  "resourceVersionBefore": "12835781",
+  "resourceVersionAfter": "12835781",
+  "unchangedSpec": true,
+  "controllerRestartReconciledWithoutWrites": true,
+  "requestSha256": "822b1225ecf5729fdfe1f357c56c4bb07420470387f18789394d415b26cd014f",
+  "deploymentAction": "Unchanged"
+}

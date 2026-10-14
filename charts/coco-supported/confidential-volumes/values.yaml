@@ -5,6 +5,8 @@ controller:
   clusterId: ""
   intervalSeconds: 15
   includeStandalonePods: false
+  # Explicit KServe target names this controller may deploy. Empty = publication only.
+  sidecarWorkloads: []
   # Ed25519 public keys only. An empty keyring permits request generation only.
   approvalKeys: {}
   resources:

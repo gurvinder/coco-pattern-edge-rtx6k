@@ -1,0 +1,7 @@
+{
+  "namespace": "gpu-workload",
+  "pod": "encrypted-qwen-predictor-c68947bb9-gw9ml",
+  "uid": "d5cc3080-ae0b-4490-b145-56a216732566",
+  "ready": true,
+  "restarts": 0
+}

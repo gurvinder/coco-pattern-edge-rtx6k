@@ -2,11 +2,13 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  namespace: {{ .Release.Namespace }}
   name: confidential-volume-controller
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  namespace: {{ .Release.Namespace }}
   name: confidential-volume-controller
 rules:
   - apiGroups: [storage.confidentialcontainers.org]
@@ -24,6 +26,23 @@ rules:
   - apiGroups: [serving.kserve.io]
     resources: [inferenceservices]
     verbs: [get, list]
+  {{- if .Values.controller.sidecarWorkloads }}
+  - apiGroups: [storage.confidentialcontainers.org]
+    resources: [confidentialworkloads]
+    verbs: [get, list]
+  - apiGroups: [storage.confidentialcontainers.org]
+    resources: [confidentialworkloads/status]
+    verbs: [update]
+  - apiGroups: [serving.kserve.io]
+    resources: [inferenceservices]
+    verbs: [create]
+  - apiGroups: [serving.kserve.io]
+    resources: [inferenceservices]
+    resourceNames: {{ .Values.controller.sidecarWorkloads | toJson }}
+    # OwnerReferencesPermissionEnforcement requires delete on the dependent
+    # when adopting it, even with blockOwnerDeletion: false.
+    verbs: [update, delete]
+  {{- end }}
   {{- if .Values.controller.includeStandalonePods }}
   - apiGroups: [""]
     resources: [pods]
@@ -33,6 +52,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
+  namespace: {{ .Release.Namespace }}
   name: confidential-volume-controller
 roleRef:
   apiGroup: rbac.authorization.k8s.io

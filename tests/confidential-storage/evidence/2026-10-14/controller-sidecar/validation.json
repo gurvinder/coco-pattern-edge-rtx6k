@@ -1,0 +1,39 @@
+{
+  "checkedAt": "2026-10-14T18:30:36.921923+00:00",
+  "result": "PASS",
+  "controllerImage": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/confidential-volume-controller@sha256:bb585231b7ca67e3bcaaca5ece9dd322c116def7807eee137493b662d98127e8",
+  "sidecarImage": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/confidential-storage-sidecar@sha256:aff5a4874e7edf39cd67bf03b7f5c31df70a4a2191bb24e7423e4f65bb798aba",
+  "applicationImage": "nvcr.io/nvidia/vllm@sha256:15f380ad9c32f0ac57ac16e4b778c6f733c88b9ffe3a936035d0a59ad17b1aab",
+  "confidentialWorkloadUid": "1cee5bd9-d80d-4f70-89df-051d252a3b73",
+  "inferenceServiceUid": "64d76866-692d-4e2a-a9a2-5807349923c6",
+  "podUid": "ae2939be-3249-4bd7-a08f-929d1d9457f9",
+  "initDataSha256": "521607af27de8db7f9a8b52c9aa075b48317bc0773bb90c9b64e55dbd4a9ba14",
+  "requestSha256": "822b1225ecf5729fdfe1f357c56c4bb07420470387f18789394d415b26cd014f",
+  "approvalSha256": "40c779260a6619957f4557a9cf05ca5a6bd57ee049ecd8c5e7317da8d1c8453a",
+  "approvalExpiresAt": 1792087794,
+  "tests": {
+    "controllerUnitTests": 29,
+    "contractUnitTests": 15,
+    "tamperedSignatureBlocksAdoption": true,
+    "controllerRestartIdempotent": true,
+    "generatedServiceRecreated": true,
+    "modelHashes": true,
+    "dataCanaryPersistedAcrossFreshVM": true,
+    "cudaProbe": true,
+    "chatBeforeAndAfterRecreation": true,
+    "adminExecDeniedBothContainers": true,
+    "controllerRBACAndTargetAdmission": true,
+    "stockBootArtifactHashes": true,
+    "helmLintAndServerDryRun": true,
+    "admissionCELTypeWarnings": []
+  },
+  "scope": [
+    "Reuses existing OCI-populated model PVC and initialized RW PVC; no new population or first-format claim.",
+    "Kata and NVIDIA vLLM image unchanged; approved helper remains privileged inside the guest.",
+    "Standard Trustee and retained authority reused with unchanged key resources and policy.",
+    "Signed package preparation, issuance/renewal and per-volume enrollment remain explicit trusted steps.",
+    "Recreation required removal of two old completed pod API records after successful exits and empty CRI sandbox inventory; no authority recovery or reset.",
+    "Existing pattern preview-all target absent; validate-schema fails on missing global.hardware.profile in the shared clustergroup chart."
+  ],
+  "publicBuildArchiveSha256": "9db6137036f02a31cb79220e9627db3f38c4bbe44d5e97fac2846fce30cafce3"
+}

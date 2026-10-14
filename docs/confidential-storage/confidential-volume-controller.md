@@ -1,5 +1,7 @@
 # ConfidentialVolume reconciliation
 
+**Update:** opt-in [automatic stock-sidecar deployment](controller-sidecar-deployment.md) now reconciles a `ConfidentialWorkload` declaration into KServe. The publication-only design and earlier validation below remain available when automatic deployment is disabled.
+
 The `confidential-volumes` Helm chart now includes a namespace-scoped controller,
 CRD status subresource and restricted RBAC. The controller uses the existing
 compiler and the existing Pod/KServe binding annotation. It adds no storage keys,

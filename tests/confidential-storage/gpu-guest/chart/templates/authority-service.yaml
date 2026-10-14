@@ -1,0 +1,16 @@
+{{- if .Values.createAuthorityService }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: storage-gpu-authority
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/part-of: confidential-storage-test
+spec:
+  selector:
+    app.kubernetes.io/name: storage-gpu-authority
+  ports:
+    - name: https
+      port: 8443
+      targetPort: 8443
+{{- end }}

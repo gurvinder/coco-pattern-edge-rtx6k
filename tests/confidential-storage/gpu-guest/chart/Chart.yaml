@@ -1,0 +1,5 @@
+apiVersion: v2
+name: confidential-gpu-storage-candidate
+description: Isolated GPU storage candidate resources; workload disabled by default
+version: 0.1.0
+type: application

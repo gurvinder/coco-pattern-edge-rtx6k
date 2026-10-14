@@ -1,0 +1,157 @@
+# Isolated Qwen GPU + RO/RW storage candidate
+
+This prepares the **same consumer** with `/models/qwen` from the previously
+OCI-populated encrypted model PVC and `/data` from a new 1 GiB block PVC. It is
+an implementation checkpoint, not a successful hardware E2E or a stock CoCo feature.
+The user has now allocated the former encrypted-file demo GPU permanently for a
+second Qwen/KServe deployment and a separate chatbot port. Preserve the original
+Qwen/KServe/chatbot throughout that handover.
+
+## Preparation inputs and output
+
+`prepare.py` uses the contract compiler and the existing authority implementation;
+it is a bounded administrator tool, not a new reconciliation controller. The
+ConfidentialVolume declarations in its bundle are approval inputs. They are not
+installed CR instances and their status does not authorize initialization.
+
+Supply a private input directory with these **public** files, captured from the
+existing deployment/API:
+
+- `aa.toml`, `cdh.toml`: AA/CDH configuration from the current Qwen InitData. The
+  generator accepts the existing HTTPS Trustee origin and matching public TLS pin,
+  rejects inline credentials, and keeps the AA/KBC configuration. It removes the
+  old image-policy/registry-credential resource requests: the candidate uses a public
+  digest-pinned image admitted by its measured agent policy. This does not add image
+  signature verification.
+- `trustee-ca.pem`: the same pinned public certificate; no Trustee private key.
+- `qwen-luks-model-v1.json`, `qwen-gpu-data-v1.json`: PVC snapshots containing
+  apiVersion/kind, metadata name/namespace/UID, spec and status. The model claim must
+  already contain the reviewed publisher artifact. Bound status alone does not
+  establish that content; guest dm-verity validates it against the approved root.
+- Separately supply the public AS signer certificate from standard Trustee.
+
+```sh
+python3 tests/confidential-storage/gpu-guest/prepare.py \
+  --inputs /secure/public-inputs \
+  --as-certificate /secure/public-inputs/as-signer-certificate.pem \
+  --new-data-pvc-uid EXACT_UID_OF_NEW_1GIB_CLAIM \
+  --authority-address AUTHORITY_SERVICE_CLUSTER_IP \
+  --output /secure/new-candidate-authority
+```
+
+Install `components/confidential-storage-authority/requirements.txt` in the Python
+3.11+ environment first. The NEW UID argument is an explicit administrator
+assertion tied to provisioning history; it is **not** inferred from PVC status.
+The guest must still verify the whole device is zero before the approved format
+sequence. Never point this command at a previously used data claim to recover it.
+
+The reviewed model publisher descriptor and source are the committed
+`evidence/2026-10-13/model-populator` artifacts. This example supports their 2 GiB
+RO disk and a new 1 GiB RW disk, UID/GID 1001. The general contract format supports
+multiple volumes, but this preparer intentionally produces exactly these two.
+Kubernetes scientific-notation capacities are parsed exactly with Decimal.
+
+The output directory is exclusively created with mode 0700; files are private.
+It contains the public contract, generated workload and policy, InitData, Pod,
+public guest service config, public TLS/signer pins, private TLS/receipt keys and
+an authority database. **Do not commit or upload the whole directory.** The tool
+never contacts Trustee, installs a runtime, provisions a LUKS key, formats a disk
+or starts an authority. An existing directory is never overwritten.
+
+The authority database has one immutable published RO record and one Uninitialized
+RW record with a journaled initialization intent bound to the exact new PVC UID.
+The two new resource names are `default/volume-keys/qwen-gpu-model-v1` and
+`default/volume-keys/qwen-gpu-data-v1`. Both expect raw 32-byte credentials. Before
+activation, the RO resource must contain the retained credential for the existing
+LUKS disk; a new random key cannot open that disk. The RW credential must be new
+and durably retained. Provision through the standard pattern secret backend/ESO,
+under separately reviewed CPU+GPU/measurement resource policy. No keys have been
+provisioned by this preparation checkpoint.
+
+The receipt signer, TLS key and authority database must be retained together in
+the trusted authority deployment. The generated TLS certificate is valid for 30
+days and its public DER is embedded in the candidate initrd. Changing that pin
+requires rebuilding/reapproving the guest. `server.json` currently uses absolute
+local paths: relocate these deliberately for deployment. The source-default EAR
+issuer and `default` appraisal IDs remain **unverified live expectations**. Do not
+weaken verification if the actual signed EAR differs; validate its provenance and
+policy meaning first.
+
+## Guest admission and workload
+
+The exact command, model inventory, image digest, environment allowlist and
+required environment entries are measured in `policy.rego`. Both SCSI transport
+paths and a single NVIDIA CDI selector are admitted. Native admission separately
+validates VFIO metadata, removes raw storage devices and host binds, and checks
+trusted guest CDI edits. Exec, CopyFile, SetPolicy and related bypass RPCs remain
+denied. UID/GID are 1001, capabilities are empty, privilege escalation is disabled
+and the container root is read-only.
+
+Startup checks the model mount is RO, verifies every publisher file hash, checks
+`/data` is writable, creates or verifies/fsyncs a persistence canary, and performs
+4096-element CUDA vector addition. It then executes GPU vLLM on `/models/qwen`
+with bf16, context 2048, four sequences and 25% GPU-memory utilization. Caches and
+temporary files use `/data`. CUDA arithmetic is not an attestation test; storage
+opening is separately gated by composite Trustee attestation in trusted guest
+infrastructure. Application code never obtains a LUKS credential or runs cryptsetup.
+
+The canary is a persistence test, **not** a freshness counter. RW dm-integrity does
+not prevent whole-volume rollback. Model freshness is pinned by approved immutable
+publication/generation and retained authority state, independently of the registry.
+
+## Helm and admission
+
+The chart creates only an explicitly requested data claim/internal authority
+Service by default; the workload is disabled. Render the prepared Pod with:
+
+```sh
+helm template gpu-storage tests/confidential-storage/gpu-guest/chart \
+  -n confidential-storage-test --set createDataClaim=false \
+  --set workloadEnabled=true \
+  --set-file candidatePodJson=/secure/new-candidate-authority/pod.json
+```
+
+Do not apply until runtime, authority persistence, exact launch references and
+resource policies are ready. The named candidate RuntimeClass is not installed.
+The direct InitData annotation uses the hypervisor prefix. The candidate sets
+`coco.io/skip-initdata: "true"` to use the existing webhook exclusion: this avoids
+its unconditional ConfigMap lookup and preserves the directly supplied measured
+InitData. It does not disable guest policy or attestation.
+
+A server dry-run using the **existing** GPU class only for admission passed with
+SCC `anyuid`, UID/GID1001, `privileged=false`, no capabilities and no privilege
+escalation. That does not establish admission under a future service account or
+successful launch of the candidate class. No SCC or shared webhook was changed.
+
+## Verification and remaining activation
+
+Run:
+
+```sh
+python3 -m unittest discover -s components/confidential-volume-contract -v
+python3 -m unittest discover -s tests/confidential-storage/gpu-guest -v
+```
+
+For policy tests, copy `policy-tests.rs` to `src/agent/tests/storage_gpu_policy.rs`
+in the pinned prepared Kata source and copy public `policy.rego`/`workload.json`
+into a test directory. Run `cargo +1.94.1 test --locked --features
+init-data,agent-policy --test storage_gpu_policy` with `STORAGE_POLICY_TEST_DIR`
+pointing there. The test uses actual protobuf serialization and downstream
+Regorus, including negative command/image/environment/capability/device cases.
+
+Current evidence is under `evidence/2026-10-14/gpu-candidate-prepared`. Next:
+
+1. Retire the separate encrypted-file demo through its GitOps source; dedicate
+   that GPU to this second Qwen instance. The original Qwen must remain intact.
+2. Install the isolated guest/runtime and independently calculate its launch
+   reference using the exact GPU CPU-count, command line, kernel and firmware.
+   Do not reuse the one-vCPU CPU-prototype measurement.
+3. Deploy the authority with persistent retained state; complete a genuine
+   standard Trustee RCAR round trip and denial cases before enabling storage keys.
+4. Provision the two scoped credentials and exact release policy; exercise first
+   initialization, all model hashes, CUDA inference, and reopen in a fresh VM.
+5. Put the proven pod template behind a second KServe InferenceService; expose
+   its chatbot on a distinct free port, while verifying the original endpoint.
+
+No successful GPU storage boot, fresh-VM persistence, inference or second chatbot
+is claimed by these preparation results.

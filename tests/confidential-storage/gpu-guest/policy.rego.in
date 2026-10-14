@@ -1,0 +1,113 @@
+package agent_policy
+import rego.v1
+
+# Workload-specific values are generated from the public publisher descriptor.
+workload := __WORKLOAD_JSON__
+default AllowRequestsFailingPolicy := false
+default CreateContainerRequest := false
+default CreateSandboxRequest := false
+default ExecProcessRequest := false
+default CopyFileRequest := false
+default SetPolicyRequest := false
+default WriteStreamRequest := false
+default AddSwapRequest := false
+default AddSwapPathRequest := false
+default SetGuestDateTimeRequest := false
+default ReseedRandomDevRequest := false
+default UpdateContainerRequest := false
+default UpdateEphemeralMountsRequest := false
+default GetDiagnosticDataRequest := false
+
+# These calls cannot introduce processes, files or storage. Native lifecycle
+# guards restrict start/remove to admitted container identities.
+default StartContainerRequest := true
+default RemoveContainerRequest := true
+default DestroySandboxRequest := true
+default SignalProcessRequest := true
+default WaitProcessRequest := true
+default ReadStreamRequest := true
+default CloseStdinRequest := true
+default StatsContainerRequest := true
+default GuestDetailsRequest := true
+default GetOOMEventRequest := true
+default GetMetricsRequest := true
+default UpdateInterfaceRequest := true
+default UpdateRoutesRequest := true
+default AddARPNeighborsRequest := true
+default ListInterfacesRequest := true
+default ListRoutesRequest := true
+default OnlineCPUMemRequest := true
+
+CreateSandboxRequest if {
+    input.guest_hook_path == ""
+    count(input.kernel_modules) == 0
+    regex.match("^[a-f0-9]{64}$", input.sandbox_id)
+}
+
+common if {
+    regex.match("^[a-f0-9]{64}$", input.container_id)
+    input.OCI.Root.Path == sprintf("/run/kata-containers/%s/rootfs", [input.container_id])
+    input.OCI.Root.Readonly == true
+    input.OCI.Hooks == null
+    input.OCI.Process.Terminal == false
+    count(input.OCI.Linux.Namespaces) == 3
+    {ns.Type | some ns in input.OCI.Linux.Namespaces} == {"ipc", "uts", "mount"}
+    every ns in input.OCI.Linux.Namespaces { ns.Path == "" }
+    count(input.shared_mounts) == 0
+    count(input.storages) == 1
+    input.storages[0].driver == "image_guest_pull"
+    input.storages[0].mount_point == input.OCI.Root.Path
+    input.storages[0].fstype == "overlay"
+    count(input.storages[0].options) == 0
+    input.storages[0].shared == false
+    input.OCI.Annotations["io.kubernetes.pod.namespace"] == "confidential-storage-test"
+}
+
+# The native agent replaces this process with its measured in-image pause
+# configuration. It removes all host file bind mounts before native creation.
+CreateContainerRequest if {
+    common
+    input.OCI.Annotations["io.kubernetes.container.name"] == "POD"
+    input.OCI.Annotations["io.katacontainers.pkg.oci.container_type"] == "pod_sandbox"
+    input.storages[0].source == "pause"
+    input.OCI.Process.Args == ["/usr/bin/pod"]
+    count(input.devices) == 0
+    count(input.OCI.Linux.Devices) == 0
+}
+
+CreateContainerRequest if {
+    common
+    input.OCI.Annotations["io.kubernetes.container.name"] == "kserve-container"
+    input.OCI.Annotations["io.katacontainers.pkg.oci.container_type"] == "pod_container"
+    input.storages[0].source == workload.image
+    input.OCI.Process.Args == workload.args
+    input.OCI.Process.Cwd == "/"
+    input.OCI.Process.User.UID == 1001
+    input.OCI.Process.User.GID == 1001
+    count(input.OCI.Process.User.AdditionalGids) == 0
+    input.OCI.Process.NoNewPrivileges == true
+    every _, capability in input.OCI.Process.Capabilities {
+        count(capability) == 0
+    }
+    every environment in input.OCI.Process.Env {
+        environment in workload.environment
+    }
+    every required in workload.requiredEnvironment {
+        required in input.OCI.Process.Env
+    }
+    disks := [d | some d in input.devices; d.type_ == "scsi"]
+    count(disks) == 2
+    {d.container_path | some d in disks} == {"/dev/coco-volume-0", "/dev/coco-volume-1"}
+    every d in disks { count(d.options) == 0 }
+    gpu := [d | some d in input.devices; d.type_ != "scsi"]
+    count(gpu) <= 1
+    every d in gpu { d.type_ == "vfio-pci-gk" }
+    cdi := {k: v | some k, v in input.OCI.Annotations; startswith(k, "cdi.k8s.io/")}
+    count(cdi) == 1
+    every k, v in cdi {
+        regex.match("^cdi.k8s.io/vfio[0-9]{1,5}$", k)
+        v == "nvidia.com/gpu=0"
+    }
+    # Native admission additionally validates VFIO locators, strips host mounts,
+    # removes transport device nodes and validates measured guest CDI edits.
+}

@@ -1,6 +1,6 @@
 # GPU and storage guest candidate
 
-**14 October 2026: development source and packaging checkpoint, not installed.**
+**14 October 2026: source, packaging and concrete configuration prepared; not installed.**
 The candidate adds an explicit NVIDIA path to the previously storage-only agent.
 The current Qwen/KServe runtime, Trustee policies, model PVC and retained RW state
 are unchanged. This checkpoint does not establish GPU inference from a LUKS PVC.
@@ -118,11 +118,27 @@ The repository-wide checks retain their existing baseline failures: no
 `preview-all` Make target and missing bare-metal `global.hardware.profile` during
 schema rendering. No chart/value configuration was changed in this checkpoint.
 
+## Concrete candidate preparation
+
+The [two-volume candidate guide](../../tests/confidential-storage/gpu-guest/README.md)
+now provides a bounded preparer, strict policy, unprivileged vLLM startup, Helm
+resources and tests. The existing populated model PVC is bound by UID. A separate
+new 1 GiB Block/RWOP claim `qwen-gpu-data-v1` and an internal authority Service
+have been created in `confidential-storage-test`; the authority and guest have
+not been deployed. Private preparation produced real TLS/receipt pins and a new
+authority database without changing older state or provisioning any storage key.
+
+The user has dedicated the encrypted-file demo's GPU permanently to the second
+Qwen/KServe instance, with a different chatbot port. This supersedes the earlier
+plan to borrow and restore that GPU. The existing Qwen/KServe/chatbot remain the
+baseline to preserve. GitOps retirement and hardware activation are still pending.
+
 ## Remaining acceptance work
 
-- Resolve actual model/RW manifests, exact PVC identities, workload policy and
-  authority trust configuration. Preserve the retained RO key and RW history;
-  initialization is allowed only for a new explicitly approved blank claim.
+- Deploy the prepared authority with durable state and finish exact standard
+  Trustee resource policy/key provisioning. Preserve the retained RO key and RW
+  history; initialization is approved only for the new claim, still subject to
+  the guest zero-device check. Validate the expected EAR issuer/policy IDs live.
 - Verify the release binaries' runtime dependencies and the combined guest boot.
 - Validate the actual guest CDI output, NVIDIA readiness and unprivileged CUDA.
 - Complete standard Trustee composite `/attest`, signed request proof, private

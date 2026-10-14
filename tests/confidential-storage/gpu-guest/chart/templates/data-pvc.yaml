@@ -1,0 +1,20 @@
+{{- if ne .Release.Namespace "confidential-storage-test" }}
+{{- fail "Use only confidential-storage-test" }}
+{{- end }}
+{{- if .Values.createDataClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.dataClaim | quote }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/part-of: confidential-storage-test
+    storage.confidentialcontainers.org/purpose: gpu-data-candidate
+spec:
+  storageClassName: {{ .Values.storageClass | quote }}
+  volumeMode: Block
+  accessModes: [ReadWriteOncePod]
+  resources:
+    requests:
+      storage: 1Gi
+{{- end }}

@@ -1,0 +1,8 @@
+dataClaim: qwen-gpu-data-v1
+storageClass: lvms-vg1
+createDataClaim: true
+workloadEnabled: false
+
+createAuthorityService: false
+# Set with --set-file only after independent measurement and resource approval.
+candidatePodJson: ""

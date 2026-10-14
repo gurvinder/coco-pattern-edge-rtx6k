@@ -8,6 +8,7 @@ JSON input avoids implicit YAML types and rejects duplicate object members.
 """
 
 import argparse
+from decimal import Decimal
 import hashlib
 import json
 from pathlib import Path
@@ -91,10 +92,21 @@ def size(value):
     # implementation. Refuse lossy floats, unknown suffixes and expansion.
     require(type(value) is str and len(value) <= 24, "invalid capacity")
     match = re.fullmatch(r"([1-9][0-9]*)(Ki|Mi|Gi)?", value)
-    require(match is not None, "unsupported capacity notation")
-    result = (
-        int(match[1]) * {None: 1, "Ki": 1024, "Mi": 1024**2, "Gi": 1024**3}[match[2]]
-    )
+    if match:
+        result = (
+            int(match[1])
+            * {None: 1, "Ki": 1024, "Mi": 1024**2, "Gi": 1024**3}[match[2]]
+        )
+    else:
+        # The API serializes some integral quantities as e.g. 2.147483648e+09.
+        # Decimal avoids a lossy float conversion; exponents/input are bounded.
+        require(
+            re.fullmatch(r"[1-9][0-9]*(?:\.[0-9]+)?[eE][+-]?[0-9]{1,2}", value),
+            "unsupported capacity notation",
+        )
+        exact = Decimal(value)
+        require(exact == exact.to_integral_value(), "fractional byte capacity")
+        result = int(exact)
     require(
         64 * 1024**2 <= result <= 64 * 1024**3 and result % 4096 == 0,
         "unsupported capacity",

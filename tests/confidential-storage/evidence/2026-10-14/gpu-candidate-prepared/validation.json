@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-14",
+  "scope": "prepared real GPU candidate; not hardware validated",
+  "contractTestsPassed": 15,
+  "preparationTestsPassed": 5,
+  "downstreamRegorusTestPassed": true,
+  "policyTests": "actual protobuf; exact image/command/env, UID, capabilities, devices, CDI, RPC denial",
+  "helmLintPassed": true,
+  "compilerContractMatchesMeasuredInitData": true,
+  "candidateImageReproducible": true,
+  "liveChanges": [
+    "Created confidential-storage-test/qwen-gpu-data-v1 PVC (1Gi Block/RWOP)",
+    "Created internal confidential-storage-test/storage-gpu-authority Service (172.30.83.184:8443)"
+  ],
+  "dataFormatted": false,
+  "authorityDeployed": false,
+  "keysProvisioned": false,
+  "runtimeInstalled": false,
+  "hardwareBootPassed": false,
+  "gpuInferencePassed": false,
+  "dataReopenPassed": false,
+  "admission": {
+    "candidateClass": "not installed; original dry run rejected missing RuntimeClass",
+    "existingGpuClassDryRun": "passed with existing webhook exclusion; no pod created",
+    "scc": "anyuid",
+    "uid": 1001,
+    "gid": 1001,
+    "privileged": false,
+    "allowPrivilegeEscalation": false,
+    "capabilities": "drop ALL and MKNOD",
+    "readOnlyRootFilesystem": true
+  },
+  "production": {
+    "qwenPodUid": "d5cc3080-ae0b-4490-b145-56a216732566",
+    "chatPodUid": "839d51fc-94fe-491b-9e77-cec5a4c1ae48",
+    "qwenAndChatReady": true,
+    "qwenAndChatRestarts": 0,
+    "unchanged": true
+  },
+  "nextGpuAllocation": "User authorized permanent retirement of gpu-encrypted-file for second Qwen/KServe and separate chatbot port; not applied yet",
+  "repositoryChecks": {
+    "preview-all": "baseline: no Make target",
+    "validate-schema": "baseline: three baremetal files missing global.hardware.profile"
+  }
+}

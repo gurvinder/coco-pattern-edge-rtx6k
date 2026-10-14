@@ -1,0 +1,64 @@
+"""Measured startup for the isolated two-volume GPU candidate."""
+import hashlib
+import json
+import os
+from pathlib import Path
+
+INVENTORY = __INVENTORY_JSON__
+MODEL = Path('/models/qwen')
+DATA = Path('/data')
+
+
+def require(condition, message):
+    if not condition:
+        raise RuntimeError(message)
+
+
+require(os.getuid() == 1001 and os.getgid() == 1001, 'unexpected application owner')
+status = dict(line.split(':', 1) for line in Path('/proc/self/status').read_text().splitlines() if ':' in line)
+require(int(status['CapEff'].strip(), 16) == 0, 'application has capabilities')
+require(status['NoNewPrivs'].strip() == '1', 'privilege escalation is enabled')
+for private in ['/dev/coco-volume-0', '/dev/coco-volume-1', '/dev/mapper/control',
+                '/run/confidential-containers/cdh.sock', '/run/coco/storage-service/agent.sock']:
+    require(not Path(private).exists(), 'guest control or raw disk visible to application')
+require(os.statvfs(MODEL).f_flag & os.ST_RDONLY, 'model mount is writable')
+require(not os.statvfs(DATA).f_flag & os.ST_RDONLY, 'data mount is read-only')
+for item in INVENTORY:
+    path = MODEL / item['path']
+    require(path.is_file() and not path.is_symlink(), 'unexpected model file type')
+    require(path.stat().st_size == item['bytes'], 'model size mismatch')
+    with path.open('rb') as stream:
+        digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+    require(digest == item['sha256'], 'model file hash mismatch')
+print('STORAGE_MODEL_RO_HASHES_PASS', flush=True)
+# This is a disposable persistence probe, not a model freshness/anti-replay counter.
+canary = DATA / 'gpu-storage-canary.json'
+expected = {'purpose': 'confidential-gpu-storage-persistence/v1', 'model': 'Qwen3-0.6B'}
+if canary.exists():
+    require(json.loads(canary.read_text()) == expected, 'persistent canary mismatch')
+    print('STORAGE_DATA_REOPEN_PASS', flush=True)
+else:
+    with canary.open('x') as stream:
+        json.dump(expected, stream, sort_keys=True)
+        stream.flush()
+        os.fsync(stream.fileno())
+    fd = os.open(DATA, os.O_DIRECTORY)
+    os.fsync(fd)
+    os.close(fd)
+    print('STORAGE_DATA_FIRST_WRITE_PASS', flush=True)
+for name in ['tmp', 'hf', 'vllm', 'triton', 'cache', 'home']:
+    (DATA / name).mkdir(exist_ok=True)
+import torch
+require(torch.cuda.is_available() and torch.cuda.device_count() == 1, 'exactly one CUDA GPU required')
+a = torch.arange(4096, dtype=torch.int32, device='cuda')
+require(torch.equal((a + a).cpu(), torch.arange(4096, dtype=torch.int32) * 2), 'CUDA vector addition failed')
+print(json.dumps({'event': 'CUDA_GPU_PROBE_PASS', 'device': torch.cuda.get_device_name(0),
+                  'torch': torch.__version__, 'cuda': torch.version.cuda}), flush=True)
+del a
+# GPU confidentiality is gated by composite Trustee attestation before storage
+# opens. Successful CUDA arithmetic alone is not proof of confidential mode.
+os.execvp('vllm', ['vllm', 'serve', str(MODEL), '--served-model-name', 'qwen3-0.6b',
+                  '--host', '0.0.0.0', '--port', '8000', '--dtype', 'bfloat16',
+                  '--max-model-len', '2048', '--max-num-seqs', '4',
+                  '--gpu-memory-utilization', '0.25', '--enforce-eager',
+                  '--disable-log-requests', '--generation-config', 'vllm'])

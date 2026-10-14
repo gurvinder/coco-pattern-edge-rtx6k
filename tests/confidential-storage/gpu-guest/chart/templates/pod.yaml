@@ -1,0 +1,7 @@
+{{- if .Values.workloadEnabled }}
+{{- $pod := required "Set candidatePodJson to the prepared pod.json" .Values.candidatePodJson | fromJson }}
+{{- if or (ne $pod.apiVersion "v1") (ne $pod.kind "Pod") (ne $pod.metadata.namespace .Release.Namespace) (ne $pod.metadata.name "qwen-gpu-storage-candidate") }}
+{{- fail "Only the isolated prepared candidate Pod is supported" }}
+{{- end }}
+{{ $pod | toYaml }}
+{{- end }}

@@ -12,6 +12,7 @@ from compiler import (
     compile_contract,
     digest,
     parse,
+    size,
 )
 
 
@@ -111,6 +112,22 @@ def edit_binding(bundle, action):
 
 
 class CompilerTests(unittest.TestCase):
+    def test_api_scientific_capacity_is_exact_and_bounded(self):
+        self.assertEqual(size("2.147483648e+09"), size("2Gi"))
+        self.assertEqual(size("1.073741824E9"), size("1Gi"))
+        for value in [
+            "2.1474836481e+09",
+            "1e99",
+            "1e999",
+            "1e-99",
+            "NaN",
+            "inf",
+            "2.5Gi",
+            "1e+09",
+        ]:
+            with self.subTest(value=value), self.assertRaises(Invalid):
+                size(value)
+
     def test_four_volumes_compile_deterministically_without_approval(self):
         source = fixture()
         original = copy.deepcopy(source)

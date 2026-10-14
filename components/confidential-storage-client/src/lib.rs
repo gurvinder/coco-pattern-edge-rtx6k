@@ -20,6 +20,8 @@ pub mod initialization;
 pub mod keys;
 #[cfg(target_os = "linux")]
 pub mod private_aa;
+#[cfg(all(target_os = "linux", feature = "private-rcar-aa"))]
+mod private_rcar_aa;
 const PROTOCOL: &str = "confidential-storage-request/v1";
 const MAX_REQUEST: usize = 8192;
 const MAX_RESPONSE: usize = 280 * 1024;
@@ -44,6 +46,11 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub trait Evidence {
     /// SNP report_data contains this SHA-256 padded to 64 bytes, not double-hashed.
     fn collect(&self, runtime_sha256: [u8; 32]) -> Result<Vec<u8>>;
+    /// Composite evidence using standard KBS SHA-384 runtime binding. Providers
+    /// without this capability fail closed; never fall back to CPU-only quotes.
+    fn collect_rcar(&self, _nonce: &str, _key: &Value) -> Result<Vec<u8>> {
+        Err(Error::Attestation)
+    }
 }
 
 /// Pin only this dedicated TLS CA, AS configuration binding and receipt signer.
@@ -67,6 +74,7 @@ pub struct AuthorityClient<E: Evidence> {
     public_key: Value,
     session: String,
     evidence: E,
+    trustee_rcar: bool,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -75,6 +83,35 @@ struct Challenge {
     nonce: String,
     request_sha256: String,
     expires_in: u64,
+    #[serde(default)]
+    attestation: Option<RcarChallenge>,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RcarChallenge {
+    kind: String,
+    nonce: String,
+    hash_algorithm: String,
+}
+fn rcar_nonce(nonce: &str) -> bool {
+    use base64::engine::general_purpose::STANDARD;
+    nonce.len() == 44
+        && STANDARD
+            .decode(nonce)
+            .is_ok_and(|v| v.len() == 32 && STANDARD.encode(v) == nonce)
+}
+fn select_challenge(mode: bool, challenge: &Option<RcarChallenge>) -> Result<Option<&str>> {
+    match (mode, challenge) {
+        (false, None) => Ok(None),
+        (true, Some(c))
+            if c.kind == "trustee-rcar-v1"
+                && c.hash_algorithm == "sha384"
+                && rcar_nonce(&c.nonce) =>
+        {
+            Ok(Some(&c.nonce))
+        }
+        _ => Err(Error::Binding),
+    }
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -94,6 +131,12 @@ struct Closed {
 }
 
 impl<E: Evidence> AuthorityClient<E> {
+    /// Select explicitly in measured configuration, never from a server hint.
+    pub fn new_rcar(config: Config, evidence: E) -> Result<Self> {
+        let mut client = Self::new(config, evidence)?;
+        client.trustee_rcar = true;
+        Ok(client)
+    }
     pub fn new(config: Config, evidence: E) -> Result<Self> {
         let url = Url::parse(&config.audience).map_err(|_| Error::Configuration)?;
         if !config.audience.is_ascii()
@@ -151,6 +194,7 @@ impl<E: Evidence> AuthorityClient<E> {
             public_key,
             session,
             evidence,
+            trustee_rcar: false,
         })
     }
     pub fn policy_sha256(&self) -> &str {
@@ -228,16 +272,21 @@ impl<E: Evidence> AuthorityClient<E> {
         {
             return Err(Error::Binding);
         }
-        let runtime = canonical(
-            &json!({"storage-binding":{"protocol":PROTOCOL,"audience":self.config.audience,
-            "nonce":challenge.nonce,"request_sha256":request_hash,"key":self.public_key}}),
-        )?;
-        let evidence = self.evidence.collect(
-            ring::digest::digest(&ring::digest::SHA256, &runtime)
-                .as_ref()
-                .try_into()
-                .unwrap(),
-        )?;
+        let evidence = match select_challenge(self.trustee_rcar, &challenge.attestation)? {
+            None => {
+                let runtime = canonical(
+                    &json!({"storage-binding":{"protocol":PROTOCOL,"audience":self.config.audience,
+                    "nonce":challenge.nonce,"request_sha256":request_hash,"key":self.public_key}}),
+                )?;
+                self.evidence.collect(
+                    ring::digest::digest(&ring::digest::SHA256, &runtime)
+                        .as_ref()
+                        .try_into()
+                        .unwrap(),
+                )?
+            }
+            Some(nonce) => self.evidence.collect_rcar(nonce, &self.public_key)?,
+        };
         if evidence.is_empty() || evidence.len() > 144 * 1024 {
             return Err(Error::Attestation);
         }
@@ -353,6 +402,23 @@ fn sha(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn mode_is_explicit_and_cannot_fall_back_or_negotiate_weaker_hashes() {
+        assert!(select_challenge(false, &None).unwrap().is_none());
+        assert!(select_challenge(true, &None).is_err());
+        let mut c = Some(RcarChallenge {
+            kind: "trustee-rcar-v1".into(),
+            hash_algorithm: "sha384".into(),
+            nonce: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=".into(),
+        });
+        assert!(select_challenge(true, &c).unwrap().is_some());
+        assert!(select_challenge(false, &c).is_err());
+        c.as_mut().unwrap().hash_algorithm = "sha256".into();
+        assert!(select_challenge(true, &c).is_err());
+        c.as_mut().unwrap().hash_algorithm = "sha384".into();
+        c.as_mut().unwrap().nonce = "replayed".into();
+        assert!(select_challenge(true, &c).is_err());
+    }
     #[test]
     fn runtime_canonicalization_is_recursive_and_whitespace_free() {
         let v = json!({"z":[{"y":2,"a":"key"}],"a":true});

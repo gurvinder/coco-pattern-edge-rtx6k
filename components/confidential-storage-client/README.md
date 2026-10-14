@@ -2,10 +2,10 @@
 
 Development library for the privileged **guest system service**, not the
 application container. No listener, public RPC, disk operation or key-byte delivery API is provided.
-Opaque key permits can now be consumed by the separate private KBS provider. It is not wired into the Kata activation gate yet.
-That gate remains closed.
+Opaque key permits are consumed by the separate private KBS provider. The isolated
+CPU RO/RW integrations are tested; the combined GPU storage guest is not deployed.
 
-The client now implements the real authority TLS protocol:
+The legacy direct-AS mode implements this authority TLS protocol:
 
 1. Load endpoint, dedicated TLS CA, exact workload policy/InitData binding and
    Ed25519 receipt verifier from measured guest configuration.
@@ -56,7 +56,11 @@ Earlier no-secret diagnostic initrds remain ineligible for keys.
 
 ## Reproduce transport tests
 
-On Linux with Rust 1.94.1 and Python 3.11+:
+On Linux with Rust 1.94.1 and Python 3.11+, first stage the pinned upstream sources
+with [prepare.py](../confidential-storage-kbs/prepare.py), including
+`--with-test-fixtures`. The optional private AA dependency resolves through that
+staged tree even when its feature is disabled. Run these commands from the staged
+`components/confidential-storage-client` directory:
 
 ```sh
 cargo fmt --check
@@ -65,7 +69,7 @@ cargo test --locked
 cargo build --locked --example transport_fixture
 python3 -m pip install -r ../confidential-storage-authority/requirements.txt
 STORAGE_CLIENT_FIXTURE="$PWD/target/debug/examples/transport_fixture" \
-  python3 -m unittest -v test_transport.py
+  python3 -m unittest discover -v -s ../confidential-storage-authority -p test_transport.py
 ```
 
 The fixture opens a temporary loopback TLS listener. It verifies actual Rust
@@ -97,3 +101,15 @@ record; it cannot grant formatting. The consumer checks the retained session,
 policy and exact credential allowlist before and after retrieval. See the
 [private KBS provider](../confidential-storage-kbs/README.md) for the real encrypted
 response integration, CPU-only test scope and remaining deployment gates.
+
+## Standard Trustee mode
+
+Feature `private-rcar-aa` adds a composite collector using the existing private AA
+ttRPC interface. `AuthorityClient::new_rcar` requires an explicit RCAR challenge
+and SHA-384 selection; it cannot fall back to the legacy CPU collector. The guest
+collects NVIDIA evidence first and binds its exact bytes into the SNP runtime
+digest. The request proof and signed receipt checks remain in place.
+
+See the [protocol, configuration and validation checkpoint](../../docs/confidential-storage/standard-trustee-adapter.md).
+Five client tests pass with this feature, four without it. Full hardware RCAR
+interoperability in the combined GPU guest remains untested.

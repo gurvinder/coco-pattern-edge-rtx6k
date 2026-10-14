@@ -135,7 +135,7 @@ class Gateway:
         }
         token = self.attester.evaluate(runtime, evidence)
         # Never relay an unsigned, wrong-policy, stale or mismatched AS result.
-        _, verified_key, _ = self.verifier.verify(
+        _, verified_key, _ = self.verify_result(
             token, nonce, expected[0], int(self.clock())
         )
         if verified_key.public_numbers() != expected_key.public_numbers():
@@ -144,6 +144,9 @@ class Gateway:
             if self.pending.get(nonce) != expected or self.monotonic() >= expected[1]:
                 raise Denied("challenge consumed or expired during attestation")
         return {"token": token}
+
+    def verify_result(self, token, nonce, request_sha256, now):
+        return self.verifier.verify(token, nonce, request_sha256, now)
 
     def execute(self, nonce, raw, token, proof):
         body = request_body(raw)
@@ -156,7 +159,7 @@ class Gateway:
             raise Denied("unknown challenge or changed request")
         if self.monotonic() >= expected[1]:
             raise Denied("expired challenge")
-        peer, key, valid = self.verifier.verify(
+        peer, key, valid = self.verify_result(
             token, nonce, expected[0], int(self.clock())
         )
         if not isinstance(proof, str) or len(proof) > 128:

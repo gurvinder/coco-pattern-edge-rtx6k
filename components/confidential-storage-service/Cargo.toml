@@ -19,3 +19,4 @@ zeroize = "1.8.2"
 
 [features]
 private-cdh = ["confidential-storage-kbs/private-cdh"]
+trustee-rcar = ["private-cdh", "confidential-storage-client/private-rcar-aa"]

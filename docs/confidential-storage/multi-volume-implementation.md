@@ -59,11 +59,12 @@ outside this initial implementation.
    resolve the approved model manifest or RW initialization plan, bind workload
    identity and produce measured configuration/InitData. Reject unsupported owner,
    geometry and unresolved approval. Keep the signer outside the populator/controller.
-2. **Standard Trustee operation authentication.** The existing authority expects a
-   custom fresh request binding and currently uses the isolated CPU AS adapter.
-   The standard AllInOne Trustee interface must be reconciled without removing
-   request freshness, ownership or workload/GPU requirements. CDH key retrieval
-   alone does not authenticate authority operations.
+2. **Standard Trustee operation authentication.** The subsequent
+   [RCAR adapter checkpoint](standard-trustee-adapter.md) implements fresh
+   request-bound handshakes against existing KBS endpoints. Unit tests and live
+   TLS `/auth` passed; genuine CPU+GPU `/attest` and exact claim compatibility
+   remain required. CDH key retrieval alone does not authenticate authority
+   operations.
 3. **GPU-compatible agent path.** The tested overlay still rejects GPU devices/hooks
    and skips NVIDIA CDI in storage guests. Review the actual GPU agent build and
    provisioning order, preserve only its required trusted operations and add

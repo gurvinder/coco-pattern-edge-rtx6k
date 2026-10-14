@@ -98,23 +98,23 @@ Keep explicit Helm/GitOps references to generated contracts initially. No mutati
 webhook is required. A binding change creates a new approved contract and workload
 rollout; the controller must not rewrite a running pod's security configuration.
 
-## Remaining standard-Trustee compatibility gate
+## Standard Trustee adapter and remaining hardware gate
 
-Reusing CDH avoids rebuilding GPU attestation for key retrieval. It does not
-automatically fix our authority's custom challenge/request-binding protocol.
-The authority currently calls a CPU-only loopback AS and requires a specific
-verified runtime-claim shape; the live standard Trustee uses AllInOneDeployment.
+The [standard Trustee adapter](standard-trustee-adapter.md) now implements
+operation authentication through the existing KBS RCAR `/auth` and `/attest`
+interfaces. The authority retains a fresh KBS session for each pending request,
+verifies signed CPU+GPU claims and requires the guest's request-specific proof.
+This preserves request freshness and ownership without adding custom runtime
+claims to the standard EAR. No Trustee, AA or CDH server source change was made.
 
-Resolve this with the smallest authenticated adapter compatible with the existing
-Trustee interfaces and verified composite-evidence semantics. Record separately:
+Key retrieval remains a separate private CDH operation authorized by an opaque
+storage permit. The authority adapter never requests a storage key from KBS.
 
-1. Key retrieval through existing CDH/KBS: expected configuration/adapter work.
-2. Authority operation authentication: unresolved compatibility work that must
-   pass real binding/replay tests before enabling initialization or key permits.
-
-Do not promise that a stock Trustee binary requires modification, or promise that
-it cannot require one, before completing that interface check. Do not silently
-remove request freshness, ownership or GPU requirements to make it connect.
+The implemented TLS client passed a live `/auth` probe; signed synthetic claim
+and replay tests passed. Real composite `/attest` interoperability, exact live
+claim shape and key retrieval still require the GPU-compatible candidate guest.
+Do not enable initialization or key permits for that candidate until those tests
+pass. The isolated CPU AS mode remains available only for its existing tests.
 
 ## What stock OpenShift already provides
 

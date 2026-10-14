@@ -1,6 +1,7 @@
 """Run the isolated authority using explicit administrator-owned configuration."""
 
 import argparse
+import hashlib
 import os
 from pathlib import Path
 import stat
@@ -50,9 +51,8 @@ def configured_server(path):
     # Paths and pins here are operator configuration, never request parameters.
     with Path(path).open("rb") as stream:
         config = read_object(stream.read(32769), 32768)
-    if set(config) != {
+    common = {
         "listen",
-        "as_loopback_port",
         "database",
         "tls_certificate",
         "tls_key",
@@ -65,8 +65,11 @@ def configured_server(path):
         "receipt_key",
         "receipt_issuer",
         "receipt_key_id",
-    }:
-        raise ValueError("explicit authority configuration required")
+    }
+    direct = set(config) == common | {"as_loopback_port"}
+    rcar_mode = set(config) == common | {"trustee_rcar"}
+    if not (direct or rcar_mode):
+        raise ValueError("select exactly one explicit authority attestation mode")
     listen = config["listen"]
     if (
         not isinstance(listen, dict)
@@ -104,12 +107,36 @@ def configured_server(path):
     issuer = ReceiptIssuer(
         authority, receipt_key, config["receipt_issuer"], config["receipt_key_id"]
     )
-    attester = AttestationServiceClient(verifier, config["as_loopback_port"])
-    return Server(
-        (listen["host"], listen["port"]),
-        Gateway(verifier, issuer, attester=attester),
-        context,
-    )
+    if direct:
+        attester = AttestationServiceClient(verifier, config["as_loopback_port"])
+        gateway = Gateway(verifier, issuer, attester=attester)
+    else:
+        from kbs_rcar import KbsRcar
+        from rcar_gateway import RcarGateway
+
+        settings = config["trustee_rcar"]
+        if not isinstance(settings, dict) or set(settings) != {
+            "origin",
+            "ca_file",
+            "init_data_file",
+            "address",
+            "policy_selector",
+        }:
+            raise ValueError("explicit standard Trustee RCAR settings required")
+        with Path(settings["init_data_file"]).open("rb") as stream:
+            init_data = stream.read(65537).decode("utf-8")
+        algorithm = {64: "sha256", 96: "sha384", 128: "sha512"}[len(verifier.init_data)]
+        if hashlib.new(algorithm, init_data.encode()).hexdigest() != verifier.init_data:
+            raise ValueError("RCAR InitData file does not match the pinned digest")
+        rcar = KbsRcar(
+            settings["origin"],
+            settings["ca_file"],
+            init_data,
+            address=None if settings["address"] is None else tuple(settings["address"]),
+            policy_selector=settings["policy_selector"],
+        )
+        gateway = RcarGateway(verifier, issuer, rcar=rcar)
+    return Server((listen["host"], listen["port"]), gateway, context)
 
 
 def main():

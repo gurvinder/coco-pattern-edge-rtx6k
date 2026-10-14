@@ -148,6 +148,24 @@ class EarVerifier:
 
     def verify(self, token, nonce, request_sha256, now):
         """Called with authority-owned challenge data, never client expectations."""
+        return self._verify(token, nonce, request_sha256, now)
+
+    def verify_rcar(self, token, nonce, request_sha256, now, *, runtime):
+        """Runtime is authority-owned RCAR state, never execute-request fields.
+
+        KBS attests its nonce/key/composite evidence. Our gateway binds that
+        fresh handshake to the storage request; the guest separately signs the
+        authority nonce, exact request hash and resulting token hash.
+        """
+        if not isinstance(runtime, dict) or set(runtime) != {
+            "nonce",
+            "tee-pubkey",
+            "additional-evidence",
+        }:
+            raise Denied("invalid retained RCAR context")
+        return self._verify(token, nonce, request_sha256, now, rcar=runtime)
+
+    def _verify(self, token, nonce, request_sha256, now, rcar=None):
         if not isinstance(token, str) or not 0 < len(token) <= MAX_TOKEN:
             raise Denied("invalid token size")
         try:
@@ -205,7 +223,28 @@ class EarVerifier:
                     and evidence["init_data"] != self.init_data
                 ):
                     raise Denied("wrong measured guest configuration")
-                current = evidence["runtime_data_claims"]["storage-binding"]
+                if rcar is None:
+                    current = evidence["runtime_data_claims"]["storage-binding"]
+                else:
+                    expected_runtime = dict(rcar)
+                    if required.submod != "cpu0":
+                        del expected_runtime["additional-evidence"]
+                    if evidence["runtime_data_claims"] != expected_runtime:
+                        raise Denied("RCAR device/session binding mismatch")
+                    tee_key = rcar["tee-pubkey"]
+                    if (
+                        not isinstance(tee_key, dict)
+                        or set(tee_key) != {"kty", "crv", "x", "y", "alg"}
+                        or tee_key["alg"] != "ES256"
+                    ):
+                        raise Denied("dedicated RCAR signing key required")
+                    current = {
+                        "protocol": PROTOCOL,
+                        "audience": self.audience,
+                        "nonce": nonce,
+                        "request_sha256": request_sha256,
+                        "key": {k: v for k, v in tee_key.items() if k != "alg"},
+                    }
                 if not isinstance(current, dict) or set(current) != {
                     "protocol",
                     "audience",

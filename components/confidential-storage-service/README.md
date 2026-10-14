@@ -84,3 +84,14 @@ or formatting is performed. Backend RW geometry remains 1 GiB.
 The declarative compiler emits an approval request, not this configuration.
 The authority resolver/approval packaging is still required. See the
 [checkpoint and remaining gates](../../docs/confidential-storage/multi-volume-implementation.md).
+
+## Opt-in standard Trustee authentication
+
+Build with `--features trustee-rcar` and set measured
+`authority.trustee_rcar: true` to select the existing KBS RCAR protocol for authority
+operations. This feature includes `private-cdh` and the private composite AA
+collector. Select the private CDH key provider explicitly in the measured key
+configuration. A build without this feature rejects RCAR selection.
+
+The feature is compiled and tested, not installed in Qwen. See the
+[protocol and remaining hardware gates](../../docs/confidential-storage/standard-trustee-adapter.md).

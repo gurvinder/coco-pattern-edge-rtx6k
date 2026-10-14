@@ -338,6 +338,36 @@ class TransportTests(unittest.TestCase):
             self.assertEqual(
                 server.gateway.issuer.authority.path, self.fixture.authority.path
             )
+        # The standard-KBS mode uses existing public protocol endpoints and
+        # requires an explicit GPU appraisal; it never falls back to loopback AS.
+        import hashlib
+        from rcar_gateway import RcarGateway
+
+        init_path = path / "approved-initdata.toml"
+        init_path.write_text('version = "0.1.0"\n')
+        rcar_config = {k: v for k, v in config.items() if k != "as_loopback_port"}
+        rcar_config["init_data"] = hashlib.sha384(init_path.read_bytes()).hexdigest()
+        rcar_config["appraisals"] = config["appraisals"] + [
+            {"submod": "gpu0", "tee": "nvidia", "policy_id": "storage-v1"}
+        ]
+        rcar_config["trustee_rcar"] = {
+            "origin": "https://localhost",
+            "ca_file": str(self.cert),
+            "init_data_file": str(init_path),
+            "address": None,
+            "policy_selector": None,
+        }
+        config_path.write_bytes(compact(rcar_config))
+        with configured_server(config_path) as server:
+            self.assertIsInstance(server.gateway, RcarGateway)
+        for bad in (
+            {**rcar_config, "as_loopback_port": 8089},
+            {**rcar_config, "init_data": "8" * 96},
+            {**rcar_config, "appraisals": config["appraisals"]},
+        ):
+            config_path.write_bytes(compact(bad))
+            with self.assertRaises(ValueError):
+                configured_server(config_path)
         for audience in (
             "http://localhost/v1",
             "https://localhost/v1?policy=other",

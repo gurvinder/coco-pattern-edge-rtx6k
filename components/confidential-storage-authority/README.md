@@ -1,7 +1,8 @@
 # Private-volume authority core
 
-This is the first implementation of the authority's durable transition rules.
-It is a local Python library, **not a deployed attestation service or a key broker**.
+This component implements durable storage transition rules and an authenticated
+TLS gateway. The isolated CPU RO/RW path has passed hardware tests. The new
+standard-Trustee GPU adapter is not deployed; this service is not a key broker.
 Run its tests with Python 3.9+ and the pinned signing-library dependency:
 
 ```sh
@@ -160,3 +161,16 @@ completion remains a trusted guest-executor responsibility; the current network
 tests use synthetic evidence and no disks. The full authority suite has 106
 passing tests at this checkpoint, and the cross-language TLS suite has 16. Real
 hardware attestation, private CDH key delivery and Kata activation are unfinished.
+
+## Standard Trustee RCAR mode
+
+`kbs_rcar.py` and `rcar_gateway.py` authenticate operations through the standard
+KBS `/auth` and `/attest` endpoints. Configure `trustee_rcar` instead of
+`as_loopback_port`; ambiguous configuration is rejected. The new mode requires
+both SNP and NVIDIA appraisals. Each request retains its own fresh KBS handshake,
+and execution requires its exact verified token plus the guest's signing proof.
+No resource request, policy mutation or AS private signing key is involved.
+
+See [configuration, security checks and evidence](../../docs/confidential-storage/standard-trustee-adapter.md).
+The authority suite now passes 121 tests. Live verified TLS `/auth` passed;
+composite hardware `/attest` acceptance still needs the candidate guest.

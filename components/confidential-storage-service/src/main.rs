@@ -35,6 +35,8 @@ const INITDATA: &str = "/run/confidential-containers/initdata/initdata.toml";
 #[derive(Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Authority {
+    #[serde(default)]
+    trustee_rcar: bool,
     audience: String,
     certificate_der: Vec<u8>,
     address: Option<SocketAddr>,
@@ -329,7 +331,15 @@ struct Service {
 impl Service {
     fn new(config: Config, initdata: String) -> Result<Self> {
         let a = config.authority;
-        let authority = AuthorityClient::new(
+        if a.trustee_rcar && !cfg!(feature = "trustee-rcar") {
+            return Err(invalid().into());
+        }
+        let constructor = if a.trustee_rcar {
+            AuthorityClient::new_rcar
+        } else {
+            AuthorityClient::new
+        };
+        let authority = constructor(
             confidential_storage_client::Config {
                 audience: a.audience,
                 certificate_der: a.certificate_der,

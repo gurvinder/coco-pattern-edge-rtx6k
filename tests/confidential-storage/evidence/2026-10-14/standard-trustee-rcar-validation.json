@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-14",
+  "baseCommit": "55a8038",
+  "scope": "standard Trustee request-authentication adapter; not installed in GPU guest; no composite hardware /attest or GPU storage E2E claim",
+  "rustToolchain": "1.94.1",
+  "results": {
+    "authority": {
+      "passed": 121,
+      "claims": "signed synthetic EAR fixtures"
+    },
+    "clientRcar": {
+      "passed": 5
+    },
+    "clientLegacy": {
+      "passed": 4
+    },
+    "privateCdh": {
+      "passed": 2
+    },
+    "kbsTypesWireRoundTrip": {
+      "passed": 1,
+      "limitation": "serialization only, not live KBS acceptance"
+    },
+    "service": {
+      "passedPerBuild": 8,
+      "builds": [
+        "trustee-rcar",
+        "default"
+      ]
+    },
+    "pythonFormattingAndLint": "passed",
+    "previewAll": "unavailable: no Make target",
+    "validateSchema": "existing bare-metal values rendering fails: global.hardware.profile absent"
+  },
+  "liveProbe": {
+    "trusteeImage": "registry.redhat.io/build-of-trustee/trustee-rhel9@sha256:85312d29d6ea7b96396b567c96893ae2527d83b9fc7a459044ba610c98593fae",
+    "implementedClientVerifiedTlsAuth": "passed",
+    "wrongTlsHostname": "rejected",
+    "authNonceDecodedBytes": 32,
+    "hardwareEvidenceSubmitted": false,
+    "resourceRequests": false,
+    "policyOrAdminMutations": false,
+    "temporaryPortForward": "closed"
+  },
+  "sourceInspection": {
+    "trustee": "71251310045d8be2e95041cf0028691623c73957",
+    "guestComponents": "0ab1fb1be6e46293f29600085f929ae035ca3739",
+    "kbsTypes": "0.15.0",
+    "exactTrusteeImageSourceMatchEstablished": false
+  },
+  "liveChanges": {
+    "productionRuntime": false,
+    "kserve": false,
+    "trusteeConfiguration": false,
+    "storageDisksOrKeys": false
+  },
+  "qwenHealth": {
+    "podUid": "d5cc3080-ae0b-4490-b145-56a216732566",
+    "phase": "Running",
+    "readyContainers": 2,
+    "restarts": 0,
+    "unchanged": true
+  },
+  "chatbotHealth": {
+    "podUid": "839d51fc-94fe-491b-9e77-cec5a4c1ae48",
+    "phase": "Running",
+    "readyContainers": 1,
+    "restarts": 0,
+    "unchanged": true
+  },
+  "remaining": [
+    "GPU-compatible agent/device lifecycle",
+    "Combined measured guest packaging",
+    "Real standard-Trustee composite /attest, claim shape and signing-key acceptance",
+    "Private CDH GPU key release and negative policies",
+    "Combined RO model / RW data / vLLM GPU inference"
+  ],
+  "sourceSha256": {
+    "components/confidential-storage-authority/attestation.py": "ae932ebce3cefb56f29ee4c8b0ba61b026c82972a2bc49c03ac64822ef16bd2b",
+    "components/confidential-storage-authority/gateway.py": "6ca43dd0febb5953d30a29a9f03911888dd7a23ceefcf1bdfd0dc217f63a3994",
+    "components/confidential-storage-authority/serve.py": "4c4782c5d217ece98511038f9c83a92649db28e73ab19005208c3a1e65dece14",
+    "components/confidential-storage-authority/kbs_rcar.py": "937091ecf6daef78515623b9a1ef78be7ab537840ba037831c051b97852ecbc9",
+    "components/confidential-storage-authority/rcar_gateway.py": "aae5d181c29b8c5f06e2ce100fc6714b64da73bfa7747cbe9305c9b6199b4548",
+    "components/confidential-storage-client/src/lib.rs": "70232b1446ca4bc4053c78546f80ecc7037368e1dcff68f28f7f791de193c5f3",
+    "components/confidential-storage-client/src/private_rcar_aa.rs": "4b33ab97f136f696d3b8841745a66129e502ddfb3b78779dbab5ff43de9c4512",
+    "components/confidential-storage-service/src/main.rs": "22d52641e252b76f0f74130ea909a32b64abc41fb42548e315f5d6d88adb2094",
+    "components/confidential-storage-kbs/tests/rcar_wire.rs": "8af1b6b274d9028ac79a4dd179d61e404eeb590dcf6d3369701f50f37b1a148e"
+  }
+}

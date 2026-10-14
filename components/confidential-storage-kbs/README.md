@@ -125,5 +125,7 @@ provider, alternate endpoint or encoding autodetection.
 CDH may reuse its own KBS attestation session. A fresh authority permit does not
 mean fresh CPU/GPU evidence was collected for every key request. Approve the
 actual GPU CDH/AA configuration, resource policies and acceptable session age
-before enabling this provider. This adapter alone does not solve the authority's
-custom operation-binding protocol against standard Trustee.
+before enabling this provider. Authority operation authentication is handled by
+the separate [standard Trustee RCAR adapter](../../docs/confidential-storage/standard-trustee-adapter.md).
+That implementation has passed unit tests and live TLS `/auth`; full composite
+hardware acceptance remains a separate gate.

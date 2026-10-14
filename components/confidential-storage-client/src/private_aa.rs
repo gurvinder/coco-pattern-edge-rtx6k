@@ -27,6 +27,10 @@ impl Evidence for PrivateAa {
     fn collect(&self, runtime_sha256: [u8; 32]) -> Result<Vec<u8>> {
         self.collect_digest(&runtime_sha256)
     }
+    #[cfg(feature = "private-rcar-aa")]
+    fn collect_rcar(&self, nonce: &str, key: &serde_json::Value) -> Result<Vec<u8>> {
+        crate::private_rcar_aa::collect(nonce, key)
+    }
 }
 impl PrivateAa {
     /// KBS negotiates SHA-256/384/512; pass the digest directly to private AA.

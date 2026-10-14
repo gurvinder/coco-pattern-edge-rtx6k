@@ -108,6 +108,28 @@ class Appraisal:
     submod: str
     tee: str
     policy_id: str
+    configuration: int = 2
+
+
+def audit_signed_appraisals(claims):
+    """Fixed diagnostic fields, called only after pinned signature verification."""
+    submods = claims.get("submods")
+    for name in ("cpu0", "gpu0"):
+        appraisal = submods.get(name) if isinstance(submods, dict) else None
+        appraisal = appraisal if isinstance(appraisal, dict) else {}
+        status = appraisal.get("ear.status")
+        if status not in ("affirming", "warning", "contraindicated", "none"):
+            status = "other"
+        vector = appraisal.get("ear.trustworthiness-vector")
+        vector = vector if isinstance(vector, dict) else {}
+        values = []
+        for field in ("hardware", "configuration", "executables"):
+            value = vector.get(field)
+            value = value if type(value) is int and -128 <= value <= 127 else "other"
+            values.append(f"{field}={value}")
+        print(
+            f"STORAGE_EAR submod={name} status={status} " + " ".join(values), flush=True
+        )
 
 
 class EarVerifier:
@@ -117,13 +139,30 @@ class EarVerifier:
     a trust anchor. No signer/issuer/policy is selected from caller input.
     """
 
-    def __init__(self, signer, issuer, audience, init_data, policy_sha256, appraisals):
+    def __init__(
+        self,
+        signer,
+        issuer,
+        audience,
+        init_data,
+        policy_sha256,
+        appraisals,
+        *,
+        issuer_claim="required",
+        gpu_binding="runtime-claims",
+    ):
         if not isinstance(signer, ec.EllipticCurvePublicKey) or not isinstance(
             signer.curve, ec.SECP256R1
         ):
             raise ValueError("pin a P-256 AS signer")
         if not issuer or not audience:
             raise ValueError("issuer and authority audience must be explicit")
+        if issuer_claim not in ("required", "absent-rcar"):
+            raise ValueError("select an explicit issuer claim profile")
+        self.issuer_claim = issuer_claim
+        if gpu_binding not in ("runtime-claims", "nvidia-nonce-match"):
+            raise ValueError("select an explicit GPU binding profile")
+        self.gpu_binding = gpu_binding
         if not isinstance(init_data, str) or not re.fullmatch(
             r"(?:[0-9a-f]{64}|[0-9a-f]{96}|[0-9a-f]{128})", init_data
         ):
@@ -136,6 +175,10 @@ class EarVerifier:
             or appraisals[0].tee not in ("snp", "tdx")
             or len({a.submod for a in appraisals}) != len(appraisals)
             or any(not a.policy_id for a in appraisals)
+            or any(
+                type(a.configuration) is not int or a.configuration not in (2, 3)
+                for a in appraisals
+            )
             or any(a.tee != "nvidia" for a in appraisals[1:])
         ):
             raise ValueError("require one real CPU and explicit optional GPUs")
@@ -166,6 +209,8 @@ class EarVerifier:
         return self._verify(token, nonce, request_sha256, now, rcar=runtime)
 
     def _verify(self, token, nonce, request_sha256, now, rcar=None):
+        if self.gpu_binding != "runtime-claims" and rcar is None:
+            raise Denied("RCAR device/session binding mismatch")
         if not isinstance(token, str) or not 0 < len(token) <= MAX_TOKEN:
             raise Denied("invalid token size")
         try:
@@ -178,6 +223,7 @@ class EarVerifier:
                 self.signer, signature, (header64 + "." + payload64).encode("ascii")
             )
             claims = read_object(unb64(payload64), MAX_TOKEN)
+            audit_signed_appraisals(claims)
             iat, exp = claims["iat"], claims["exp"]
             if (
                 type(now) is not int
@@ -192,7 +238,16 @@ class EarVerifier:
                 )
             ):
                 raise Denied("stale attestation result")
-            if claims["iss"] != self.issuer or claims["eat_profile"] != PROFILE:
+            # Some installed Trustee EAR brokers omit iss. This explicit RCAR-only
+            # profile requires its absence; it is never an issuer-check fallback.
+            # Identity still comes exclusively from the administrator-pinned signer,
+            # behind the pinned KBS TLS channel, with fresh request-specific RCAR.
+            issuer_ok = (
+                claims.get("iss") == self.issuer
+                if self.issuer_claim == "required"
+                else rcar is not None and "iss" not in claims
+            )
+            if not issuer_ok or claims["eat_profile"] != PROFILE:
                 raise Denied("wrong attestation issuer/profile")
             submods = claims["submods"]
             if not isinstance(submods, dict) or set(submods) != {
@@ -211,7 +266,7 @@ class EarVerifier:
                         type(v) is not int or v not in range(4) for v in vector.values()
                     )
                     or vector.get("hardware") != 2
-                    or vector.get("configuration") != 2
+                    or vector.get("configuration") != required.configuration
                     or vector.get("executables") != 3
                 ):
                     raise Denied("unacceptable device appraisal")
@@ -229,8 +284,41 @@ class EarVerifier:
                     expected_runtime = dict(rcar)
                     if required.submod != "cpu0":
                         del expected_runtime["additional-evidence"]
-                    if evidence["runtime_data_claims"] != expected_runtime:
+                    if (
+                        self.gpu_binding == "nvidia-nonce-match"
+                        and required.tee == "nvidia"
+                    ):
+                        # Standard Trustee's NVIDIA verifier checks the GPU nonce
+                        # against SHA-384(nonce + tee-pubkey), but does not export
+                        # runtime_data_claims for this submod. The CPU must bind the
+                        # exact additional-evidence bytes; both appraisals originate
+                        # from this gateway's one retained pinned-TLS KBS handshake.
+                        gpu = evidence["nvidia"]
+                        if (
+                            "runtime_data_claims" in evidence
+                            or gpu.get("x-nvidia-gpu-attestation-report-nonce-match")
+                            is not True
+                            or gpu.get("x-nvidia-overall-att-result") is not True
+                            or gpu.get("secboot") is not True
+                            or gpu.get("dbgstat") != "disabled"
+                            or gpu.get("measres") != "success"
+                        ):
+                            raise Denied("RCAR device/session binding mismatch")
+                    elif evidence["runtime_data_claims"] != expected_runtime:
                         raise Denied("RCAR device/session binding mismatch")
+                    if (
+                        self.gpu_binding == "nvidia-nonce-match"
+                        and required.submod == "cpu0"
+                    ):
+                        expected_report = (
+                            hashlib.sha384(compact(expected_runtime)).hexdigest()
+                            + "0" * 32
+                        )
+                        if (
+                            required.tee != "snp"
+                            or evidence.get("report_data") != expected_report
+                        ):
+                            raise Denied("RCAR device/session binding mismatch")
                     tee_key = rcar["tee-pubkey"]
                     if (
                         not isinstance(tee_key, dict)
@@ -282,6 +370,24 @@ class EarVerifier:
                 (iat, min(exp, iat + 61)),
             )
         except (KeyError, TypeError, ValueError, RecursionError) as exc:
+            field = exc.args[0] if isinstance(exc, KeyError) and exc.args else None
+            if field not in (
+                "iat",
+                "exp",
+                "iss",
+                "eat_profile",
+                "submods",
+                "ear.status",
+                "ear.appraisal-policy-id",
+                "ear.trustworthiness-vector",
+                ANNOTATED,
+                "init_data",
+                "runtime_data_claims",
+                "snp",
+                "nvidia",
+            ):
+                field = "other"
+            print(f"STORAGE_EAR malformed_field={field}", flush=True)
             raise Denied("malformed attestation result") from exc
 
 

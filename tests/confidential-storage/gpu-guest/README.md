@@ -71,12 +71,19 @@ provisioned by this preparation checkpoint.
 
 The receipt signer, TLS key and authority database must be retained together in
 the trusted authority deployment. The generated TLS certificate is valid for 30
-days and its public DER is embedded in the candidate initrd. Changing that pin
+days, has `CA=false` and `serverAuth` EKU, and its public DER is embedded in the candidate initrd. Changing that pin
 requires rebuilding/reapproving the guest. `server.json` currently uses absolute
-local paths: relocate these deliberately for deployment. The source-default EAR
-issuer and `default` appraisal IDs remain **unverified live expectations**. Do not
-weaken verification if the actual signed EAR differs; validate its provenance and
-policy meaning first.
+local paths: relocate these deliberately for deployment. The default preparer expects an issuer-bearing EAR with configuration score 2.
+The installed Trustee 1.2 was verified to omit `iss`, use configuration score 3,
+and export NVIDIA nonce-match rather than GPU `runtime_data_claims`. For this
+verified installation, prepare with `--as-issuer-claim absent-rcar
+--as-configuration 3 --as-gpu-binding nvidia-nonce-match`. These are explicit
+profiles, not automatic fallbacks. The absent-issuer profile requires absence of
+`iss`; it still pins the AS signing key, KBS TLS identity and EAR profile. The GPU
+profile requires signed nonce-match and secure GPU claims, plus the CPU's exact
+SHA-384 composite report-data binding (including the GPU evidence), and the
+same retained RCAR handshake. Unknown fields/failed appraisals remain denials.
+Never select these profiles merely to make an unexplained denial disappear.
 
 ## Guest admission and workload
 
@@ -183,3 +190,44 @@ This same-cluster lab deployment trusts the control plane and authority storage
 administrators, as it trusts the colocated Trustee. A retained PVC alone does not
 provide protection against rollback of authority history. Production deployment
 must place that history outside the adversary's rollback domain.
+
+## Scoped storage-key provisioning
+
+`kbs.resourcePolicy.modelKeyBindings` maps each new `default/model-keys` tag to
+its approved `launchMeasurement` and `initData`. The chart appends those references
+to RVPS without removing existing references. A bound tag additionally requires
+both exact values in the verified CPU claims, as well as all existing CPU/GPU
+security checks. Review the measured artifacts independently before changing this
+map. The example values are host/image-specific approval records, not portable
+reference values for arbitrary rebuilds.
+
+After GitOps reconciles both policies, load them into Trustee (its subPath mounts
+require a pod rollout). Only then provision the keys:
+
+```sh
+python3 tests/confidential-storage/gpu-guest/provision-storage-keys.py \
+  --kubeconfig /secure/cluster.kubeconfig \
+  --approved-policy /secure/reviewed-rendered-resource-policy.rego \
+  --model-key /secure/retained-ro-luks.key \
+  --data-key /secure/private-candidate/new-data.key
+```
+
+This checks the loaded KBS policy against the reviewed file before writing. It
+reads the existing private 32-byte model key, exclusively creates or reuses the
+private 32-byte RW key, and CAS-merges only the two named Vault entries. Different
+existing entries are errors; unrelated credentials are preserved. Retain the RW
+file across retries and back up the Vault state. Verify ESO reconciliation, then
+reload Trustee's existing startup secret converter before admitting initialization.
+Verify a new pod UID and both explicit conversion records: an operator may revert
+a rollout-restart annotation before the deployment controller acts on it.
+Never launch a formatting attempt with a missing credential: uncertain initialization
+ownership deliberately remains fenced and requires explicit recovery.
+
+
+For a failed first-use attempt with **no step permit ever issued**, the authority
+administrator can use `components/confidential-storage-authority/recover_unstarted.py`
+after retaining a consistent DB backup, stopping the failed guest and recording
+evidence. Supply the existing DB, exact volume/activation IDs and evidence hash.
+The transactional guard retires the old session and preserves the operation ledger.
+It cannot recover a Started step or initialized disk, and is not exposed by the
+workload-facing gateway. See the detailed candidate guide before using recovery.

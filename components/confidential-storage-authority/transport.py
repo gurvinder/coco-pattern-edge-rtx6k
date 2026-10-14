@@ -18,6 +18,38 @@ from receipts import compact
 
 MAX_ENVELOPE = MAX_TOKEN + 2 * MAX_REQUEST + 1024
 
+# Exact local exception strings only. Never print an exception or client field.
+DENIAL_CODES = {
+    "Trustee RCAR response rejected": "trustee-response",
+    "Trustee RCAR unavailable": "trustee-unavailable",
+    "invalid Trustee token response": "trustee-token-envelope",
+    "unsupported JWS profile": "token-profile",
+    "stale attestation result": "token-time",
+    "wrong attestation issuer/profile": "token-issuer-profile",
+    "unexpected device appraisal set": "device-set",
+    "unacceptable device appraisal": "device-appraisal",
+    "missing expected hardware evidence": "device-evidence",
+    "wrong measured guest configuration": "guest-initdata",
+    "RCAR device/session binding mismatch": "device-session-binding",
+    "malformed attestation result": "token-shape",
+    "invalid ES256 signature": "token-signature",
+    "invalid ES256 signature length": "token-signature-length",
+    "invalid base64url": "base64url",
+    "noncanonical base64url": "base64url-canonical",
+    "invalid JSON": "json",
+    "expected JSON object": "json-object",
+    "invalid message size": "message-size",
+    "duplicate JSON member": "json-duplicate",
+    "invalid composite evidence size": "composite-size",
+    "RCAR signing-key binding mismatch": "signing-key-binding",
+    "expected dedicated P-256 storage key": "signing-key-profile",
+    "invalid EC coordinates": "signing-key-coordinates",
+    "invalid EC key": "signing-key-invalid",
+    "invalid composite evidence envelope": "composite-envelope",
+    "NVIDIA evidence required": "gpu-evidence-missing",
+    "unknown, expired or already attempted handshake": "handshake-state",
+}
+
 
 def tls_context(certificate, key):
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -39,6 +71,15 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
     def reply(self, status, body):
+        # Fixed route/status only: no URL parameters, request body, evidence,
+        # token, proof, receipt, key or exception text reaches the audit log.
+        route = (
+            self.path
+            if getattr(self, "path", "")
+            in ("/v1/challenge", "/v1/attest", "/v1/execute")
+            else "other"
+        )
+        print(f"STORAGE_AUTHORITY route={route} status={status}", flush=True)
         raw = compact(body)
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
@@ -99,7 +140,9 @@ class Handler(BaseHTTPRequestHandler):
                 result = self.server.gateway.execute(
                     body["nonce"], request, body["token"], body["proof"]
                 )
-        except Denied:
+        except Denied as exc:
+            code = DENIAL_CODES.get(str(exc), "other")
+            print(f"STORAGE_AUTHORITY denial={code}", flush=True)
             self.reply(403, {"error": "request denied"})
             return
         except Exception:  # Do not expose SQLite/crypto/configuration details.

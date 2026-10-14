@@ -51,7 +51,8 @@ class Authority:
 
     No timeout-based takeover: a missing Close leaves the volume owned until a
     separately reviewed recovery procedure establishes that the old guest stopped.
-    There is intentionally no reset/reinitialize or force-takeover method.
+    There is no reset or force takeover after a destructive step was issued.
+    An explicitly released unstarted attempt permanently retires its old session.
     """
 
     def __init__(self, path):
@@ -176,6 +177,49 @@ class Authority:
             self._save(db, record, "register")
         return record
 
+    def update_workload_policy(
+        self, volume_ids, old_policy, new_policy, evidence_sha256
+    ):
+        """Administrator-only, atomic update of closed Ready volumes.
+
+        This does not rotate keys, reset disks, change manifests, or recover an
+        owner. Previous policies are permanently retired for these records.
+        The administrator must separately update the measured guest and KBS
+        release bindings. There is deliberately no network route for this action.
+        """
+        digest(old_policy)
+        digest(new_policy)
+        digest(evidence_sha256)
+        if (
+            not isinstance(volume_ids, list)
+            or not 1 <= len(volume_ids) <= 32
+            or len(set(volume_ids)) != len(volume_ids)
+            or old_policy == new_policy
+        ):
+            raise Denied("invalid workload policy update")
+        with self._transaction() as db:
+            records = [self._load(db, name) for name in volume_ids]
+            for record in records:
+                if (
+                    record["revoked"]
+                    or record["state"] != "Ready"
+                    or record["owner"] is not None
+                    or record["policy_sha256"] != old_policy
+                    or new_policy in record.get("retired_workload_policies", [])
+                ):
+                    raise Denied(
+                        "policy update requires closed Ready volumes and fresh policy"
+                    )
+            for record in records:
+                record.setdefault("retired_workload_policies", []).append(old_policy)
+                record["policy_sha256"] = new_policy
+                record["last_policy_update"] = {
+                    "previous_policy_sha256": old_policy,
+                    "evidence_sha256": evidence_sha256,
+                }
+                self._save(db, record, "update-workload-policy")
+            return records
+
     def begin(
         self,
         volume_id,
@@ -202,6 +246,8 @@ class Authority:
                 raise Denied("volume or workload not authorized")
             if expected_generation != record["generation"]:
                 raise Denied("stale generation")
+            if peer.session_sha256 in record.get("retired_initialization_sessions", []):
+                raise Denied("retired unstarted initialization session")
             if operation == "initialize":
                 if not record.get("initialization_approval"):
                     raise Denied("explicit first-use initialization approval required")
@@ -346,6 +392,49 @@ class Authority:
             record["last_closed"] = record["owner"]
             record["owner"] = None
             self._save(db, record, "close")
+
+    def release_unstarted_initialization(
+        self, volume_id, activation_id, evidence_sha256
+    ):
+        """Administrator-only recovery before ANY destructive step was issued.
+
+        No network route exposes this method. The durable ledger is the safety
+        condition: an empty step journal proves no formatting permit was issued.
+        A racing step and recovery serialize in the same transaction. Retire the
+        old session permanently, retain operation IDs/history, and require the
+        next measured guest to repeat its complete blank-device check. This does
+        not recover a Started step, initialized disk, lost journal or rollback.
+        The operator records its teardown/import-readiness evidence hash here.
+        """
+        from initialization import canonical_uuid
+
+        canonical_uuid(activation_id)
+        digest(evidence_sha256)
+        with self._transaction() as db:
+            record = self._load(db, volume_id)
+            owner = record.get("owner")
+            if (
+                record["revoked"]
+                or record["state"] != "Initializing"
+                or not owner
+                or owner["operation"] != "initialize"
+                or owner["activation_id"] != activation_id
+                or not record.get("initialization_approval")
+                or record.get("initialization_steps") != []
+            ):
+                raise Denied("only unstarted initialization may be released")
+            retired = record.setdefault("retired_initialization_sessions", [])
+            if owner["session_sha256"] in retired:
+                raise Denied("initialization session already retired")
+            retired.append(owner["session_sha256"])
+            record["last_unstarted_release"] = {
+                "owner": owner,
+                "evidence_sha256": evidence_sha256,
+            }
+            record["owner"] = None
+            record["state"] = "Uninitialized"
+            self._save(db, record, "release-unstarted-initialization")
+            return record
 
     def revoke(self, volume_id):
         """Administrative denial of new operations; does not revoke existing keys."""

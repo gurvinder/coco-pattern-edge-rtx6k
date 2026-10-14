@@ -66,8 +66,16 @@ def configured_server(path):
         "receipt_issuer",
         "receipt_key_id",
     }
+    issuer_claim = config.get("as_issuer_claim", "required")
+    if "as_issuer_claim" in config:
+        common.add("as_issuer_claim")
+    gpu_binding = config.get("as_gpu_binding", "runtime-claims")
+    if "as_gpu_binding" in config:
+        common.add("as_gpu_binding")
     direct = set(config) == common | {"as_loopback_port"}
     rcar_mode = set(config) == common | {"trustee_rcar"}
+    if direct and (issuer_claim != "required" or gpu_binding != "runtime-claims"):
+        raise ValueError("absent issuer profile requires standard RCAR")
     if not (direct or rcar_mode):
         raise ValueError("select exactly one explicit authority attestation mode")
     listen = config["listen"]
@@ -99,6 +107,8 @@ def configured_server(path):
         config["init_data"],
         config["policy_sha256"],
         [Appraisal(**a) for a in config["appraisals"]],
+        issuer_claim=issuer_claim,
+        gpu_binding=gpu_binding,
     )
     receipt_key = load_pem_private_key(private_pem(config["receipt_key"]), None)
     private_pem(config["tls_key"])

@@ -5,6 +5,7 @@ from contextlib import redirect_stdout
 import copy
 from datetime import datetime, timedelta, timezone
 import io
+import importlib.util
 import json
 from pathlib import Path
 import sqlite3
@@ -103,6 +104,13 @@ class PreparationTests(unittest.TestCase):
             prepare.prepare(self.args)
         state = self.args.output
         guest = prepare.read(state / "guest-public.json")
+        workload = prepare.read(state / "workload.json")
+        environment = dict(item.split("=", 1) for item in workload["environment"])
+        self.assertEqual(environment["USER"], "qwen")
+        self.assertEqual(environment["LOGNAME"], "qwen")
+        self.assertEqual(
+            environment["TORCHINDUCTOR_CACHE_DIR"], "/data/cache/torchinductor"
+        )
         self.assertTrue(guest["authority"]["trustee_rcar"])
         self.assertEqual(guest["kbs"]["provider"], "private-cdh")
         with sqlite3.connect(state / "authority.db") as db:
@@ -129,6 +137,35 @@ class PreparationTests(unittest.TestCase):
         self.assertEqual(
             before, {p.name: p.read_bytes() for p in state.iterdir() if p.is_file()}
         )
+
+    def test_environment_revision_preserves_storage_and_creates_no_credentials(self):
+        spec = importlib.util.spec_from_file_location(
+            "revision", prepare.HERE / "update-environment.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with redirect_stdout(io.StringIO()):
+            prepare.prepare(self.args)
+            state = self.args.output
+            module.revise(
+                state,
+                state / "guest-public.json",
+                state / "server.json",
+                self.root / "revision",
+                {"USER": "revised-user"},
+            )
+        before = prepare.read(state / "guest-public.json")
+        after = prepare.read(self.root / "revision/guest-public.json")
+        self.assertNotEqual(
+            before["authority"]["policy_sha256"], after["authority"]["policy_sha256"]
+        )
+        for key in ("certificate_der", "receipt_public_key", "address"):
+            self.assertEqual(before["authority"][key], after["authority"][key])
+        for old, new in zip(before["volumes"], after["volumes"]):
+            new["expected"]["policy_sha256"] = old["expected"]["policy_sha256"]
+            self.assertEqual(old, new)
+        files = {p.name for p in (self.root / "revision").iterdir()}
+        self.assertFalse(files.intersection({"tls.key", "receipt.key", "authority.db"}))
 
     def test_recreated_or_wrong_data_claim_denied(self):
         with self.assertRaises(Invalid):
@@ -157,6 +194,22 @@ class PreparationTests(unittest.TestCase):
         aa.write_text(aa.read_text() + '\npassword = "test-value"\n')
         with self.assertRaises(Invalid):
             prepare.public_configs(self.inputs)
+
+    def test_authority_certificate_is_a_server_leaf_not_a_ca(self):
+        with redirect_stdout(io.StringIO()):
+            prepare.prepare(self.args)
+        cert = x509.load_pem_x509_certificate(
+            (self.args.output / "tls.pem").read_bytes()
+        )
+        self.assertFalse(
+            cert.extensions.get_extension_for_class(x509.BasicConstraints).value.ca
+        )
+        from cryptography.x509.oid import ExtendedKeyUsageOID
+
+        self.assertIn(
+            ExtendedKeyUsageOID.SERVER_AUTH,
+            cert.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value,
+        )
 
     def test_conflicting_ca_pin_denied(self):
         cdh = self.inputs / "cdh.toml"

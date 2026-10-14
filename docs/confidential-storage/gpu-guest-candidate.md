@@ -135,24 +135,48 @@ exposed.
 The candidate RuntimeClass aliases the existing isolated `kata-snp-storage-probe`
 handler. Only that test handler's configuration was switched to a hash-named
 NVIDIA guest image, with previous configurations retained. The production GPU
-configuration is unchanged; CRI-O was neither reloaded nor restarted.
+configuration is unchanged; CRI-O was neither reloaded nor restarted. The live
+QEMU image/kernel/firmware hashes, eight-vCPU EPYC-v4 configuration and exact
+command line match the independently calculated v14 reference; the historical
+v12 comparison is retained separately.
+
+During diagnostic hashing, reading the whole 214 MB initrd into memory caused
+the VFIO-manager helper container to be OOMKilled at 11:08:23 UTC and restart
+once. It recovered; subsequent hashing uses 1 MiB chunks. The original Qwen
+and chatbot kept their UIDs, readiness and zero restarts; both HTTP endpoints
+returned 200 after recovery.
 
 Guest bring-up admitted the exact non-root process policy and attached both block
 PVCs. Real NVIDIA CDI output required bounded compatibility handling: normalize
 readonly regular-file binds, omit the private persistence socket/daemon, pinned
 firmware files and display modesetting device. Unknown mounts, block devices,
-broad device grants and privilege changes still fail closed. The fixed guest libcuda environment addition is admitted. All 22 native tests
+broad device grants and privilege changes still fail closed. The fixed guest libcuda environment addition is admitted. All 23 native tests
 and the real Regorus policy tests pass. Live GPU CDI admission now succeeds;
 private storage activation is denied and cleanup completes. No application has
 started and no GPU storage E2E is claimed.
 
-The authority image passed its 121 tests inside the built image. Its deployment
+The authority image passed all 131 tests inside the built image. Its deployment
 uses `restricted-v2`, namespace UID 1001100000, no capabilities, no service-account
 token and a read-only container root. Vault/ESO supplies its TLS and receipt keys.
 Its two-volume database is retained on `storage-gpu-authority-state` at
 `/state/retained/authority.db`. Missing state prevents startup rather than creating
 a fresh database. A pinned-TLS RCAR challenge against the standard pattern Trustee
-passed. This is connectivity evidence, not successful composite attestation.
+passed. The real guest also obtains a fresh challenge and submits composite
+CPU/GPU evidence; both CPU and GPU now have affirming appraisals after independently approved
+references were loaded. Final end-to-end storage activation remains under test.
+
+The first TLS failure was a generated authority certificate with `CA=true`.
+The guest Rust verifier correctly rejected its use as a server leaf
+(`CaUsedAsEndEntity`). The preparer now emits `CA=false` with the `serverAuth`
+extended key usage. Reissuing only the public certificate preserved the private
+TLS key, receipt key, InitData and retained authority database. An exact Rust
+client probe and the real guest both verify the new pin successfully.
+
+Failure diagnostics expose only fixed phase/category labels. Authority logs
+contain fixed route/status/denial codes and bounded trust-vector values after
+pinned-signature verification. Request contents, keys, evidence, session cookies,
+tokens and arbitrary exception strings are excluded. Privacy regression tests
+cover hostile diagnostic inputs.
 
 **Lab trust boundary:** this authority and the existing Trustee are trusted
 services on the same administrative cluster. The PVC retains state across process
@@ -161,20 +185,90 @@ administrator rolling it back. Production freshness requires authority state in 
 separate trusted rollback domain, with retained backups and controlled recovery.
 Neither dm-integrity nor a same-cluster state PVC supplies that guarantee.
 
+The installed Trustee signs an EAR without `iss` and without GPU
+`runtime_data_claims`. The explicit adapter profile verifies its pinned signer,
+requires the absence of `iss`, keeps the standard EAR profile and freshness checks,
+and expects configuration appraisal 3. GPU freshness uses the signed NVIDIA
+nonce-match claim plus the CPU's exact SHA-384 composite report-data binding.
+The gateway accepts this only for its retained request-specific standard KBS RCAR
+session. Missing GPU claims, wrong report-data and warning appraisals are tested
+denials. The stricter original profiles remain the default.
+
+The scoped GitOps update changes only the key-release ConfigMap and RVPS policy.
+Each of the two new tags additionally pins exact launch/InitData values; other
+keys retain their existing CPU+GPU requirements. All 84 Rego cases and four
+reference-merge tests passed. Trustee was rolled twice to load subPath-mounted
+references/policy and then startup-converted new resources. Original Qwen/chatbot
+pod identities and zero restarts were retained; real inference returned HTTP 200.
+
+## Verified storage and CUDA checkpoint (14 October 2026)
+
+Guest pod `1273e795-9149-418f-b040-2ade09ef2e81` completed standard Trustee
+composite CPU/GPU attestation, RO model verification, first-use RW initialization,
+and application-side CUDA vector addition. Its logs contain:
+
+```text
+STORAGE_MODEL_RO_HASHES_PASS
+STORAGE_DATA_FIRST_WRITE_PASS
+{"event":"CUDA_GPU_PROBE_PASS","device":"NVIDIA RTX PRO 6000 Blackwell Server Edition","torch":"2.9.0a0+50eac811a6.nv25.09","cuda":"13.0"}
+```
+
+All four RW journal steps are Complete. Both volume records are Ready, and the
+failed application closed both owners cleanly. The disk is now used: never repeat
+blank initialization, replace its key, or restore the original seed database.
+
+vLLM subsequently failed during import because `getpass.getuser()` could not find
+UID 1001 in the image's passwd database. The next measured revision sets `USER`,
+`LOGNAME` and `TORCHINDUCTOR_CACHE_DIR` explicitly. The application remains UID/GID
+1001 with no capabilities, no privilege escalation, and a read-only root.
+This checkpoint proves storage and CUDA execution, **not successful vLLM serving**.
+
+### Updating a measured workload without resetting its storage
+
+`gpu-guest/update-environment.py` derives revised policy, InitData, contract,
+pod and public guest/server configuration from the previous preparation. It
+creates neither keys nor a database. Preserve the existing TLS/receipt keys,
+model/data credentials, volume records and disk contents.
+
+The administrator-only `confidential-storage-authority/update_policy.py` updates
+an explicit set of volume policy bindings atomically. Every record must be
+nonrevoked, Ready, unowned and match the exact previous policy. It retains disk
+headers, authenticated manifests, generation, initialization journal, operation
+IDs and events, records the reviewed evidence digest, and permanently retires the
+old policy. Concurrent reopen and update cannot both win. No HTTP route exposes
+this operation. It cannot recover a live owner or an interrupted format.
+
+Separately update the public authority InitData through Vault CAS/ESO, its server
+configuration, the measured guest, and the two scoped Trustee launch/InitData
+bindings. Verify the actual replacement Trustee pod and loaded configuration;
+rollout status alone does not prove that startup-only resources were reloaded.
+
 ## Remaining acceptance work
 
-- Finish real guest CDI admission and a genuine standard Trustee composite RCAR
-  round trip. Verify signed EAR fields against the reviewed installed policies.
-- Independently match the final guest launch to its approved measurement and
-  InitData. Scope the two new `default/model-keys/qwen-gpu-{model,data}-v1` resources
-  to those exact identities; test denials before provisioning credentials.
-- Preserve the existing RO disk key. Provision a durable new RW key; initialization
-  remains restricted to the new claim and the guest's complete zero-device check.
-- Verify all model hashes, unprivileged CUDA/vLLM inference, and `/data` persistence
-  from a fresh confidential VM, including ownership and failure cleanup.
-- Deploy a second KServe InferenceService and separate chatbot, preserving the
-  original endpoint. Exercise OCI population for a new model PVC as well.
+- Reopen the same RO and RW disks in a fresh VM, verify the persistent canary,
+  independently compare the new live launch, and complete vLLM inference.
+- Deploy a second KServe InferenceService and chatbot on port 30081, preserving
+  the original endpoint. Exercise OCI population for a new model PVC as well.
 
-No storage key has been provisioned for this GPU candidate, no data disk formatted,
-and no second GPU inference endpoint or chatbot is ready at this checkpoint.
 See the [live bring-up record](../../tests/confidential-storage/evidence/2026-10-14/gpu-live-bringup/progress.json).
+
+### Unstarted initialization recovery
+
+The first fully attested attempt obtained authority decisions, but standard KBS
+returned resource-not-found. The second `rollout restart` command had reported
+success without a replacement pod: the operator retained the old template/pod.
+A checked deletion of that specific stale Trustee pod caused its replacement to
+import both new keys; its new UID and conversion logs were verified. A successful
+rollout-status command alone is insufficient for resource readiness here.
+
+The authority correctly retained the RW owner in `Initializing`. Its step journal
+was empty: **no destructive formatting permit had been issued**. Recovery now has
+a narrowly scoped administrator-only operation, `recover_unstarted.py`. Before
+using it, stop the failed guest and retain a consistent private database backup
+and audit evidence. It checks the exact activation, nonrevoked state, original
+approval and empty step journal atomically, retires that session, and returns the
+record to `Uninitialized`. Operation IDs, approval, generation and all events are
+retained. A new guest must repeat the complete blank-device check. A concurrent
+step issuance and recovery cannot both succeed. Any Started step, including one
+with a lost response, remains fenced; this is not general interrupted-format or
+rollback recovery. No HTTPS/application route exposes this administration method.

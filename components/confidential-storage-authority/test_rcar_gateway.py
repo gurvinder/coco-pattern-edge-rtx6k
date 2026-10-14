@@ -2,6 +2,7 @@
 
 import base64
 import copy
+import hashlib
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import tempfile
@@ -140,6 +141,102 @@ class RcarGatewayTests(unittest.TestCase):
         with self.assertRaises(Denied):
             self.gateway.execute(*args)
         self.assertEqual(len(self.kbs.calls), 1)
+
+    def test_explicit_absent_issuer_profile_requires_rcar_and_pinned_signature(self):
+        self.kbs.mutate = lambda c: c.pop("iss")
+        with self.assertRaises(Denied):
+            self.prepare()  # Default profile still requires the issuer.
+        self.verifier.issuer_claim = "absent-rcar"
+        args = self.prepare()
+        self.gateway.execute(*args)
+        with self.assertRaises(Denied):
+            self.verifier.verify(args[2], args[0], "a" * 64, self.wall)
+        self.kbs.mutate = lambda c: c.update(iss="test-as")
+        with self.assertRaises(Denied):
+            self.prepare()  # Even matching iss is wrong for the absence profile.
+        self.elapsed += 61
+        self.kbs.mutate = lambda c: c.pop("iss")
+        self.verifier.signer = ec.generate_private_key(ec.SECP256R1()).public_key()
+        with self.assertRaises(Denied):
+            self.prepare()
+
+    def test_configuration_three_is_explicit_and_cannot_accept_warning(self):
+        def installed(c):
+            for a in c["submods"].values():
+                a["ear.trustworthiness-vector"]["configuration"] = 3
+
+        self.kbs.mutate = installed
+        with self.assertRaises(Denied):
+            self.prepare()
+        self.verifier.appraisals = tuple(
+            Appraisal(a.submod, a.tee, a.policy_id, configuration=3)
+            for a in self.verifier.appraisals
+        )
+        args = self.prepare()
+        self.gateway.execute(*args)
+
+        def warning(c):
+            installed(c)
+            c["submods"]["cpu0"]["ear.status"] = "warning"
+            c["submods"]["cpu0"]["ear.trustworthiness-vector"]["executables"] = 33
+
+        self.kbs.mutate = warning
+        with self.assertRaises(Denied):
+            self.prepare()
+
+    def installed_gpu_claims(self, claims):
+        cpu = claims["submods"]["cpu0"][ANNOTATED]
+        cpu["report_data"] = (
+            hashlib.sha384(compact(cpu["runtime_data_claims"])).hexdigest() + "0" * 32
+        )
+        gpu = claims["submods"]["gpu0"][ANNOTATED]
+        del gpu["runtime_data_claims"]
+        gpu["nvidia"] = {
+            "x-nvidia-gpu-attestation-report-nonce-match": True,
+            "x-nvidia-overall-att-result": True,
+            "secboot": True,
+            "dbgstat": "disabled",
+            "measres": "success",
+        }
+
+    def test_nvidia_nonce_binding_requires_exact_cpu_composite_and_secure_gpu(self):
+        self.kbs.mutate = self.installed_gpu_claims
+        with self.assertRaises(Denied):
+            self.prepare()  # No automatic fallback for missing GPU runtime claims.
+        self.verifier.gpu_binding = "nvidia-nonce-match"
+        args = self.prepare()
+        self.gateway.execute(*args)
+        mutations = [
+            lambda c: c["submods"]["cpu0"][ANNOTATED].update(report_data="0" * 128),
+            lambda c: c["submods"]["cpu0"][ANNOTATED].pop("report_data"),
+            lambda c: c["submods"]["gpu0"][ANNOTATED].update(runtime_data_claims={}),
+            lambda c: c["submods"].pop("gpu0"),
+        ]
+        for field in (
+            "x-nvidia-gpu-attestation-report-nonce-match",
+            "x-nvidia-overall-att-result",
+            "secboot",
+            "dbgstat",
+            "measres",
+        ):
+            mutations.append(
+                lambda c, f=field: c["submods"]["gpu0"][ANNOTATED]["nvidia"].pop(f)
+            )
+            mutations.append(
+                lambda c, f=field: c["submods"]["gpu0"][ANNOTATED]["nvidia"].update(
+                    {f: "invalid"}
+                )
+            )
+        for mutation in mutations:
+            self.elapsed += 61
+
+            def mutate(c):
+                self.installed_gpu_claims(c)
+                mutation(c)
+
+            self.kbs.mutate = mutate
+            with self.assertRaises(Denied):
+                self.prepare()
 
     def test_parallel_execute_only_one_dispatches(self):
         args = self.prepare()

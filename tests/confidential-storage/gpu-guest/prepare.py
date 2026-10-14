@@ -22,7 +22,7 @@ import uuid
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, ed25519
-from cryptography.x509.oid import NameOID
+from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
@@ -236,6 +236,9 @@ def prepare(args):
         "CUDA_VISIBLE_DEVICES": "0",
         "TMPDIR": "/data/tmp",
         "HOME": "/data/home",
+        "USER": "qwen",
+        "LOGNAME": "qwen",
+        "TORCHINDUCTOR_CACHE_DIR": "/data/cache/torchinductor",
         "PYTHONDONTWRITEBYTECODE": "1",
         "HF_HOME": "/data/hf",
         "HF_HUB_OFFLINE": "1",
@@ -344,7 +347,10 @@ def prepare(args):
         .add_extension(
             x509.SubjectAlternativeName([x509.DNSName(HOST)]), critical=False
         )
-        .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
+        .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+        .add_extension(
+            x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]), critical=False
+        )
         .sign(tls_key, hashes.SHA256())
     )
     (out / "tls.pem").write_bytes(tls.public_bytes(serialization.Encoding.PEM))
@@ -429,10 +435,22 @@ def prepare(args):
         "tls_key": state_path + "/tls.key",
         "as_signer": state_path + "/as-signer.pem",
         "as_issuer": "CoCo-Attestation-Service",
+        "as_issuer_claim": getattr(args, "as_issuer_claim", "required"),
+        "as_gpu_binding": getattr(args, "as_gpu_binding", "runtime-claims"),
         "receipt_key": state_path + "/receipt.key",
         "appraisals": [
-            {"submod": "cpu0", "tee": "snp", "policy_id": "default"},
-            {"submod": "gpu0", "tee": "nvidia", "policy_id": "default"},
+            {
+                "submod": "cpu0",
+                "tee": "snp",
+                "policy_id": "default",
+                "configuration": getattr(args, "as_configuration", 2),
+            },
+            {
+                "submod": "gpu0",
+                "tee": "nvidia",
+                "policy_id": "default",
+                "configuration": getattr(args, "as_configuration", 2),
+            },
         ],
         "trustee_rcar": {
             "origin": TRUSTEE,
@@ -476,4 +494,13 @@ if __name__ == "__main__":
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--new-data-pvc-uid", required=True)
     parser.add_argument("--authority-address", required=True)
+    parser.add_argument(
+        "--as-issuer-claim", choices=("required", "absent-rcar"), default="required"
+    )
+    parser.add_argument("--as-configuration", type=int, choices=(2, 3), default=2)
+    parser.add_argument(
+        "--as-gpu-binding",
+        choices=("runtime-claims", "nvidia-nonce-match"),
+        default="runtime-claims",
+    )
     prepare(parser.parse_args())

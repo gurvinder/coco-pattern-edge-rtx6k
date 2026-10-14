@@ -17,7 +17,8 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
 
-from attestation import b64, proof_message
+from attestation import audit_signed_appraisals, b64, proof_message
+from authority import Denied
 from receipts import compact
 from serve import configured_server, private_pem
 import test_gateway as fixtures
@@ -26,6 +27,63 @@ from transport import MAX_ENVELOPE, Server, tls_context
 
 
 class TransportTests(unittest.TestCase):
+    def test_audit_contains_only_fixed_route_and_status(self):
+        with patch("builtins.print") as audit:
+            status, _ = self.post("/unknown?token=must-not-log", b"secret-body")
+            self.assertEqual(status, 404)
+            status, _ = self.post("/v1/attest", b'{"token":"must-not-log"}')
+            self.assertEqual(status, 403)
+        self.assertEqual(
+            [call.args[0] for call in audit.call_args_list],
+            [
+                "STORAGE_AUTHORITY route=other status=404",
+                "STORAGE_AUTHORITY denial=other",
+                "STORAGE_AUTHORITY route=/v1/attest status=403",
+            ],
+        )
+
+    def test_denial_audit_never_prints_exception_text(self):
+        for error, code in [
+            ("secret-evidence-must-not-log", "other"),
+            ("unacceptable device appraisal", "device-appraisal"),
+        ]:
+            with patch.object(
+                self.fixture.gateway, "challenge", side_effect=Denied(error)
+            ):
+                with patch("builtins.print") as audit:
+                    status, body = self.post("/v1/challenge", self.fixture.raw)
+            self.assertEqual(status, 403)
+            self.assertEqual(body, {"error": "request denied"})
+            self.assertEqual(
+                audit.call_args_list[0].args[0], f"STORAGE_AUTHORITY denial={code}"
+            )
+
+    def test_signed_appraisal_audit_is_bounded_and_fixed(self):
+        with patch("builtins.print") as audit:
+            audit_signed_appraisals(
+                {
+                    "submods": {
+                        "cpu0": {
+                            "ear.status": "secret-token",
+                            "ear.trustworthiness-vector": {
+                                "hardware": "secret-evidence",
+                                "configuration": True,
+                                "executables": 999999999999999999999,
+                            },
+                        }
+                    }
+                }
+            )
+        self.assertEqual(
+            [c.args[0] for c in audit.call_args_list],
+            [
+                "STORAGE_EAR submod=cpu0 status=other "
+                "hardware=other configuration=other executables=other",
+                "STORAGE_EAR submod=gpu0 status=other "
+                "hardware=other configuration=other executables=other",
+            ],
+        )
+
     def setUp(self):
         self.fixture = fixtures.GatewayTests()
         self.fixture.setUp()

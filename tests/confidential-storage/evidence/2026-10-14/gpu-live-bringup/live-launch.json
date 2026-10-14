@@ -1,0 +1,13 @@
+{
+  "-initrd": "/var/opt/kata-storage-test/gpu-candidate-853167d3e8c0/initrd",
+  "-kernel": "/usr/share/kata-containers/osbuilder-images/6.12.0-211.16.1.el10_2.x86_64/vmlinuz",
+  "-append": "tsc=reliable no_timer_check rcupdate.rcu_expedited=1 i8042.direct=1 i8042.dumbkbd=1 i8042.nopnp=1 i8042.noaux=1 noreplace-smp reboot=k cryptomgr.notests net.ifnames=0 pci=lastbus=0 console=hvc0 console=hvc1 quiet panic=1 nr_cpus=8 selinux=0 scsi_mod.scan=none agent.launch_process_timeout=15 agent.log=warn cgroup_no_v1=all pci=realloc pci=nocrs pci=assign-busses nvrc.smi.srs=1",
+  "-smp": "8,cores=1,threads=1,sockets=8,maxcpus=8",
+  "-cpu": "EPYC-v4,pmu=off",
+  "-bios": "/usr/share/edk2/ovmf/OVMF.amdsev.fd",
+  "fileSha256": {
+    "-initrd": "853167d3e8c0b916404d135189c9f737160154c8ee2f6befd887b8a7e947d48e",
+    "-kernel": "0317da8a23853124ed4e4da6c56254f40a741ff4507e1afbbcb7f32e5c097206",
+    "-bios": "1aa196fe94e56809aa668fc4eabfc50923131288e018bcf0c6ab4dd3581bd850"
+  }
+}

@@ -28,6 +28,59 @@ lazy_static! {
     static ref STATE: Arc<Mutex<State>> = Arc::new(Mutex::new(State::default()));
 }
 
+fn public_failure_status(raw: &str) -> Option<&str> {
+    let (stage, category) = raw.split_once(' ')?;
+    ([
+        "reserve",
+        "resolve-device",
+        "authority-reopen",
+        "authenticate-header",
+        "kbs-retrieve",
+        "open-mappings",
+        "initialization-plan",
+        "initialization-begin",
+        "initialization-key",
+        "initialization-step",
+        "luks-format",
+        "integrity-initialize",
+        "filesystem-create",
+        "durability-barrier",
+        "close",
+    ]
+    .contains(&stage)
+        && [
+            "authority-config",
+            "authority-transport",
+            "authority-binding",
+            "private-attestation",
+            "authority-receipt",
+            "local-or-kbs",
+        ]
+        .contains(&category))
+    .then_some(raw)
+}
+fn failure_status() -> Result<String> {
+    let mut file = OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC | libc::O_NONBLOCK)
+        .open("/run/coco/storage-service/failure-status")?;
+    let metadata = file.metadata()?;
+    ensure!(
+        metadata.is_file()
+            && metadata.uid() == 0
+            && metadata.mode() & 0o777 == 0o600
+            && metadata.len() <= 128,
+        "invalid diagnostic file"
+    );
+    let mut raw = String::new();
+    (&mut file).take(129).read_to_string(&mut raw)?;
+    ensure!(
+        public_failure_status(&raw).is_some(),
+        "invalid diagnostic labels"
+    );
+    Ok(raw)
+}
+
 /// Runs before the agent accepts container RPCs. No application can use AA or
 /// CDH as an alternate attestation/key oracle, even if REST was host-requested.
 pub fn protect_guest_components() -> Result<()> {
@@ -537,8 +590,9 @@ impl State {
             }],
             Response::MountedMany { mounts } if !bindings.legacy => mounts,
             _ => {
+                let status = failure_status().unwrap_or_else(|_| "unavailable".into());
                 self.close().await?;
-                bail!("private storage activation denied; cleanup completed");
+                bail!("private storage activation denied; cleanup completed; phase={status}");
             }
         };
         validate_mounts(&mounts, &bindings.volumes)?;
@@ -898,6 +952,22 @@ mod tests {
                 {"binding_id":"model","transport_path":"/dev/coco-volume-0","expected":{"container_name":"consumer","destination":"/models/qwen","access":"ro"}},
                 {"binding_id":"data","transport_path":"/dev/coco-volume-1","expected":{"container_name":"consumer","destination":"/data/results","access":"rw"}}
             ]})).unwrap()).unwrap()
+    }
+    #[test]
+    fn diagnostic_status_never_exposes_arbitrary_text() {
+        assert_eq!(
+            public_failure_status("authority-reopen authority-transport"),
+            Some("authority-reopen authority-transport")
+        );
+        for bad in [
+            "secret",
+            "authority-reopen token=secret",
+            "authority-reopen authority-transport\nsecret",
+            "unknown local-or-kbs",
+            "reserve local-or-kbs extra",
+        ] {
+            assert!(public_failure_status(bad).is_none());
+        }
     }
     #[test]
     fn gpu_admission_preserves_exact_storage_validation_and_is_opt_in() {

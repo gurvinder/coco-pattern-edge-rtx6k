@@ -6,7 +6,7 @@
   "hostRuntimeChanges": false,
   "files": {
     "native-lifecycle.patch": "8257445ea4404f2e21fa2a53e3314e5b8076b5112f4a6fbe0eae125c7baa3718",
-    "storage_service.rs": "2d591078415a86e53f1a602ba0837c9e6798fed5911476166a5a96193fe2ac6d",
+    "storage_service.rs": "76dbbf8b03a0d43641fe2395d9831687ae7985a4358dde3f1fb10cc37a5534e3",
     "storage_gpu.rs": "479faa55a27186303116e19094cac2a6017dc4abc00f1718dec094e50811d262"
   }
 }

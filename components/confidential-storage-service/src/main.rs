@@ -16,7 +16,7 @@ use ring::rand::{SecureRandom, SystemRandom};
 use serde::Deserialize;
 use std::{
     fs::{self, File, OpenOptions},
-    io::{self, Read},
+    io::{self, Read, Write},
     net::SocketAddr,
     os::{
         fd::AsRawFd,
@@ -690,12 +690,38 @@ impl Service {
     }
 }
 
+// Fixed diagnostic labels only, in the existing root-private service directory.
+// This is not an application API and never contains error text, evidence or keys.
+fn failure_category(error: &(dyn std::error::Error + 'static)) -> &'static str {
+    match error.downcast_ref::<confidential_storage_client::Error>() {
+        Some(confidential_storage_client::Error::Configuration) => "authority-config",
+        Some(confidential_storage_client::Error::Transport) => "authority-transport",
+        Some(confidential_storage_client::Error::Binding) => "authority-binding",
+        Some(confidential_storage_client::Error::Attestation) => "private-attestation",
+        Some(confidential_storage_client::Error::Receipt(_)) => "authority-receipt",
+        None => "local-or-kbs",
+    }
+}
+fn record_failure(stage: &'static str, error: &(dyn std::error::Error + 'static)) {
+    let _ = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .mode(0o600)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+        .open("/run/coco/storage-service/failure-status")
+        .and_then(|mut file| {
+            file.write_all(format!("{} {}", stage, failure_category(error)).as_bytes())
+        });
+}
+
 impl confidential_storage_service::group::Backend for Service {
     fn reserve(&mut self, request: &Request) -> io::Result<()> {
         self.reservation.reserve(request)
     }
     fn activate(&mut self, request: &Request) -> io::Result<Response> {
-        Service::activate(self, request).map_err(|_| {
+        Service::activate(self, request).map_err(|error| {
+            record_failure(self.stage, error.as_ref());
             eprintln!("STORAGE_SERVICE volume_denied stage={}", self.stage);
             invalid()
         })

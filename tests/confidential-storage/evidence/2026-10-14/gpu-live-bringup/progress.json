@@ -34,13 +34,13 @@
     ],
     "boundedFixTested": true
   },
-  "nativeGpuTestsPassed": 22,
+  "nativeGpuTestsPassed": 23,
   "remainingCdiReview": [],
-  "authorityImage": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/storage-gpu-authority@sha256:2114e9afcd357fdb6fd7db6f6b7d46206387ce4e5faeb7f7a60d9a424fe3fc09",
+  "authorityImage": "image-registry.openshift-image-registry.svc:5000/confidential-storage-test/storage-gpu-authority@sha256:96526455138ce4daf014ce5e78014ef6207f4165ed26c00dd2c8752288de29fd",
   "authorityImageSmokePassed": true,
-  "authorityTestsInsideImagePassed": 121,
-  "storageKeysProvisioned": false,
-  "dataFormatted": false,
+  "authorityTestsInsideImagePassed": 131,
+  "storageKeysProvisioned": true,
+  "dataFormatted": true,
   "gpuInferencePassed": false,
   "originalQwenUid": "d5cc3080-ae0b-4490-b145-56a216732566",
   "originalChatUid": "839d51fc-94fe-491b-9e77-cec5a4c1ae48",
@@ -51,13 +51,92 @@
   "authorityStatePath": "/state/retained/authority.db",
   "authorityVaultPath": "secret/hub/storageGpuAuthority",
   "standardTrusteeTlsPinnedRcarChallengePassed": true,
-  "activeCandidate": "v12",
-  "activeCandidateInitrdSha256": "853167d3e8c0b916404d135189c9f737160154c8ee2f6befd887b8a7e947d48e",
+  "activeCandidate": "v14",
+  "activeCandidateInitrdSha256": "dcddf956cc9c413769497e43f4e7e3bb8b0af06258b9a01a00111cd625e8a435",
   "gpuCdiAdmissionPassed": true,
-  "storageActivation": "denied; cleanup completed; no application started",
+  "storageActivation": "both volumes Ready and owned by new guest; application startup pending",
   "authorityRecords": 2,
-  "authorityOperations": 0,
+  "authorityOperations": 4,
   "authorityIntegrity": "ok",
   "authorityVaultIdempotencyPassed": true,
-  "measuredPolicyTestPassed": true
+  "measuredPolicyTestPassed": true,
+  "liveLaunchMatchesPlanned": true,
+  "infrastructureDiagnosticIncident": {
+    "timeUtc": "2026-10-14T11:08:23Z",
+    "component": "nvidia-vfio-manager-2mwkm/nvidia-vfio-manager",
+    "reason": "Host hash diagnostic read entire 214 MB image; helper container OOMKilled and restarted once",
+    "remediation": "Use bounded 1 MiB streaming hashes; helper recovered",
+    "originalQwenAndChatHttpStatusAfterRecovery": 200,
+    "originalPodIdentitiesAndZeroRestartsPreserved": true
+  },
+  "guestRcarChallengePassed": true,
+  "guestRcarAttestationAccepted": true,
+  "tlsRepair": {
+    "cause": "Guest Rust verifier rejected CA certificate used as TLS server leaf (CaUsedAsEndEntity)",
+    "fix": "CA=false, serverAuth EKU; same private key and retained authority database",
+    "certificateSha256": "56dc82507897b5ef5c75a5ad7c27366e24d34853aace5841c4a47f5fc22c8cc2",
+    "rustPinnedTlsProbe": "HTTP 403 for deliberately malformed request; TLS verified",
+    "guestReachedAuthority": true
+  },
+  "standardTrusteeBindingCommit": "ab8a31cc61c04e367ae64e0f8a31ae73d9b644f2",
+  "standardTrusteeCpuAppraisal": {
+    "status": "affirming",
+    "hardware": 2,
+    "configuration": 3,
+    "executables": 3
+  },
+  "standardTrusteeGpuAppraisal": {
+    "status": "affirming",
+    "hardware": 2,
+    "configuration": 3,
+    "executables": 3
+  },
+  "scopedResourcePolicyCasesPassed": 84,
+  "referenceMergeCasesPassed": 4,
+  "storageKeyProvisioningIdempotencyPassed": true,
+  "standardTrusteeRolloutReason": "Reload subPath-mounted policy/reference files, then startup-converted new scoped key resources",
+  "originalQwenInferenceAfterPolicyRollout": {
+    "status": 200,
+    "reply": "OK"
+  },
+  "dataInitializationSteps": [
+    "luks-format: Complete",
+    "integrity-initialize: Complete",
+    "filesystem-create: Complete",
+    "durability-barrier: Complete"
+  ],
+  "standardTrusteeReload": {
+    "rolloutRequests": 2,
+    "secondRequestDidNotReplacePod": true,
+    "stalePodExplicitlyReplaced": true,
+    "currentPodUid": "0951aed0-b0da-4d51-95c0-bd0247789444",
+    "bothNewKeyConversionRecordsVerified": true
+  },
+  "unstartedRecovery": {
+    "oldPodUid": "d0d7d54e-c477-4510-a797-42723c0562bd",
+    "formattingPermitsIssued": 0,
+    "consistentPrivateBackupRetained": true,
+    "oldGuestDeleted": true,
+    "oldSessionPermanentlyRetired": true,
+    "historyAndOperationIdsRetained": true,
+    "recoveryTestsPassed": 4
+  },
+  "currentCandidatePodUid": "1273e795-9149-418f-b040-2ade09ef2e81",
+  "storageCudaCheckpoint": {
+    "podUid": "1273e795-9149-418f-b040-2ade09ef2e81",
+    "modelHashes": "pass",
+    "dataCanary": "first-write-pass",
+    "cudaVectorAdd": "pass",
+    "device": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+    "applicationFailure": "getpass.getuser: UID 1001 absent in passwd",
+    "bothRecords": "Ready and unowned after application exit",
+    "inferenceVerified": false
+  },
+  "startupRevision": {
+    "policySha256": "ee5658b6e4af614dfc90a4024b9ed6b754c085839966968cc19545085c987ab6",
+    "authorityImage": "sha256:d31c0c2a4dc4cae73ed074c4af30fd198998ad2f30f09e46a09325c010ad624b",
+    "authorityTests": 134,
+    "retainedVolumesPolicyUpdated": true,
+    "freshVmReopenPending": true
+  }
 }

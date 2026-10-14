@@ -6,10 +6,10 @@
     "agent": "7e1c212aca1c1fcad859cc2f4bd1a7b7bd9160a483fef304a9b6faa17b2ea033",
     "service": "b44202308e011b2939385c78580c04053a74d467122da05ca11a5a9b6de44563",
     "client": "1a9ea738602ccaebf7141e9e01ced3adfb3125e05a63b1332b930898a86509e5",
-    "config": "d530c8a0ddaecd9201884861a9fc81dbc22a51648c055278a56eeb9b42b964da"
+    "config": "d22ff40d99d396e08827b15e0a45f60dfbfb405f92763591c04c14bac6ae0bd9"
   },
-  "initrdSha256": "fde2f852f464c9a44f1fd6369eab0162e0841dd827bc30da172ff8761304cc3a",
-  "overlaySha256": "455067dd2fd59b6ce5f23ccafd06db60b0506420461b5f1005ed315a38947b3f",
+  "initrdSha256": "43ac494dbd94646c128c892814d3aa36040bbf58f4f9de2cc472e71d88303328",
+  "overlaySha256": "888a902b93e81cbcae4e4a064432a0bf49c9eb4b2567ba747615021458f201bc",
   "replaced": [
     "usr/bin/kata-agent"
   ],
@@ -61,6 +61,6 @@
     "usr/bin/storage-aa-client": "1a9ea738602ccaebf7141e9e01ced3adfb3125e05a63b1332b930898a86509e5",
     "usr/bin/storage-service-start": "6f31c7049aa92b6d683d7a4bedc1aded32ec12cad78bdf0f972a7df0e7ac1ca0",
     "etc/confidential-storage": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "etc/confidential-storage/service.json": "d530c8a0ddaecd9201884861a9fc81dbc22a51648c055278a56eeb9b42b964da"
+    "etc/confidential-storage/service.json": "d22ff40d99d396e08827b15e0a45f60dfbfb405f92763591c04c14bac6ae0bd9"
   }
 }

@@ -47,6 +47,13 @@ async fn exact_image_command_environment_and_no_policy_bypass() {
     ] {
         spec.Annotations.insert(k.into(), v.into());
     }
+    let mut linux = oci::Linux::new();
+    for kind in ["ipc", "uts", "mount"] {
+        let mut namespace = oci::LinuxNamespace::new();
+        namespace.Type = kind.into();
+        linux.Namespaces.push(namespace);
+    }
+    spec.Linux = Some(linux).into();
     req.OCI = Some(spec).into();
     let mut storage = agent::Storage::new();
     storage.driver = "image_guest_pull".into();
@@ -70,6 +77,8 @@ async fn exact_image_command_environment_and_no_policy_bypass() {
         ("/OCI/Process/Env", json!(["LD_PRELOAD=/host/lib.so"])),
         ("/OCI/Process/User/UID", json!(0)),
         ("/OCI/Root/Readonly", json!(false)),
+        ("/OCI/Linux/Namespaces", json!([])),
+        ("/OCI/Linux/Namespaces/0/Path", json!("/proc/1/ns/ipc")),
         ("/devices/0/container_path", json!("/dev/sda")),
     ] {
         let mut bad = base.clone();

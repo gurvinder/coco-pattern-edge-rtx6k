@@ -44,13 +44,15 @@ Local source staging is `/private/tmp/storage-native-agent-v1`.
 `tests/confidential-storage/native-guest` contains guest assembly/bootstrap,
 deny-all KBS preparation and strict RO file-verification InitData preparation.
 The policy pins UBI digest, exact hash-check command, UID/GID and environment;
-its generated files are `/private/tmp/storage-native-policy-v1`. This workload
+its generated files are `/private/tmp/storage-native-policy-v2`. This workload
 checks all published Qwen file hashes and read-only behavior; it is not yet a
-model inference server. Live policy/request compatibility remains to be checked.
+model inference server. Live policy/request compatibility remains to be checked. The v2 policy also
+requires the actual IPC/UTS/mount namespaces and rejects host namespace paths.
+The original v1 candidate/state remain private scratch only; use v2 next.
 
 The candidate image is now assembled and reproduced byte-for-byte:
-`/private/tmp/storage-native-v1.initrd`, SHA-256
-`fde2f852f464c9a44f1fd6369eab0162e0841dd827bc30da172ff8761304cc3a`.
+`/private/tmp/storage-native-v2.initrd`, SHA-256
+`43ac494dbd94646c128c892814d3aa36040bbf58f4f9de2cc472e71d88303328`.
 Its overlay and measurement JSON are beside it and public build/measurement
 metadata are in evidence. The intended config disables `[agent.kata].enable_debug`
 and prepends `agent.log=warn` to the existing hypervisor `kernel_params`. Runtime
@@ -62,7 +64,7 @@ Six native tests, three protocol tests and the strict actual-protobuf policy tes
 pass. Source preparation is byte-identical to the tested tree.
 
 Fresh actual RO authority state/public guest config are private locally at
-`work/confidential-storage-private/authority-native-20261014`. They are not yet
+`work/confidential-storage-private/authority-native-v2-20261014`. They are not yet
 uploaded or started. They bind the real published manifest to
 `kbs:///storage-test/model-keys/qwen-luks-v1`, but no such KBS key exists. Reuse
 this state and config for the recorded candidate; regenerating signing/TLS data

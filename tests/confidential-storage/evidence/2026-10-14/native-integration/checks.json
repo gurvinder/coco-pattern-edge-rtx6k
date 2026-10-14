@@ -38,8 +38,9 @@
   ],
   "strictPolicyActualProtobufTest": {
     "passed": 1,
-    "negativeVariants": 14
+    "negativeVariants": 16
   },
   "productionUnchanged": true,
-  "guestImageRebuildByteIdentical": true
+  "guestImageRebuildByteIdentical": true,
+  "strictInitDataSha256": "e192944453e4a87969569a9c962b9b9c13c45cf4db9f82c0f96129ab5b2529fb"
 }

@@ -50,6 +50,9 @@ common if {
     input.OCI.Root.Readonly == true
     input.OCI.Hooks == null
     input.OCI.Process.Terminal == false
+    count(input.OCI.Linux.Namespaces) == 3
+    {ns.Type | some ns in input.OCI.Linux.Namespaces} == {"ipc", "uts", "mount"}
+    every ns in input.OCI.Linux.Namespaces { ns.Path == "" }
     count(input.shared_mounts) == 0
     count(input.storages) == 1
     input.storages[0].driver == "image_guest_pull"
@@ -69,6 +72,7 @@ CreateContainerRequest if {
     input.storages[0].source == "pause"
     input.OCI.Process.Args == ["/usr/bin/pod"]
     count(input.devices) == 0
+    count(input.OCI.Linux.Devices) == 0
 }
 
 CreateContainerRequest if {

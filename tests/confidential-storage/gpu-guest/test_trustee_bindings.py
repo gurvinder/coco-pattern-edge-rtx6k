@@ -105,6 +105,16 @@ class TrusteeBindingTests(unittest.TestCase):
         self.assertIn('"data-v1"', policy)
         self.assertIn("evidence.init_data == expected.initData", policy)
 
+    def test_many_bindings_fit_regorus_column_limit(self):
+        bindings = {"model-" + str(i) + "-" + "a" * 80: BINDING for i in range(32)}
+        policy = next(d for d in render(bindings) if d and
+                      d.get("kind") == "ConfigMap" and
+                      d["metadata"]["name"] == "resource-policy")["data"]["resource-policy.rego"]
+        self.assertLessEqual(max(map(len, policy.splitlines())), 1024)
+        start = policy.index("model_key_bindings := ") + len("model_key_bindings := ")
+        actual, _ = json.JSONDecoder().raw_decode(policy[start:])
+        self.assertEqual(actual, bindings)
+
     def test_empty_bindings_preserve_old_reference_sets(self):
         refs = references(render({}), {"snp_launch_measurement": ["existing"]})
         self.assertEqual(refs["snp_launch_measurement"], ["existing"])

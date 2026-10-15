@@ -1,63 +1,59 @@
-# GPU model keys are exposed only with the strict resource-policy chart.
 kbs:
   secretResources:
-    - name: kbsres1
-      key: secret/data/hub/kbsres1
-    - name: passphrase
-      key: secret/data/hub/passphrase
-    - name: model-keys
-      key: secret/data/hub/modelKeys
+  - name: kbsres1
+    key: secret/data/hub/kbsres1
+  - name: passphrase
+    key: secret/data/hub/passphrase
+  - name: model-keys
+    key: secret/data/hub/modelKeys
   resourcePolicy:
-    # Independently calculated from unchanged stock GPU boot artifacts with exact
-    # boot parameters; live launch comparison is recorded separately. These two tags are unavailable to other approved guests.
     modelKeyBindings:
       qwen-controller-006-data:
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "595e1058078392d00a3c6c861daf33918a31ab68353a5168dc2bd138ee67159c"
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: 595e1058078392d00a3c6c861daf33918a31ab68353a5168dc2bd138ee67159c
       qwen-controller-006-model:
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "595e1058078392d00a3c6c861daf33918a31ab68353a5168dc2bd138ee67159c"
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: 595e1058078392d00a3c6c861daf33918a31ab68353a5168dc2bd138ee67159c
       qwen-controller-006-registry:
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "595e1058078392d00a3c6c861daf33918a31ab68353a5168dc2bd138ee67159c"
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: 595e1058078392d00a3c6c861daf33918a31ab68353a5168dc2bd138ee67159c
       qwen-controller-003-data:
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "ca315ef7ede0052c5c2be72340b25b45fb1a9457f430c6e5398843e98bef6371"
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: ca315ef7ede0052c5c2be72340b25b45fb1a9457f430c6e5398843e98bef6371
       qwen-controller-003-model:
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "ca315ef7ede0052c5c2be72340b25b45fb1a9457f430c6e5398843e98bef6371"
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: ca315ef7ede0052c5c2be72340b25b45fb1a9457f430c6e5398843e98bef6371
       qwen-controller-003-registry:
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "ca315ef7ede0052c5c2be72340b25b45fb1a9457f430c6e5398843e98bef6371"
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: ca315ef7ede0052c5c2be72340b25b45fb1a9457f430c6e5398843e98bef6371
       qwen-controller-001-data:
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "94a9c895875c1be73218c386d639c3f41c2d5879ee682ccef8ddedc45b8eda4a"
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: 94a9c895875c1be73218c386d639c3f41c2d5879ee682ccef8ddedc45b8eda4a
       qwen-controller-001-model:
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "94a9c895875c1be73218c386d639c3f41c2d5879ee682ccef8ddedc45b8eda4a"
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: 94a9c895875c1be73218c386d639c3f41c2d5879ee682ccef8ddedc45b8eda4a
       qwen-controller-001-registry:
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "94a9c895875c1be73218c386d639c3f41c2d5879ee682ccef8ddedc45b8eda4a"
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: 94a9c895875c1be73218c386d639c3f41c2d5879ee682ccef8ddedc45b8eda4a
       qwen-quickstart-001-data:
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "e0e3752cbd6167dcb9e5de504c575eb0df2177f961a58eb205707880ccd288eb"
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: e0e3752cbd6167dcb9e5de504c575eb0df2177f961a58eb205707880ccd288eb
       qwen-quickstart-001-model:
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "e0e3752cbd6167dcb9e5de504c575eb0df2177f961a58eb205707880ccd288eb"
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: e0e3752cbd6167dcb9e5de504c575eb0df2177f961a58eb205707880ccd288eb
       qwen-quickstart-001-registry:
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "e0e3752cbd6167dcb9e5de504c575eb0df2177f961a58eb205707880ccd288eb"
-      qwen-gpu-model-v1: &storageSidecarV1
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "521607af27de8db7f9a8b52c9aa075b48317bc0773bb90c9b64e55dbd4a9ba14"
-      qwen-gpu-data-v1: *storageSidecarV1
-      # Separate add-on demo: fresh OCI model and blank writable PVC.
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: e0e3752cbd6167dcb9e5de504c575eb0df2177f961a58eb205707880ccd288eb
+      qwen-gpu-model-v1: &id001
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: 521607af27de8db7f9a8b52c9aa075b48317bc0773bb90c9b64e55dbd4a9ba14
+      qwen-gpu-data-v1: *id001
       qwen-003-model-c01521907884452d9c6fc888d7fa8207:
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "55d9686c06ecfd8533c1a352f08e98eaf79c150442efa9b93d6bd67dfa6f02b3"
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: 55d9686c06ecfd8533c1a352f08e98eaf79c150442efa9b93d6bd67dfa6f02b3
       qwen-003-data-c01521907884452d9c6fc888d7fa8207:
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "55d9686c06ecfd8533c1a352f08e98eaf79c150442efa9b93d6bd67dfa6f02b3"
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: 55d9686c06ecfd8533c1a352f08e98eaf79c150442efa9b93d6bd67dfa6f02b3
       qwen-003-registry-c01521907884452d9c6fc888d7fa8207:
-        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "55d9686c06ecfd8533c1a352f08e98eaf79c150442efa9b93d6bd67dfa6f02b3"
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: 55d9686c06ecfd8533c1a352f08e98eaf79c150442efa9b93d6bd67dfa6f02b3

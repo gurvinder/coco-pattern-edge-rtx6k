@@ -1,3 +1,5 @@
+# Retired with the original Qwen service; the add-on owns the replacement chat.
+replicas: 0
 # Direct private-IP access on the Red Hat network/VPN; no login or DNS dependency.
 publicHost: 10.14.202.14:30080
 publicScheme: http

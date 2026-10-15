@@ -18,10 +18,10 @@ kbs:
       # Separate add-on demo: fresh OCI model and blank writable PVC.
       qwen-003-model-c01521907884452d9c6fc888d7fa8207:
         launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "00f3bf16930cbbbd9b3d3d428d46e7e09d23a1ce36f0f3095127031843972709"
+        initData: "55d9686c06ecfd8533c1a352f08e98eaf79c150442efa9b93d6bd67dfa6f02b3"
       qwen-003-data-c01521907884452d9c6fc888d7fa8207:
         launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "00f3bf16930cbbbd9b3d3d428d46e7e09d23a1ce36f0f3095127031843972709"
+        initData: "55d9686c06ecfd8533c1a352f08e98eaf79c150442efa9b93d6bd67dfa6f02b3"
       qwen-003-registry-c01521907884452d9c6fc888d7fa8207:
         launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
-        initData: "00f3bf16930cbbbd9b3d3d428d46e7e09d23a1ce36f0f3095127031843972709"
+        initData: "55d9686c06ecfd8533c1a352f08e98eaf79c150442efa9b93d6bd67dfa6f02b3"

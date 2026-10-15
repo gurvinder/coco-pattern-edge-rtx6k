@@ -11,6 +11,15 @@ kbs:
     # Independently calculated from unchanged stock GPU boot artifacts with exact
     # boot parameters; live launch comparison is recorded separately. These two tags are unavailable to other approved guests.
     modelKeyBindings:
+      qwen-controller-001-data:
+        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
+        initData: "94a9c895875c1be73218c386d639c3f41c2d5879ee682ccef8ddedc45b8eda4a"
+      qwen-controller-001-model:
+        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
+        initData: "94a9c895875c1be73218c386d639c3f41c2d5879ee682ccef8ddedc45b8eda4a"
+      qwen-controller-001-registry:
+        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
+        initData: "94a9c895875c1be73218c386d639c3f41c2d5879ee682ccef8ddedc45b8eda4a"
       qwen-quickstart-001-data:
         launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
         initData: "e0e3752cbd6167dcb9e5de504c575eb0df2177f961a58eb205707880ccd288eb"

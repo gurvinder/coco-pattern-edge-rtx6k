@@ -15,3 +15,10 @@ kbs:
         launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
         initData: "521607af27de8db7f9a8b52c9aa075b48317bc0773bb90c9b64e55dbd4a9ba14"
       qwen-gpu-data-v1: *storageSidecarV1
+      # Separate add-on demo: fresh OCI model and blank writable PVC.
+      qwen-003-model-c01521907884452d9c6fc888d7fa8207:
+        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
+        initData: "19ff9ba2fbdd9f3024eda5e66e0aadbd8eadb30f32e245a6b83b5d9c7ab6123e"
+      qwen-003-data-c01521907884452d9c6fc888d7fa8207:
+        launchMeasurement: "be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818"
+        initData: "19ff9ba2fbdd9f3024eda5e66e0aadbd8eadb30f32e245a6b83b5d9c7ab6123e"

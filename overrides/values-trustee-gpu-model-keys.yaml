@@ -57,3 +57,8 @@ kbs:
       qwen-003-registry-c01521907884452d9c6fc888d7fa8207:
         launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
         initData: 55d9686c06ecfd8533c1a352f08e98eaf79c150442efa9b93d6bd67dfa6f02b3
+      qwen-controller-007-model: &id002
+        launchMeasurement: be2e11ecce7f8fedf0ab8fe056b927c5508557c5e57279f70c6e43ab6b3c3afcb10da6982a6e5f5bcf1069ec8a664818
+        initData: 3d9080cf2dd6e5f5a75138e6d0ae6a84b1634a5b653705119d0b01ebc0d5705e
+      qwen-controller-007-data: *id002
+      qwen-controller-007-registry: *id002

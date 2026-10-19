@@ -1,0 +1,16 @@
+kbs:
+  secretResources:
+  - name: kbsres1
+    key: secret/data/hub/kbsres1
+  - name: passphrase
+    key: secret/data/hub/passphrase
+  - name: model-keys
+    key: secret/data/hub/modelKeys
+  - name: rhoai-qwen-secrets
+    key: secret/data/hub/rhoaiQwen
+    decodingStrategy: Base64
+  resourcePolicy:
+    confidentialGuestBindings:
+      rhoai-qwen-secrets:
+        initData: 57f7aecbd8d986741c7443ea053c96569867ed495ce9d7d0ca4079b9fce383a6
+        launchMeasurement: 81b9d5db6c10b0b9297b448d917044261f9bd0d6cceceafd1b4680058b365c5ac77a4d82ca77c4ac10c838e32536eddb

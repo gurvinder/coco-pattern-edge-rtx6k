@@ -27,7 +27,7 @@ kbs:
   # Dynamic secret resources list - add new secrets here
   # Each entry generates an ESO and gets added to kbsSecretResources
   # requires a name of the secret and a key to retrieve using ESO, typically from vault.
-  secretResources: 
+  secretResources:
     # Example:
     - name: "kbsres1"
       key: "secret/data/hub/kbsres1"
@@ -138,6 +138,7 @@ kbs:
     # tags. Also append their exact InitData/launch references to RVPS. Existing
     # tags keep their current CPU+GPU policy; new bound tags fail on mismatch.
     modelKeyBindings: {}
+    confidentialGuestBindings: {}
     # Enforce hardware trust claims in resource policy
     # When true: requires hardware claim >= 2 (affirming range)
     # When false: allows resource access even if hardware claim fails
@@ -150,4 +151,3 @@ kbs:
 attestation:
   commonName: "kbs-trustee-operator-system"
   organization: "Red Hat"
-

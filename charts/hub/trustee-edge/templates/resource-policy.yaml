@@ -1,5 +1,6 @@
 {{- $bindings := .Values.kbs.resourcePolicy.modelKeyBindings | default dict -}}
-{{- range $tag, $binding := $bindings -}}
+{{- $guests := .Values.kbs.resourcePolicy.confidentialGuestBindings | default dict -}}
+{{- range $tag, $binding := merge (deepCopy $bindings) $guests -}}
 {{- if not (regexMatch "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$" $tag) -}}
 {{- fail "modelKeyBindings requires valid resource tags" -}}
 {{- end -}}
@@ -17,4 +18,4 @@ metadata:
     kbs.confidentialcontainers.org/migrated-from-v1.1.0: v1.2.0
 data:
   resource-policy.rego: |
-{{ .Files.Get "files/resource-policy.rego" | replace "model_key_bindings := {}" (printf "model_key_bindings := %s" (toPrettyJson $bindings)) | indent 4 }}
+{{ .Files.Get "files/resource-policy.rego" | replace "model_key_bindings := {}" (printf "model_key_bindings := %s" (toPrettyJson $bindings)) | replace "confidential_guest_bindings := {}" (printf "confidential_guest_bindings := %s" (toPrettyJson $guests)) | indent 4 }}

@@ -49,7 +49,7 @@ main:
     # Connected mode: repoURL is inferred from your local git remote.
     # Disconnected: uncomment and set to the HTTP URL served by git-http-server.py
     # repoURL: http://JUMP_HOST_IP:8080/coco-pattern.git
-    revision: codex/edge-rtx6k
+    revision: rhoai-confidential-qwen
   patternsOperator:
     # Required for airgap -- set to your mirrored catalog source name
     # source: cs-community-operator-index-v4-22

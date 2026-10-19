@@ -2,7 +2,7 @@
 ---
 apiVersion: "external-secrets.io/v1"
 kind: ExternalSecret
-metadata: 
+metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "6"
   name: tls-key-eso
@@ -22,5 +22,3 @@ spec:
         key: 'secret/data/pushsecrets/kbs-tls-self-signed'
         property: key
 {{- end }}
-
-

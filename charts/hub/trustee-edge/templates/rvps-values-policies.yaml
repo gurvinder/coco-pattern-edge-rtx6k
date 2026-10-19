@@ -26,7 +26,7 @@ spec:
           {{`{{- $rawHashPadded := printf "%s00000000000000000000000000000000" $rawHash -}}`}}
           {{`{{- $debugRawHashPadded := printf "%s00000000000000000000000000000000" $debugRawHash -}}`}}
           {{`{{- $referenceValues := dict -}}`}}
-          {{`{{- $storageBindings := `}}{{ .Values.kbs.resourcePolicy.modelKeyBindings | default dict | toJson | quote }}{{` | fromJson -}}`}}
+          {{`{{- $storageBindings := `}}{{ merge (deepCopy (.Values.kbs.resourcePolicy.modelKeyBindings | default dict)) (.Values.kbs.resourcePolicy.confidentialGuestBindings | default dict) | toJson | quote }}{{` | fromJson -}}`}}
           {{`{{- $initValues := list $pcr8Hash $debugPcr8Hash $rawHash $debugRawHash $rawHashPadded $debugRawHashPadded -}}`}}
           {{`{{- range $_, $binding := $storageBindings -}}`}}
           {{`{{- $initValues = append $initValues $binding.initData -}}`}}

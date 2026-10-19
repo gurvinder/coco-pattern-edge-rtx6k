@@ -3,7 +3,7 @@
 ---
 apiVersion: "external-secrets.io/v1"
 kind: ExternalSecret
-metadata: 
+metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
   name: {{ .name }}-eso
@@ -20,6 +20,6 @@ spec:
   dataFrom:
   - extract:
       key: {{ .key }}
+      decodingStrategy: {{ .decodingStrategy | default "None" }}
 {{- end }}
 {{- end }}
-

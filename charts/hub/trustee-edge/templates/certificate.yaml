@@ -16,4 +16,3 @@ spec:
   issuerRef:
     name: kbs-self-signed-issuer
     kind: Issuer
-

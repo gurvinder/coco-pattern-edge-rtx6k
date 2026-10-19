@@ -1,5 +1,3 @@
-# AMD SEV-SNP + NVIDIA GPU passthrough on edge-rtx6k.
-# OSC owns the runtime and guest driver. Keep the existing CPU runtime default.
 clusterGroup:
   subscriptions:
     intel-device-plugins:
@@ -14,8 +12,7 @@ clusterGroup:
       installPlanApproval: Manual
       csv: gpu-operator-certified.v26.3.0
       annotations:
-        argocd.argoproj.io/sync-wave: "25"
-
+        argocd.argoproj.io/sync-wave: '25'
   applications:
     qwen-chat:
       name: qwen-chat
@@ -23,74 +20,118 @@ clusterGroup:
       project: hub
       path: charts/coco-supported/qwen-chat
       extraValueFiles:
-        - /overrides/values-qwen-chat.yaml
+      - /overrides/values-qwen-chat.yaml
       annotations:
-        argocd.argoproj.io/sync-wave: "35"
+        argocd.argoproj.io/sync-wave: '35'
+      disabled: true
     encrypted-inference:
       name: encrypted-inference
       namespace: gpu-workload
       project: hub
       path: charts/coco-supported/encrypted-inference
       extraValueFiles:
-        - /overrides/values-encrypted-qwen.yaml
+      - /overrides/values-encrypted-qwen.yaml
       annotations:
-        argocd.argoproj.io/sync-wave: "30"
+        argocd.argoproj.io/sync-wave: '30'
+      disabled: true
     internal-registry:
       name: internal-registry
       namespace: openshift-image-registry
       project: hub
       path: charts/hub/internal-registry
       annotations:
-        argocd.argoproj.io/sync-wave: "20"
+        argocd.argoproj.io/sync-wave: '20'
     intel-dcap:
       disabled: true
     baremetal:
       overrides:
-        - name: tdx.enabled
-          value: "false"
+      - name: tdx.enabled
+        value: 'false'
     trustee:
       chart: null
       path: charts/hub/trustee-edge
-      repoURL: git@github.com:pmatouse/coco-pattern-edge-rtx6k.git
-      # Local copy matches released tag edge-trustee-0.10.3-1.
-      # Argo cannot use two revisions of the same repo in a multisource app.
+      repoURL: https://github.com/pmatouse/coco-pattern-edge-rtx6k.git
       chartVersion: null
       extraValueFiles:
-        - /overrides/values-trustee.yaml
-        - /overrides/values-snp-vcek.yaml
-        - /overrides/values-trustee-gpu-model-keys.yaml
-      # Helm replaces arrays; retain SNP and bare-metal reference loading.
+      - /overrides/values-trustee.yaml
+      - /overrides/values-snp-vcek.yaml
+      - /overrides/values-trustee-gpu-model-keys.yaml
+      - /overrides/values-rhoai-qwen-trustee.yaml
       overrides:
-        - name: kbs.snp.enabled
-          value: "true"
-        - name: kbs.baremetal.enabled
-          value: "true"
-        - name: kbs.gpu.enabled
-          value: "true"
+      - name: kbs.snp.enabled
+        value: 'true'
+      - name: kbs.baremetal.enabled
+        value: 'true'
+      - name: kbs.gpu.enabled
+        value: 'true'
     nvidia-gpu:
       name: nvidia-gpu
       namespace: nvidia-gpu-operator
       project: hub
       path: charts/all/nvidia-gpu
       annotations:
-        argocd.argoproj.io/sync-wave: "25"
+        argocd.argoproj.io/sync-wave: '25'
       overrides:
-        # IOMMU and ACS are already active; avoid an unnecessary SNO reboot.
-        - name: iommu.enabled
-          value: "false"
+      - name: iommu.enabled
+        value: 'false'
     gpu-workload:
       overrides:
-        # Dedicate both GPUs to Qwen: original service plus RO/RW storage service.
-        # Keep the standalone vector and encrypted-file demos disabled.
-        - name: vectorAddReplicas
-          value: "0"
-        - name: encryptedFileTest.enabled
-          value: "false"
+      - name: vectorAddReplicas
+        value: '0'
+      - name: encryptedFileTest.enabled
+        value: 'false'
       name: gpu-workload
       namespace: gpu-workload
       project: workloads
       path: charts/coco-supported/gpu-workload
-      # One GPU per confidential VM; CPU and GPU references must be loaded first.
       disabled: false
       annotations:
-        argocd.argoproj.io/sync-wave: "30"
+        argocd.argoproj.io/sync-wave: '30'
+    kserve:
+      disabled: true
+    kserve-crd:
+      disabled: true
+    confidential-inference:
+      disabled: true
+    hello-openshift:
+      disabled: true
+    kbs-access-curl:
+      disabled: true
+    kbs-access-sealed:
+      disabled: true
+    rhoai-platform:
+      name: rhoai-platform
+      namespace: redhat-ods-operator
+      project: hub
+      repoURL: https://github.com/pmatouse/confidential-inference-pattern.git
+      path: charts/rhoai-platform
+      chartVersion: rhoai-confidential-qwen
+      extraValueFiles:
+      - /overrides/values-rhoai-platform.yaml
+      annotations:
+        argocd.argoproj.io/sync-wave: '30'
+      disabled: false
+    rhoai-model-publisher:
+      name: rhoai-model-publisher
+      namespace: rhoai-model-publisher
+      project: hub
+      repoURL: https://github.com/pmatouse/confidential-inference-pattern.git
+      path: charts/rhoai-model-publisher
+      chartVersion: rhoai-confidential-qwen
+      extraValueFiles:
+      - /overrides/values-rhoai-publisher.yaml
+      annotations:
+        argocd.argoproj.io/sync-wave: '32'
+      disabled: false
+    rhoai-confidential-qwen:
+      name: rhoai-confidential-qwen
+      namespace: rhoai-confidential-qwen
+      project: hub
+      repoURL: https://github.com/pmatouse/confidential-inference-pattern.git
+      path: charts/rhoai-confidential-qwen
+      chartVersion: rhoai-confidential-qwen
+      extraValueFiles:
+      - /overrides/values-rhoai-qwen.yaml
+      annotations:
+        argocd.argoproj.io/sync-wave: '40'
+      disabled: false

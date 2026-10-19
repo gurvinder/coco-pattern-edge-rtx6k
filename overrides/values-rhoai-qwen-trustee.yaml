@@ -12,5 +12,5 @@ kbs:
   resourcePolicy:
     confidentialGuestBindings:
       rhoai-qwen-secrets:
-        initData: 57f7aecbd8d986741c7443ea053c96569867ed495ce9d7d0ca4079b9fce383a6
+        initData: 21edd5fc035d584030b072f9d7c94d636f095fb8cef0a9aa8b86d256e9bb429e
         launchMeasurement: 81b9d5db6c10b0b9297b448d917044261f9bd0d6cceceafd1b4680058b365c5ac77a4d82ca77c4ac10c838e32536eddb

@@ -24,6 +24,12 @@ spec:
       containers:
         - name: hello-openshift
           image: {{ .Values.image }}
+          # Force a PullImage call on every create so CRI-O routes the pull
+          # through the kata guest-pull ImageServer. With IfNotPresent the image
+          # is already cached host-side (e.g. by the standard pod), kubelet skips
+          # PullImage, and CreateContainer fails with "image not found:
+          # docker.io/library/<config-digest>:latest".
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           volumeMounts:

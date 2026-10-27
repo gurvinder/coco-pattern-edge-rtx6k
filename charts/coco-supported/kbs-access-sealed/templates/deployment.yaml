@@ -25,6 +25,11 @@ spec:
       containers:
       - name: httpd
         image: {{ .Values.image }}
+        # Force a PullImage call on every create so CRI-O routes the pull
+        # through the kata guest-pull ImageServer (IfNotPresent + a host-cached
+        # image makes kubelet skip PullImage, breaking guest-pull with
+        # "image not found: docker.io/library/<config-digest>:latest").
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
           protocol: TCP

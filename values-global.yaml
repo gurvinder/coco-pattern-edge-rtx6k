@@ -5,7 +5,7 @@ global:
   singleArgoCD: true
   multiSourceRepoUrl: quay.io/validatedpatterns
   storageProvider: lvm  # Options: hpp, lvm, external
-  clusterVersion: "4.22"  # OCP minor version for operator pins. Options: 4.19, 4.20, 4.21
+  clusterVersion: "5.0"  # OCP minor version for operator pins. Options: 4.19, 4.20, 4.21, 4.22, 5.0
   secretStore:
     # Warning: This must be present even if it is set to none.
     backend: vault # none, vault, kubernetes

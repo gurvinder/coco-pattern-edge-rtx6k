@@ -1,0 +1,46 @@
+# OCP 5.0 version-specific operator pins and catalog routing.
+# Applied via sharedValueFiles when global.clusterVersion is "5.0".
+#
+# As of the 5.0.0-rc, the Red Hat operator index for 5.0
+# (registry.redhat.io/redhat/redhat-operator-index:v5.0) does NOT yet publish
+# LVMS, sandboxed-containers (OSC), trustee, or NFD. Until it does, source those
+# four from the 4.22 operator index via a dedicated CatalogSource. ACM,
+# External Secrets, cert-manager, and GitOps remain on the native 5.0 catalog.
+#
+# Remove this file (and set clusterVersion accordingly) once the 5.0 index
+# carries these operators.
+clusterGroup:
+  subscriptions:
+    # LVMS: no 5.0 channel yet -> use the 4.22 channel from the 4.22 index.
+    lvm-operator:
+      channel: stable-4.22
+      source: coco-operators-v422
+      sourceNamespace: openshift-marketplace
+    sandbox:
+      source: coco-operators-v422
+      sourceNamespace: openshift-marketplace
+    trustee:
+      source: coco-operators-v422
+      sourceNamespace: openshift-marketplace
+    nfd:
+      source: coco-operators-v422
+      sourceNamespace: openshift-marketplace
+  extraObjects:
+    # Bootstrap CatalogSource exposing the 4.22 operator index on the 5.0 cluster.
+    # Created ahead of the operator subscriptions (sync-wave 10).
+    coco-operators-v422-catalog:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: CatalogSource
+      metadata:
+        name: coco-operators-v422
+        namespace: openshift-marketplace
+        annotations:
+          argocd.argoproj.io/sync-wave: '1'
+      spec:
+        sourceType: grpc
+        image: registry.redhat.io/redhat/redhat-operator-index:v4.22
+        displayName: CoCo Operators (4.22 index)
+        publisher: Red Hat
+        updateStrategy:
+          registryPoll:
+            interval: 30m

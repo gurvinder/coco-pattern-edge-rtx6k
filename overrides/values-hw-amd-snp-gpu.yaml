@@ -9,12 +9,35 @@ clusterGroup:
     gpu-operator:
       name: gpu-operator-certified
       namespace: nvidia-gpu-operator
-      source: certified-operators
+      # OCP 5.0.0-rc: sourced from the certified 4.22 index (see extraObjects below)
+      # until the certified 5.0 index publishes gpu-operator-certified.
+      source: coco-certified-v422
+      sourceNamespace: openshift-marketplace
       channel: v26.3
       installPlanApproval: Manual
       csv: gpu-operator-certified.v26.3.0
       annotations:
         argocd.argoproj.io/sync-wave: "25"
+
+  extraObjects:
+    # OCP 5.0.0-rc: the certified 5.0 index does not yet publish the NVIDIA GPU
+    # operator. Expose the certified 4.22 index so gpu-operator-certified installs.
+    coco-certified-v422-catalog:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: CatalogSource
+      metadata:
+        name: coco-certified-v422
+        namespace: openshift-marketplace
+        annotations:
+          argocd.argoproj.io/sync-wave: '1'
+      spec:
+        sourceType: grpc
+        image: registry.redhat.io/redhat/certified-operator-index:v4.22
+        displayName: CoCo Certified Operators (4.22 index)
+        publisher: Red Hat
+        updateStrategy:
+          registryPoll:
+            interval: 30m
 
   applications:
     qwen-chat:

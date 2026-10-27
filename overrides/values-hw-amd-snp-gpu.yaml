@@ -15,7 +15,7 @@ clusterGroup:
       sourceNamespace: openshift-marketplace
       channel: v26.3
       installPlanApproval: Manual
-      csv: gpu-operator-certified.v26.3.0
+      csv: gpu-operator-certified.v26.3.3
       annotations:
         argocd.argoproj.io/sync-wave: "25"
 
